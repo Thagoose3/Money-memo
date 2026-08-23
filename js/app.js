@@ -1,9 +1,9 @@
 /**
- * Main Application Controller for Money Memo (Minimalist & Aesthetic Edition)
+ * Main Application Controller for Money Memo
  */
 
 const App = {
-  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'categories'
+  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'fixed-expenses'
   dashboardViewMode: 'overview', // 'overview' (Monthly charts) or 'daily' (Daily breakdown)
   selectedDate: new Date(), // สำหรับ Dashboard
   currentEntryType: 'expense', // 'expense' or 'income' for transaction form
@@ -12,6 +12,7 @@ const App = {
   // Modals & Pending actions
   editingTransactionId: null,
   deletingTransactionId: null,
+  editingFixedExpenseId: null,
 
   // Chart instances
   categoryChart: null,
@@ -116,12 +117,12 @@ const App = {
     if (searchInput) searchInput.addEventListener('input', () => this.renderTransactionList());
     if (filterType) filterType.addEventListener('change', () => this.renderTransactionList());
 
-    // Category Modal Form Submit
-    const categoryForm = document.getElementById('new-category-form');
-    if (categoryForm) {
-      categoryForm.addEventListener('submit', (e) => {
+    // Fixed Expense Modal Form Submit
+    const fixedForm = document.getElementById('fixed-expense-form');
+    if (fixedForm) {
+      fixedForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleCreateCategory();
+        this.handleSaveFixedExpense();
       });
     }
 
@@ -196,8 +197,9 @@ const App = {
       this.renderDashboard();
     } else if (tabName === 'transactions') {
       this.renderTransactionList();
-    } else if (tabName === 'categories') {
-      this.renderCategoriesTab();
+      this.renderQuickFixedChips();
+    } else if (tabName === 'fixed-expenses') {
+      this.renderFixedExpensesTab();
     } else if (tabName === 'simulator') {
       BudgetSimulator.render();
     }
@@ -275,6 +277,414 @@ const App = {
     });
   },
 
+  // --- Quick Fixed Chips (ปุ่มลัดรายจ่ายประจำ) ---
+  renderQuickFixedChips() {
+    const container = document.getElementById('quick-fixed-chips-list');
+    if (!container) return;
+
+    const fixedExpenses = StorageManager.getFixedExpenses();
+
+    if (fixedExpenses.length === 0) {
+      container.innerHTML = `
+        <span class="text-xs text-slate-400">ยังไม่มีปุ่มลัด (กด "+ เพิ่มปุ่มลัด" เพื่อตั้งค่า)</span>
+      `;
+      return;
+    }
+
+    container.innerHTML = fixedExpenses.map(item => {
+      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name));
+      return `
+        <button 
+          type="button" 
+          onclick="App.quickFillFromFixed('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.amount})"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 shadow-xs transition-all group"
+          title="กดเพื่อกรอก ${item.name} ฿${item.amount.toLocaleString()} ลงฟอร์มทันที"
+        >
+          <span>${cat.emoji}</span>
+          <span class="truncate max-w-[120px]">${item.name}</span>
+          <span class="num-font text-[11px] font-bold text-slate-500 group-hover:text-slate-300">฿${item.amount.toLocaleString()}</span>
+        </button>
+      `;
+    }).join('');
+  },
+
+  quickFillFromFixed(id, name, amount) {
+    this.setEntryType('expense');
+    const amountInput = document.getElementById('tx-amount');
+    const noteInput = document.getElementById('tx-note');
+    const paymentInput = document.getElementById('tx-payment-method');
+
+    const fixedItem = StorageManager.getFixedExpenses().find(e => e.id === id);
+
+    if (amountInput) {
+      amountInput.value = amount;
+      amountInput.focus();
+    }
+    if (noteInput) {
+      noteInput.value = name;
+    }
+    if (paymentInput && fixedItem && fixedItem.paymentMethod) {
+      paymentInput.value = fixedItem.paymentMethod;
+    }
+
+    const catId = (fixedItem && fixedItem.categoryId) ? fixedItem.categoryId : StorageManager.guessCategoryByName(name);
+    this.selectCategory('form-category-grid', catId);
+
+    this.showToast(`กรอก "${name}" ฿${amount.toLocaleString()} ลงฟอร์มแล้ว ✨`);
+  },
+
+  // --- Batch Import Modal (นำเข้ารายจ่ายประจำหลายรายการ) ---
+  openQuickFixedModal() {
+    const modal = document.getElementById('quick-fixed-modal');
+    const dateInput = document.getElementById('batch-import-date');
+    if (dateInput) {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    }
+
+    this.renderQuickFixedModalList();
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  closeQuickFixedModal() {
+    const modal = document.getElementById('quick-fixed-modal');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  renderQuickFixedModalList() {
+    const container = document.getElementById('batch-fixed-items-list');
+    if (!container) return;
+
+    const fixedExpenses = StorageManager.getFixedExpenses();
+    const categories = StorageManager.getCategories().filter(c => c.type === 'expense');
+
+    if (fixedExpenses.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <p class="text-xs font-semibold text-slate-600">ยังไม่มีรายการรายจ่ายประจำ</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">คุณสามารถตั้งค่ารายการได้ที่แท็บ "รายจ่ายประจำเดือน"</p>
+        </div>
+      `;
+      this.updateBatchTotal();
+      return;
+    }
+
+    container.innerHTML = fixedExpenses.map((item) => {
+      const currentCatId = item.categoryId || StorageManager.guessCategoryByName(item.name);
+      
+      const catOptionsHtml = categories.map(c => `
+        <option value="${c.id}" ${c.id === currentCatId ? 'selected' : ''}>${c.emoji} ${c.name}</option>
+      `).join('');
+
+      return `
+        <div class="flex items-center gap-2.5 p-2.5 bg-slate-50/80 hover:bg-slate-100/70 rounded-xl border border-slate-200/80 transition-all batch-item-row" data-id="${item.id}">
+          <input 
+            type="checkbox" 
+            class="batch-item-checkbox rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+            checked
+            onchange="App.updateBatchTotal()"
+          />
+          <div class="flex-1 min-w-0">
+            <input 
+              type="text" 
+              class="batch-item-name w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
+              value="${item.name}"
+              placeholder="ชื่อรายการ"
+            />
+          </div>
+          <div class="w-36">
+            <select class="batch-item-category w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[11px] text-slate-700 font-medium focus:outline-none">
+              ${catOptionsHtml}
+            </select>
+          </div>
+          <div class="relative w-28">
+            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+            <input 
+              type="number" 
+              class="batch-item-amount w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-xs text-right font-bold text-slate-900 num-font focus:outline-none"
+              value="${item.amount}"
+              step="50"
+              oninput="App.updateBatchTotal()"
+            />
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.updateBatchTotal();
+  },
+
+  toggleSelectAllFixed(checked) {
+    document.querySelectorAll('.batch-item-checkbox').forEach(cb => {
+      cb.checked = checked;
+    });
+    this.updateBatchTotal();
+  },
+
+  updateBatchTotal() {
+    const rows = document.querySelectorAll('.batch-item-row');
+    let total = 0;
+    let selectedCount = 0;
+
+    rows.forEach(row => {
+      const cb = row.querySelector('.batch-item-checkbox');
+      const amountInput = row.querySelector('.batch-item-amount');
+      if (cb && cb.checked && amountInput) {
+        total += Math.max(0, parseFloat(amountInput.value) || 0);
+        selectedCount++;
+      }
+    });
+
+    const summaryEl = document.getElementById('batch-selected-summary');
+    const totalEl = document.getElementById('batch-total-amount');
+
+    if (summaryEl) summaryEl.textContent = `(เลือก ${selectedCount}/${rows.length} รายการ)`;
+    if (totalEl) totalEl.textContent = `ยอดรวมที่เลือก: ฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+  },
+
+  handleSaveBatchFixedExpenses() {
+    const rows = document.querySelectorAll('.batch-item-row');
+    const batchDate = document.getElementById('batch-import-date')?.value || new Date().toISOString().slice(0, 16);
+    const batchPayment = document.getElementById('batch-import-payment')?.value || 'โอนเงิน / บัญชีธนาคาร';
+
+    const txsToSave = [];
+
+    rows.forEach(row => {
+      const cb = row.querySelector('.batch-item-checkbox');
+      const nameInput = row.querySelector('.batch-item-name');
+      const catSelect = row.querySelector('.batch-item-category');
+      const amountInput = row.querySelector('.batch-item-amount');
+
+      if (cb && cb.checked) {
+        const name = (nameInput?.value || '').trim();
+        const categoryId = catSelect?.value || 'exp_bills';
+        const amount = Math.max(0, parseFloat(amountInput?.value) || 0);
+
+        if (amount > 0) {
+          txsToSave.push({
+            type: 'expense',
+            amount: amount,
+            categoryId: categoryId,
+            date: batchDate,
+            paymentMethod: batchPayment,
+            note: name
+          });
+        }
+      }
+    });
+
+    if (txsToSave.length === 0) {
+      alert('กรุณาเลือกอย่างน้อย 1 รายการ และมียอดเงินมากกว่า 0 บาท');
+      return;
+    }
+
+    const count = StorageManager.addTransactionsBatch(txsToSave);
+    this.closeQuickFixedModal();
+    this.renderAll();
+    this.showToast(`นำเข้ารายจ่ายประจำเดือนสำเร็จ ${count} รายการ 🎉`);
+  },
+
+  // --- Fixed Expenses Tab Management (แท็บจัดการรายจ่ายประจำเดือน) ---
+  renderFixedExpensesTab() {
+    const container = document.getElementById('fixed-expenses-cards-list');
+    const totalAmountEl = document.getElementById('fixed-tab-total-amount');
+    const totalCountEl = document.getElementById('fixed-tab-total-count');
+
+    const fixedExpenses = StorageManager.getFixedExpenses();
+    const totalAmount = fixedExpenses.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+
+    if (totalAmountEl) totalAmountEl.textContent = '฿' + totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    if (totalCountEl) totalCountEl.textContent = `${fixedExpenses.length} รายการ`;
+
+    if (!container) return;
+
+    if (fixedExpenses.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full text-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+          <span class="text-3xl block mb-1">📌</span>
+          <p class="font-bold text-slate-700 text-sm">ยังไม่มีรายการรายจ่ายประจำเดือน</p>
+          <p class="text-xs text-slate-400 mt-1">กดปุ่ม "+ เพิ่มรายจ่ายประจำ" ด้านบนเพื่อเริ่มสร้างปุ่มลัดและคำนวณงบประมาณ</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = fixedExpenses.map(item => {
+      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name));
+      return `
+        <div class="minimal-card p-4 rounded-2xl flex flex-col justify-between gap-3 group">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-slate-50 border border-slate-100">
+                ${cat.emoji}
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">${item.name}</h4>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-[11px] text-slate-500">${cat.name}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'}</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-lg font-extrabold text-slate-900 num-font">฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+              <span class="text-[10px] text-slate-400 block">/ เดือน</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+            <button 
+              onclick="App.quickLogFixedExpense('${item.id}')"
+              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-semibold transition-all"
+              title="บันทึกยอดนี้เข้าบัญชีทันที"
+            >
+              <span>⚡ บันทึกลงบัญชีทันที</span>
+            </button>
+
+            <div class="flex items-center gap-1">
+              <button onclick="App.openEditFixedExpenseModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors" title="แก้ไข">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
+              <button onclick="App.deleteFixedExpense('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors" title="ลบ">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  openAddFixedExpenseModal() {
+    this.editingFixedExpenseId = null;
+    const titleEl = document.getElementById('fixed-modal-title');
+    const idInput = document.getElementById('fixed-modal-id');
+    const nameInput = document.getElementById('fixed-modal-name');
+    const amountInput = document.getElementById('fixed-modal-amount');
+    const catSelect = document.getElementById('fixed-modal-category');
+    const paymentSelect = document.getElementById('fixed-modal-payment');
+
+    if (titleEl) titleEl.textContent = 'เพิ่มรายจ่ายประจำเดือน';
+    if (idInput) idInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (amountInput) amountInput.value = '';
+    
+    // Populate categories
+    if (catSelect) {
+      const categories = StorageManager.getCategories().filter(c => c.type === 'expense');
+      catSelect.innerHTML = categories.map(c => `
+        <option value="${c.id}">${c.emoji} ${c.name}</option>
+      `).join('');
+    }
+
+    if (paymentSelect) paymentSelect.value = 'โอนเงิน / บัญชีธนาคาร';
+
+    const modal = document.getElementById('fixed-expense-modal');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  openEditFixedExpenseModal(id) {
+    const fixedExpenses = StorageManager.getFixedExpenses();
+    const item = fixedExpenses.find(e => e.id === id);
+    if (!item) return;
+
+    this.editingFixedExpenseId = id;
+    const titleEl = document.getElementById('fixed-modal-title');
+    const idInput = document.getElementById('fixed-modal-id');
+    const nameInput = document.getElementById('fixed-modal-name');
+    const amountInput = document.getElementById('fixed-modal-amount');
+    const catSelect = document.getElementById('fixed-modal-category');
+    const paymentSelect = document.getElementById('fixed-modal-payment');
+
+    if (titleEl) titleEl.textContent = 'แก้ไขรายจ่ายประจำเดือน';
+    if (idInput) idInput.value = item.id;
+    if (nameInput) nameInput.value = item.name;
+    if (amountInput) amountInput.value = item.amount;
+
+    if (catSelect) {
+      const categories = StorageManager.getCategories().filter(c => c.type === 'expense');
+      catSelect.innerHTML = categories.map(c => `
+        <option value="${c.id}" ${c.id === (item.categoryId || StorageManager.guessCategoryByName(item.name)) ? 'selected' : ''}>${c.emoji} ${c.name}</option>
+      `).join('');
+    }
+
+    if (paymentSelect) paymentSelect.value = item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร';
+
+    const modal = document.getElementById('fixed-expense-modal');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  closeFixedExpenseModal() {
+    this.editingFixedExpenseId = null;
+    const modal = document.getElementById('fixed-expense-modal');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  handleSaveFixedExpense() {
+    const nameInput = document.getElementById('fixed-modal-name');
+    const amountInput = document.getElementById('fixed-modal-amount');
+    const catSelect = document.getElementById('fixed-modal-category');
+    const paymentSelect = document.getElementById('fixed-modal-payment');
+
+    const name = (nameInput?.value || '').trim();
+    const amount = Math.max(0, parseFloat(amountInput?.value) || 0);
+    const categoryId = catSelect?.value || 'exp_bills';
+    const paymentMethod = paymentSelect?.value || 'โอนเงิน / บัญชีธนาคาร';
+
+    if (!name) {
+      alert('กรุณาระบุชื่อรายการ');
+      nameInput.focus();
+      return;
+    }
+
+    if (this.editingFixedExpenseId) {
+      StorageManager.updateFixedExpense(this.editingFixedExpenseId, { name, amount, categoryId, paymentMethod });
+      this.showToast(`อัปเดต "${name}" เรียบร้อย ✅`);
+    } else {
+      StorageManager.addFixedExpense({ name, amount, categoryId, paymentMethod });
+      this.showToast(`เพิ่มรายจ่ายประจำ "${name}" เรียบร้อย 🎉`);
+    }
+
+    this.closeFixedExpenseModal();
+    this.renderAll();
+    BudgetSimulator.render();
+  },
+
+  deleteFixedExpense(id) {
+    const item = StorageManager.getFixedExpenses().find(e => e.id === id);
+    const name = item ? item.name : 'รายการนี้';
+
+    if (confirm(`คุณต้องการลบรายจ่ายประจำ "${name}" ใช่หรือไม่?`)) {
+      StorageManager.deleteFixedExpense(id);
+      this.renderAll();
+      BudgetSimulator.render();
+      this.showToast(`ลบ "${name}" เรียบร้อยแล้ว`);
+    }
+  },
+
+  quickLogFixedExpense(id) {
+    const item = StorageManager.getFixedExpenses().find(e => e.id === id);
+    if (!item) return;
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    StorageManager.addTransaction({
+      type: 'expense',
+      amount: item.amount,
+      categoryId: item.categoryId || StorageManager.guessCategoryByName(item.name),
+      date: dateStr,
+      paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
+      note: item.name
+    });
+
+    this.renderAll();
+    this.showToast(`บันทึก "${item.name}" ฿${item.amount.toLocaleString()} ลงบัญชีแล้ว ⚡`);
+  },
+
+  // --- Transactions Tab Logic ---
   handleSaveTransaction() {
     const amountInput = document.getElementById('tx-amount');
     const dateInput = document.getElementById('tx-date');
@@ -868,104 +1278,12 @@ const App = {
     this.showToast('ลบรายการเรียบร้อย 🗑️');
   },
 
-  renderCategoriesTab() {
-    const expenseContainer = document.getElementById('category-list-expense');
-    const incomeContainer = document.getElementById('category-list-income');
-    const allCategories = StorageManager.getCategories();
-    const allTxs = StorageManager.getTransactions();
-
-    const renderList = (cats, container) => {
-      if (!container) return;
-      container.innerHTML = cats.map(c => {
-        const usageCount = allTxs.filter(t => t.categoryId === c.id).length;
-        return `
-          <div class="minimal-card p-3 rounded-xl flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100">
-                ${c.emoji}
-              </div>
-              <div>
-                <p class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                  ${c.name}
-                  ${c.isDefault ? '<span class="text-[9px] bg-slate-100 text-slate-400 px-1 py-0.2 rounded font-normal">ระบบ</span>' : '<span class="text-[9px] bg-slate-900 text-white px-1 py-0.2 rounded font-bold">สร้างเอง</span>'}
-                </p>
-                <p class="text-[10px] text-slate-400 mt-0.5">ใช้ไป ${usageCount} รายการ</p>
-              </div>
-            </div>
-            ${!c.isDefault ? `
-              <button onclick="App.handleDeleteCategory('${c.id}', ${usageCount})" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors" title="ลบหมวดหมู่นี้">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              </button>
-            ` : ''}
-          </div>
-        `;
-      }).join('');
-    };
-
-    renderList(allCategories.filter(c => c.type === 'expense'), expenseContainer);
-    renderList(allCategories.filter(c => c.type === 'income'), incomeContainer);
-  },
-
-  openNewCategoryModal() {
-    const modal = document.getElementById('new-category-modal');
-    if (modal) modal.classList.remove('hidden');
-  },
-
-  closeNewCategoryModal() {
-    const modal = document.getElementById('new-category-modal');
-    if (modal) modal.classList.add('hidden');
-  },
-
-  handleCreateCategory() {
-    const nameInput = document.getElementById('new-cat-name');
-    const typeInput = document.querySelector('input[name="new-cat-type"]:checked');
-    const emojiInput = document.getElementById('new-cat-emoji');
-    const colorInput = document.getElementById('new-cat-color');
-
-    const name = (nameInput?.value || '').trim();
-    if (!name) {
-      alert('กรุณากรอกชื่อหมวดหมู่');
-      nameInput.focus();
-      return;
-    }
-
-    const type = typeInput ? typeInput.value : 'expense';
-    const emoji = (emojiInput?.value || '').trim() || '🏷️';
-    const color = colorInput?.value || '#0f172a';
-
-    StorageManager.addCategory({ name, type, emoji, color });
-
-    if (nameInput) nameInput.value = '';
-    this.closeNewCategoryModal();
-    this.initCategoryGrid('form-category-grid', this.currentEntryType);
-    this.renderCategoriesTab();
-    this.showToast('สร้างหมวดหมู่ใหม่เรียบร้อยแล้ว 🎉');
-  },
-
-  handleDeleteCategory(catId, usageCount) {
-    if (usageCount > 0) {
-      if (!confirm(`หมวดหมู่นี้มีการใช้งานอยู่ ${usageCount} รายการ คุณแน่ใจหรือไม่ว่าต้องการลบ?`)) {
-        return;
-      }
-    } else {
-      if (!confirm('ต้องการลบหมวดหมู่นี้ใช่หรือไม่?')) return;
-    }
-
-    const res = StorageManager.deleteCategory(catId);
-    if (res.success) {
-      this.initCategoryGrid('form-category-grid', this.currentEntryType);
-      this.renderCategoriesTab();
-      this.showToast('ลบหมวดหมู่เรียบร้อยแล้ว');
-    } else {
-      alert(res.message);
-    }
-  },
-
   renderAll() {
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.renderTransactionList();
     this.renderDashboard();
-    this.renderCategoriesTab();
+    this.renderFixedExpensesTab();
+    this.renderQuickFixedChips();
   },
 
   showToast(message) {

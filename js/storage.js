@@ -1,20 +1,21 @@
-﻿/**
- * Storage & Data Management for Smart Expense & Budget App
+/**
+ * Storage & Data Management for Money Memo
  */
 
 const STORAGE_KEYS = {
   TRANSACTIONS: 'smart_expense_transactions_v1',
   CATEGORIES: 'smart_expense_categories_v1',
-  BUDGET_SIMULATOR: 'smart_expense_budget_sim_v1'
+  BUDGET_SIMULATOR: 'smart_expense_budget_sim_v1',
+  FIXED_EXPENSES: 'smart_expense_fixed_list_v1'
 };
 
 const DEFAULT_CATEGORIES = [
   // รายจ่าย (Expenses)
+  { id: 'exp_housing', name: 'ค่าเช่าห้อง & ที่พัก', emoji: '🏠', color: '#8b5cf6', type: 'expense', isDefault: true },
+  { id: 'exp_bills', name: 'บิล น้ำ/ไฟ/เน็ต', emoji: '💡', color: '#eab308', type: 'expense', isDefault: true },
   { id: 'exp_food', name: 'อาหาร & เครื่องดื่ม', emoji: '🍔', color: '#f97316', type: 'expense', isDefault: true },
   { id: 'exp_transport', name: 'เดินทาง & คมนาคม', emoji: '🚗', color: '#06b6d4', type: 'expense', isDefault: true },
   { id: 'exp_shopping', name: 'ช้อปปิ้ง & เสื้อผ้า', emoji: '🛍️', color: '#ec4899', type: 'expense', isDefault: true },
-  { id: 'exp_bills', name: 'บิล น้ำ/ไฟ/เน็ต', emoji: '💡', color: '#eab308', type: 'expense', isDefault: true },
-  { id: 'exp_housing', name: 'ค่าเช่าห้อง & ที่พัก', emoji: '🏠', color: '#8b5cf6', type: 'expense', isDefault: true },
   { id: 'exp_ent', name: 'บันเทิง & สังสรรค์', emoji: '🎮', color: '#a855f7', type: 'expense', isDefault: true },
   { id: 'exp_health', name: 'สุขภาพ & ยารักษา', emoji: '💊', color: '#ef4444', type: 'expense', isDefault: true },
   { id: 'exp_edu', name: 'การศึกษา & ความรู้', emoji: '📚', color: '#3b82f6', type: 'expense', isDefault: true },
@@ -28,18 +29,18 @@ const DEFAULT_CATEGORIES = [
   { id: 'inc_other', name: 'รายรับอื่นๆ', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
 ];
 
+const DEFAULT_FIXED_EXPENSES = [
+  { id: 'fe_1', name: 'ค่าเช่าห้อง / คอนโด', amount: 2800, categoryId: 'exp_housing', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'fe_2', name: 'ค่าน้ำ + ค่าไฟ', amount: 2200, categoryId: 'exp_bills', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'fe_3', name: 'ค่าเน็ตบ้าน + มือถือ', amount: 300, categoryId: 'exp_bills', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
+  { id: 'fe_4', name: 'ค่าเดินทางประจำ (BTS/น้ำมัน)', amount: 400, categoryId: 'exp_transport', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
+  { id: 'fe_5', name: 'ค่าซักผ้า & ของใช้ในห้อง', amount: 300, categoryId: 'exp_shopping', paymentMethod: 'เงินสด (Cash)' }
+];
+
 const DEFAULT_BUDGET_SIMULATOR = {
-  monthlyIncome: 28000,
-  savingsGoal: 4000,
-  daysInMonth: 30,
-  fixedExpenses: [
-    { id: 'f1', name: 'ค่าเช่าห้อง / คอนโด', amount: 6500 },
-    { id: 'f2', name: 'ค่าน้ำ + ค่าไฟ', amount: 1500 },
-    { id: 'f3', name: 'ค่าเน็ตบ้าน + มือถือ', amount: 800 },
-    { id: 'f4', name: 'ค่าเดินทางประจำ (BTS/น้ำมัน)', amount: 2000 },
-    { id: 'f5', name: 'ค่าซักผ้า & ของใช้ในห้อง', amount: 600 },
-    { id: 'f6', name: 'Netflix & Spotify', amount: 450 }
-  ]
+  monthlyIncome: 18000,
+  savingsGoal: 5000,
+  daysInMonth: 30
 };
 
 const StorageManager = {
@@ -51,18 +52,8 @@ const StorageManager = {
         this.saveCategories(DEFAULT_CATEGORIES);
         return DEFAULT_CATEGORIES;
       }
-      const parsed = JSON.parse(data);
-      // รวมหมวดหมู่เริ่มต้นหากยังไม่มี
-      const defaultIds = new Set(parsed.map(c => c.id));
-      const missingDefaults = DEFAULT_CATEGORIES.filter(c => !defaultIds.has(c.id));
-      if (missingDefaults.length > 0) {
-        const merged = [...parsed, ...missingDefaults];
-        this.saveCategories(merged);
-        return merged;
-      }
-      return parsed;
+      return JSON.parse(data);
     } catch (e) {
-      console.error('Error loading categories:', e);
       return DEFAULT_CATEGORIES;
     }
   },
@@ -75,42 +66,90 @@ const StorageManager = {
     }
   },
 
-  addCategory(category) {
-    const categories = this.getCategories();
-    const newCat = {
-      id: 'cat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      name: category.name.trim(),
-      emoji: category.emoji.trim() || '🏷️',
-      color: category.color || '#3b82f6',
-      type: category.type || 'expense',
-      isDefault: false
-    };
-    categories.push(newCat);
-    this.saveCategories(categories);
-    return newCat;
-  },
-
-  deleteCategory(id) {
-    let categories = this.getCategories();
-    const target = categories.find(c => c.id === id);
-    if (!target) return { success: false, message: 'ไม่พบหมวดหมู่ที่ระบุ' };
-    if (target.isDefault) {
-      return { success: false, message: 'ไม่สามารถลบหมวดหมู่ระบบเริ่มต้นได้' };
-    }
-    categories = categories.filter(c => c.id !== id);
-    this.saveCategories(categories);
-    return { success: true };
-  },
-
   getCategoryById(id) {
     const categories = this.getCategories();
     return categories.find(c => c.id === id) || {
       id: 'unknown',
-      name: 'ไม่ระบุหมวดหมู่',
-      emoji: '❓',
+      name: 'ค่าใช้จ่ายทั่วไป',
+      emoji: '📦',
       color: '#94a3b8',
       type: 'expense'
     };
+  },
+
+  guessCategoryByName(name = '') {
+    const lower = name.toLowerCase();
+    if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท/.test(lower)) return 'exp_housing';
+    if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi/.test(lower)) return 'exp_bills';
+    if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว/.test(lower)) return 'exp_transport';
+    if (/กิน|อาหาร|ข้าว|กาแฟ|ชา|บุฟเฟต์|สุกี้/.test(lower)) return 'exp_food';
+    if (/ซักผ้า|ของใช้|ช้อป|ซื้อ|เสื้อผ้า/.test(lower)) return 'exp_shopping';
+    if (/netflix|spotify|ดูหนัง|เกม|เที่ยว|สตรีม/.test(lower)) return 'exp_ent';
+    if (/ยา|หมอ|สุขภาพ|วิตามิน|คลินิก|ฟิตเนส/.test(lower)) return 'exp_health';
+    if (/เรียน|หนังสือ|คอร์ส|ติว|การศึกษา/.test(lower)) return 'exp_edu';
+    return 'exp_other';
+  },
+
+  // --- รายจ่ายประจำเดือน (Fixed Expenses Management) ---
+  getFixedExpenses() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.FIXED_EXPENSES);
+      if (!data) {
+        this.saveFixedExpenses(DEFAULT_FIXED_EXPENSES);
+        return DEFAULT_FIXED_EXPENSES;
+      }
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : DEFAULT_FIXED_EXPENSES;
+    } catch (e) {
+      console.error('Error loading fixed expenses:', e);
+      return DEFAULT_FIXED_EXPENSES;
+    }
+  },
+
+  saveFixedExpenses(list) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.FIXED_EXPENSES, JSON.stringify(list));
+    } catch (e) {
+      console.error('Error saving fixed expenses:', e);
+    }
+  },
+
+  addFixedExpense(item) {
+    const list = this.getFixedExpenses();
+    const newItem = {
+      id: 'fe_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: item.name.trim() || 'รายจ่ายประจำใหม่',
+      amount: Math.max(0, parseFloat(item.amount) || 0),
+      categoryId: item.categoryId || this.guessCategoryByName(item.name),
+      paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
+    };
+    list.push(newItem);
+    this.saveFixedExpenses(list);
+    return newItem;
+  },
+
+  updateFixedExpense(id, updatedData) {
+    const list = this.getFixedExpenses();
+    const index = list.findIndex(e => e.id === id);
+    if (index === -1) return { success: false, message: 'ไม่พบรายการ' };
+
+    list[index] = {
+      ...list[index],
+      name: updatedData.name ? updatedData.name.trim() : list[index].name,
+      amount: updatedData.amount !== undefined ? Math.max(0, parseFloat(updatedData.amount) || 0) : list[index].amount,
+      categoryId: updatedData.categoryId || list[index].categoryId,
+      paymentMethod: updatedData.paymentMethod || list[index].paymentMethod
+    };
+
+    this.saveFixedExpenses(list);
+    return { success: true, item: list[index] };
+  },
+
+  deleteFixedExpense(id) {
+    let list = this.getFixedExpenses();
+    list = list.filter(e => e.id !== id);
+    this.saveFixedExpenses(list);
+    return { success: true };
   },
 
   // --- รายการบันทึก (Transactions) ---
@@ -121,7 +160,6 @@ const StorageManager = {
       const parsed = JSON.parse(data);
       return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-      console.error('Error loading transactions:', e);
       return [];
     }
   },
@@ -146,9 +184,27 @@ const StorageManager = {
       note: (tx.note || '').trim(),
       createdAt: Date.now()
     };
-    transactions.unshift(newTx); // รายการใหม่อยู่บนสุด
+    transactions.unshift(newTx);
     this.saveTransactions(transactions);
     return newTx;
+  },
+
+  addTransactionsBatch(txList) {
+    if (!Array.isArray(txList) || txList.length === 0) return 0;
+    const transactions = this.getTransactions();
+    const newItems = txList.map((tx, idx) => ({
+      id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
+      type: tx.type === 'income' ? 'income' : 'expense',
+      amount: Math.abs(parseFloat(tx.amount)) || 0,
+      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
+      date: tx.date || new Date().toISOString().slice(0, 16),
+      paymentMethod: tx.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
+      note: (tx.note || '').trim(),
+      createdAt: Date.now() + idx
+    }));
+    const merged = [...newItems, ...transactions];
+    this.saveTransactions(merged);
+    return newItems.length;
   },
 
   updateTransaction(id, updatedData) {
@@ -196,7 +252,6 @@ const StorageManager = {
       }
       return JSON.parse(data);
     } catch (e) {
-      console.error('Error loading budget simulator:', e);
       return DEFAULT_BUDGET_SIMULATOR;
     }
   },
@@ -217,7 +272,6 @@ const StorageManager = {
       return;
     }
 
-    // สร้าง Header ภาษาไทย
     const headers = ['วันที่-เวลา', 'ประเภท', 'หมวดหมู่', 'จำนวนเงิน (บาท)', 'ช่องทางชำระเงิน', 'โน้ต/บันทึกช่วยจำ'];
     
     const rows = transactions.map(t => {
@@ -235,14 +289,13 @@ const StorageManager = {
       ].join(',');
     });
 
-    // UTF-8 BOM (\uFEFF) เพื่อให้ Microsoft Excel และโปรแกรมในไทยเปิดได้ไม่เป็นภาษาต่างดาว
     const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const dateStr = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `expense_report_${dateStr}.csv`;
+    a.download = `money_memo_${dateStr}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -251,10 +304,11 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '1.0',
+      version: '1.2',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
+      fixedExpenses: this.getFixedExpenses(),
       budgetSimulator: this.getBudgetSimulator()
     };
 
@@ -264,7 +318,7 @@ const StorageManager = {
     const a = document.createElement('a');
     const dateStr = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `smart_expense_backup_${dateStr}.json`;
+    a.download = `money_memo_backup_${dateStr}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -274,37 +328,32 @@ const StorageManager = {
   importFromJSON(jsonString) {
     try {
       const data = JSON.parse(jsonString);
-      if (!data || (!data.transactions && !Array.isArray(data))) {
-        throw new Error('รูปแบบไฟล์ JSON สำรองข้อมูลไม่ถูกต้อง');
-      }
+      if (!data) throw new Error('ไฟล์ไม่ถูกต้อง');
 
       if (Array.isArray(data)) {
-        // กรณีเป็น Array รายการตรงๆ
         this.saveTransactions(data);
       } else {
         if (Array.isArray(data.transactions)) this.saveTransactions(data.transactions);
         if (Array.isArray(data.categories)) this.saveCategories(data.categories);
+        if (Array.isArray(data.fixedExpenses)) this.saveFixedExpenses(data.fixedExpenses);
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
       }
       return { success: true };
     } catch (e) {
-      console.error('Import error:', e);
-      return { success: false, message: e.message || 'ไฟล์ JSON เสียหายหรือไม่ถูกต้อง' };
+      return { success: false, message: e.message || 'ไฟล์ JSON เสียหาย' };
     }
   },
 
-  // โหลดข้อมูลตัวอย่างทดลองใช้งานทันที
   loadSampleData() {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     
-    // วันที่ต่างๆ ในเดือนปัจจุบัน
     const sampleTxs = [
       {
         id: 'sample_1',
         type: 'income',
-        amount: 32000,
+        amount: 18000,
         categoryId: 'inc_salary',
         date: `${year}-${month}-01T09:00`,
         paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
@@ -313,93 +362,53 @@ const StorageManager = {
       },
       {
         id: 'sample_2',
-        type: 'income',
-        amount: 3500,
-        categoryId: 'inc_bonus',
-        date: `${year}-${month}-05T14:30`,
+        type: 'expense',
+        amount: 2800,
+        categoryId: 'exp_housing',
+        date: `${year}-${month}-02T10:00`,
         paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
-        note: 'งานฟรีแลนซ์พิเศษออกแบบกราฟิก',
-        createdAt: Date.now() - 86400000 * 18
+        note: 'ค่าเช่าห้อง / คอนโด',
+        createdAt: Date.now() - 86400000 * 19
       },
       {
         id: 'sample_3',
         type: 'expense',
-        amount: 6500,
-        categoryId: 'exp_housing',
-        date: `${year}-${month}-02T10:00`,
+        amount: 2200,
+        categoryId: 'exp_bills',
+        date: `${year}-${month}-03T11:20`,
         paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
-        note: 'จ่ายค่าเช่าคอนโด',
-        createdAt: Date.now() - 86400000 * 19
+        note: 'ค่าน้ำ + ค่าไฟ',
+        createdAt: Date.now() - 86400000 * 18
       },
       {
         id: 'sample_4',
         type: 'expense',
-        amount: 1450,
+        amount: 300,
         categoryId: 'exp_bills',
-        date: `${year}-${month}-03T11:20`,
-        paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
-        note: 'ค่าน้ำค่าไฟ ประจำเดือน',
-        createdAt: Date.now() - 86400000 * 18
+        date: `${year}-${month}-05T12:00`,
+        paymentMethod: 'พร้อมเพย์ / สแกน QR',
+        note: 'ค่าเน็ตบ้าน + มือถือ',
+        createdAt: Date.now() - 86400000 * 16
       },
       {
         id: 'sample_5',
         type: 'expense',
-        amount: 180,
-        categoryId: 'exp_food',
-        date: `${year}-${month}-08T12:15`,
+        amount: 400,
+        categoryId: 'exp_transport',
+        date: `${year}-${month}-07T08:30`,
         paymentMethod: 'พร้อมเพย์ / สแกน QR',
-        note: 'ก๋วยเตี๋ยวเนื้อ + ชาไทยเย็น',
+        note: 'ค่าเดินทางประจำ (BTS/น้ำมัน)',
         createdAt: Date.now() - 86400000 * 14
       },
       {
         id: 'sample_6',
         type: 'expense',
-        amount: 350,
+        amount: 100,
         categoryId: 'exp_food',
-        date: `${year}-${month}-10T19:00`,
-        paymentMethod: 'บัตรเครดิต',
-        note: 'กินสุกี้ตี๋น้อยกับเพื่อน',
-        createdAt: Date.now() - 86400000 * 12
-      },
-      {
-        id: 'sample_7',
-        type: 'expense',
-        amount: 450,
-        categoryId: 'exp_transport',
-        date: `${year}-${month}-12T08:30`,
-        paymentMethod: 'บัตรแรบบิท / บัตรเครดิต',
-        note: 'เติมเที่ยวบัตรรถไฟฟ้า BTS',
-        createdAt: Date.now() - 86400000 * 10
-      },
-      {
-        id: 'sample_8',
-        type: 'expense',
-        amount: 1290,
-        categoryId: 'exp_shopping',
-        date: `${year}-${month}-15T16:45`,
-        paymentMethod: 'บัตรเครดิต',
-        note: 'ซื้อรองเท้าผ้าใบใหม่ช่วงโปรโมชั่น',
-        createdAt: Date.now() - 86400000 * 7
-      },
-      {
-        id: 'sample_9',
-        type: 'expense',
-        amount: 320,
-        categoryId: 'exp_ent',
-        date: `${year}-${month}-18T15:00`,
+        date: `${year}-${month}-10T12:30`,
         paymentMethod: 'พร้อมเพย์ / สแกน QR',
-        note: 'ดูหนังรอบบ่ายวันหยุด',
-        createdAt: Date.now() - 86400000 * 4
-      },
-      {
-        id: 'sample_10',
-        type: 'expense',
-        amount: 250,
-        categoryId: 'exp_health',
-        date: `${year}-${month}-20T17:30`,
-        paymentMethod: 'เงินสด (Cash)',
-        note: 'ซื้อวิตามินซีและยาแก้แพ้',
-        createdAt: Date.now() - 86400000 * 2
+        note: 'ข้าวกะเพราหมูกรอบ + ไข่ดาว',
+        createdAt: Date.now() - 86400000 * 11
       }
     ];
 

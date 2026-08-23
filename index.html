@@ -40,7 +40,7 @@
       </div>
       <div>
         <h1 class="text-sm sm:text-base font-bold text-slate-900 leading-none">Money Memo</h1>
-        <p class="text-[11px] text-slate-400 font-normal mt-0.5">บันทึกรายรับ-รายจ่าย & วิเคราะห์เงินกินใช้รายวัน</p>
+        <p class="text-[11px] text-slate-400 font-normal mt-0.5">บันทึกรายรับ-รายจ่าย & จัดการรายจ่ายประจำเดือน</p>
       </div>
     </div>
 
@@ -81,9 +81,9 @@
         <span>🧮</span>
         <span>วิเคราะห์เงินกินใช้</span>
       </button>
-      <button data-tab-target="categories" class="nav-tab-btn flex-1 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap">
-        <span>🏷️</span>
-        <span>หมวดหมู่</span>
+      <button data-tab-target="fixed-expenses" class="nav-tab-btn flex-1 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap">
+        <span>📌</span>
+        <span>รายจ่ายประจำเดือน</span>
       </button>
     </div>
   </div>
@@ -95,13 +95,53 @@
     <!-- TAB 1: 📝 บันทึกรายรับ-รายจ่าย & ประวัติรายการ -->
     <!-- ========================================== -->
     <section id="tab-pane-transactions" class="tab-content-pane space-y-6">
+      
+      <!-- Quick Fixed Expenses Bar (แถบดึงรายจ่ายประจำเดือนมาบันทึก) -->
+      <div class="minimal-card p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/60 border-blue-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-bold shadow-xs">
+            ⚡
+          </div>
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-900">ดึงรายจ่ายประจำเดือนมาบันทึก</h3>
+            <p class="text-[11px] text-slate-500">เลือกรายการที่ตั้งไว้เพื่อบันทึกลงบัญชีได้ทันที หรือแก้ไขตัวเลขจริงก่อนบันทึก</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button 
+            onclick="App.openQuickFixedModal()" 
+            class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+          >
+            <span>📋 นำเข้ารายการประจำ</span>
+          </button>
+          <button 
+            onclick="App.switchTab('fixed-expenses')" 
+            class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition-all whitespace-nowrap"
+          >
+            <span>⚙️ ตั้งค่ารายการ</span>
+          </button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- ซ้าย: ฟอร์มบันทึกรายการ (Minimalist Entry Card) -->
-        <div class="lg:col-span-5 minimal-card p-5 sm:p-6 rounded-2xl">
-          <div class="flex items-center justify-between mb-4">
+        <div class="lg:col-span-5 minimal-card p-5 sm:p-6 rounded-2xl space-y-4">
+          
+          <div class="flex items-center justify-between">
             <h2 class="text-sm font-bold text-slate-900 tracking-tight">บันทึกรายการใหม่</h2>
             <span class="text-[11px] text-slate-400">Offline Auto-save</span>
+          </div>
+
+          <!-- Quick Fixed Chips (กดแล้วกรอกค่าลงฟอร์มทันที) -->
+          <div id="quick-fixed-chips-container" class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">ปุ่มลัดรายจ่ายประจำ:</span>
+              <button type="button" onclick="App.switchTab('fixed-expenses')" class="text-[10px] text-blue-600 hover:underline font-semibold">+ เพิ่มปุ่มลัด</button>
+            </div>
+            <div id="quick-fixed-chips-list" class="flex flex-wrap gap-1.5">
+              <!-- JS Populates Quick Fixed Chips -->
+            </div>
           </div>
 
           <form id="transaction-form" class="space-y-4">
@@ -143,12 +183,7 @@
 
             <!-- เลือกหมวดหมู่ (Category Grid) -->
             <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">เลือกหมวดหมู่ *</label>
-                <button type="button" onclick="App.openNewCategoryModal()" class="text-[11px] text-slate-600 hover:text-slate-900 font-semibold">
-                  + สร้างหมวดหมู่
-                </button>
-              </div>
+              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">เลือกหมวดหมู่ *</label>
               <div id="form-category-grid" class="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-100">
                 <!-- JS Populates Category items -->
               </div>
@@ -169,9 +204,9 @@
               <div>
                 <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ช่องทางชำระเงิน</label>
                 <select id="tx-payment-method" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
-                  <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
-                  <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / สแกน QR</option>
                   <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน / ธนาคาร</option>
+                  <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / สแกน QR</option>
+                  <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
                   <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
                   <option value="วอลเล็ท (TrueMoney/ShopeePay)">👛 TrueMoney / Wallet</option>
                   <option value="อื่นๆ">📦 อื่นๆ</option>
@@ -185,7 +220,7 @@
               <input 
                 type="text" 
                 id="tx-note" 
-                placeholder="เช่น ข้าวกะเพรา, กาแฟสด, เติมน้ำมัน..." 
+                placeholder="เช่น ข้าวกะเพรา, ค่าห้องประจำเดือน, เติมน้ำมัน..." 
                 class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400"
               />
             </div>
@@ -377,8 +412,8 @@
           
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h3 class="text-sm font-bold text-slate-900">กำหนดงบประมาณประจำเดือน</h3>
-              <p class="text-[11px] text-slate-400">ระบบจำลองคำนวณแยกอิสระจากบัญชีรายรับ-รายจ่าย</p>
+              <h3 class="text-sm font-bold text-slate-900">กำหนดงบประมาณจำลองล่วงหน้า</h3>
+              <p class="text-[11px] text-slate-400">คำนวณเงินกินใช้ล่วงหน้าจากรายได้ - เงินออม - รายจ่ายประจำ</p>
             </div>
             <button id="sim-reset-btn" class="text-xs text-slate-400 hover:text-slate-700">
               รีเซ็ตค่าเริ่มต้น
@@ -395,7 +430,7 @@
                   type="number" 
                   id="sim-monthly-income" 
                   class="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 num-font"
-                  placeholder="28000"
+                  placeholder="18000"
                   step="500"
                 />
               </div>
@@ -409,7 +444,7 @@
                   type="number" 
                   id="sim-savings-goal" 
                   class="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 num-font"
-                  placeholder="4000"
+                  placeholder="5000"
                   step="500"
                 />
               </div>
@@ -426,11 +461,11 @@
             </select>
           </div>
 
-          <!-- Fixed Expenses Rows -->
+          <!-- Fixed Expenses Rows (เชื่อมกับแท็บรายจ่ายประจำ) -->
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">รายจ่ายประจำเดือน (Fixed Expenses)</label>
-              <span class="text-[11px] text-slate-400">เพิ่ม/ลบได้อิสระ</span>
+              <button type="button" onclick="App.switchTab('fixed-expenses')" class="text-[11px] text-blue-600 hover:underline font-semibold">จัดการแบบละเอียด ↗</button>
             </div>
             
             <div id="sim-fixed-expenses-list" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
@@ -524,52 +559,190 @@
       </div>
     </section>
 
-    <!-- ========================================== -->
-    <!-- TAB 4: 🏷️ จัดการหมวดหมู่ (Category Management) -->
-    <!-- ========================================== -->
-    <section id="tab-pane-categories" class="tab-content-pane hidden space-y-5">
+    <!-- ========================================================== -->
+    <!-- TAB 4: 📌 รายจ่ายประจำเดือน (Monthly Fixed Expenses Manager) -->
+    <!-- ========================================================== -->
+    <section id="tab-pane-fixed-expenses" class="tab-content-pane hidden space-y-6">
       
-      <div class="minimal-card p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- Header Banner -->
+      <div class="minimal-card p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 class="text-sm sm:text-base font-bold text-slate-900">
-            ระบบจัดการหมวดหมู่ (Categories)
+          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>📌</span> จัดการรายจ่ายประจำเดือน (Fixed Expenses)
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">มีหมวดหมู่มาตรฐานครบถ้วน และสามารถสร้างหมวดหมู่ใหม่ได้เอง</p>
+          <p class="text-xs text-slate-400 mt-0.5">
+            บันทึกรายการและยอดเงินที่ต้องจ่ายเป็นประจำทุกเดือน เพื่อใช้เป็นปุ่มลัดในการบันทึก และใช้คำนวณเงินกินใช้รายวัน
+          </p>
         </div>
         <button 
-          onclick="App.openNewCategoryModal()" 
-          class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
+          onclick="App.openAddFixedExpenseModal()" 
+          class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
         >
-          <span>+ สร้างหมวดหมู่ใหม่</span>
+          <span>➕ เพิ่มรายจ่ายประจำ</span>
         </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-        
-        <!-- หมวดหมู่รายจ่าย -->
-        <div class="space-y-2.5">
-          <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider">หมวดหมู่รายจ่าย (Expense)</h3>
-          <div id="category-list-expense" class="grid grid-cols-1 gap-2">
-            <!-- Render via JS -->
-          </div>
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div class="minimal-card p-4 rounded-2xl bg-white">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">ยอดรวมรายจ่ายประจำเดือน</span>
+          <p id="fixed-tab-total-amount" class="text-2xl font-extrabold text-rose-600 num-font mt-1">฿0.00</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">คำนวณจากทุกรายการที่ตั้งไว้</p>
         </div>
 
-        <!-- หมวดหมู่รายรับ -->
-        <div class="space-y-2.5">
-          <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider">หมวดหมู่รายรับ (Income)</h3>
-          <div id="category-list-income" class="grid grid-cols-1 gap-2">
-            <!-- Render via JS -->
-          </div>
+        <div class="minimal-card p-4 rounded-2xl bg-white">
+          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">จำนวนรายการทั้งหมด</span>
+          <p id="fixed-tab-total-count" class="text-2xl font-extrabold text-slate-900 num-font mt-1">0 รายการ</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">พร้อมใช้งานเป็นปุ่มลัดบันทึกด่วน</p>
         </div>
+      </div>
 
+      <!-- List of Fixed Expense Cards -->
+      <div class="space-y-3">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">รายการรายจ่ายประจำที่ตั้งค่าไว้</h3>
+        <div id="fixed-expenses-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <!-- Rendered via JS -->
+        </div>
       </div>
 
     </section>
 
   </main>
 
+  <!-- ========================================================== -->
+  <!-- MODAL: ⚡ นำเข้ารายจ่ายประจำเดือน (Batch Import Fixed Expenses) -->
+  <!-- ========================================================== -->
+  <div id="quick-fixed-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white max-w-xl w-full rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] flex flex-col">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>⚡</span> นำเข้ารายจ่ายประจำเดือนเข้าบัญชี
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">เลือกรายการที่คุณจ่ายในเดือนนี้ แก้ไขยอดเงินตามจริง แล้วกดบันทึกพร้อมกันได้ทันที</p>
+        </div>
+        <button onclick="App.closeQuickFixedModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1">✕</button>
+      </div>
+
+      <!-- Batch Date & Payment Method Global -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">วันที่บันทึกรายการ</label>
+          <input type="datetime-local" id="batch-import-date" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 mb-1">ช่องทางชำระเงินเริ่มต้น</label>
+          <select id="batch-import-payment" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium">
+            <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน / ธนาคาร</option>
+            <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / สแกน QR</option>
+            <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+            <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
+            <option value="วอลเล็ท (TrueMoney/ShopeePay)">👛 TrueMoney / Wallet</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fixed Expense Items List to Check/Edit -->
+      <div class="flex-1 overflow-y-auto pr-1 space-y-2">
+        <div class="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" id="batch-select-all" checked onchange="App.toggleSelectAllFixed(this.checked)" class="rounded text-blue-600 focus:ring-blue-500" />
+            <span>เลือกทั้งหมด</span>
+          </label>
+          <span id="batch-selected-summary" class="text-blue-600 font-bold"></span>
+        </div>
+
+        <div id="batch-fixed-items-list" class="space-y-2">
+          <!-- JS generates rows with checkbox, name, category, and editable amount -->
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+        <span id="batch-total-amount" class="text-xs font-bold text-slate-700">ยอดรวม: ฿0.00</span>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="App.closeQuickFixedModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+            ยกเลิก
+          </button>
+          <button type="button" onclick="App.handleSaveBatchFixedExpenses()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+            <span>➕ บันทึกรายการที่เลือกเข้าบัญชี</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: 📌 เพิ่ม/แก้ไข รายจ่ายประจำเดือน (Fixed Expense Modal) -->
+  <!-- ========================================================== -->
+  <div id="fixed-expense-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-3.5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h3 id="fixed-modal-title" class="text-sm font-bold text-slate-900">เพิ่มรายจ่ายประจำเดือน</h3>
+        <button onclick="App.closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+      </div>
+
+      <form id="fixed-expense-form" class="space-y-3">
+        <input type="hidden" id="fixed-modal-id" value="" />
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อรายการรายจ่ายประจำ *</label>
+          <input 
+            type="text" 
+            id="fixed-modal-name" 
+            placeholder="เช่น ค่าเช่าห้อง, ค่าน้ำ+ค่าไฟ, ค่าเน็ต" 
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800" 
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">จำนวนเงินโดยประมาณ (บาท) *</label>
+          <input 
+            type="number" 
+            id="fixed-modal-amount" 
+            step="any" 
+            min="0" 
+            placeholder="0"
+            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900 num-font" 
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">หมวดหมู่</label>
+          <select id="fixed-modal-category" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ช่องทางชำระเงินเริ่มต้น</label>
+          <select id="fixed-modal-payment" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium">
+            <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน / ธนาคาร</option>
+            <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / QR</option>
+            <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
+            <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+            <option value="วอลเล็ท (TrueMoney/ShopeePay)">👛 TrueMoney</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="App.closeFixedExpenseModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all">
+            บันทึกรายการ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ========================================== -->
-  <!-- MODAL: ✏️ แก้ไขรายการ (Edit Transaction Modal) -->
+  <!-- MODAL: ✏️ แก้ไขรายการบัญชี (Edit Transaction Modal) -->
   <!-- ========================================== -->
   <div id="edit-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
     <div class="bg-white max-w-md w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-4">
@@ -617,9 +790,9 @@
           <div>
             <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ช่องทางชำระเงิน</label>
             <select id="edit-tx-payment-method" class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
-              <option value="เงินสด (Cash)">💵 เงินสด</option>
-              <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์/QR</option>
               <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน/ธนาคาร</option>
+              <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์/QR</option>
+              <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
               <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
               <option value="วอลเล็ท (TrueMoney/ShopeePay)">👛 TrueMoney</option>
               <option value="อื่นๆ">📦 อื่นๆ</option>
@@ -670,83 +843,6 @@
           ยืนยันการลบ
         </button>
       </div>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- MODAL: 🏷️ สร้างหมวดหมู่ใหม่ (New Category Modal) -->
-  <!-- ========================================== -->
-  <div id="new-category-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-3.5">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-        <h3 class="text-sm font-bold text-slate-900">สร้างหมวดหมู่ใหม่</h3>
-        <button onclick="App.closeNewCategoryModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
-      </div>
-
-      <form id="new-category-form" class="space-y-3">
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ประเภท</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center gap-1.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer">
-              <input type="radio" name="new-cat-type" value="expense" checked class="text-rose-600 focus:ring-rose-500" />
-              <span class="text-xs font-bold text-rose-600">🔴 รายจ่าย</span>
-            </label>
-            <label class="flex items-center gap-1.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer">
-              <input type="radio" name="new-cat-type" value="income" class="text-emerald-600 focus:ring-emerald-500" />
-              <span class="text-xs font-bold text-emerald-600">🟢 รายรับ</span>
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อหมวดหมู่ *</label>
-          <input 
-            type="text" 
-            id="new-cat-name" 
-            placeholder="เช่น ค่าน้ำมัน, ช้อปปิ้งออนไลน์, สัตว์เลี้ยง" 
-            class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium" 
-            required
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Emoji</label>
-            <input 
-              type="text" 
-              id="new-cat-emoji" 
-              placeholder="☕" 
-              class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-center text-lg"
-              maxlength="4"
-            />
-            <div class="flex items-center gap-1 mt-1 justify-center">
-              <button type="button" onclick="document.getElementById('new-cat-emoji').value='☕'" class="p-1 text-xs bg-slate-100 rounded hover:bg-slate-200">☕</button>
-              <button type="button" onclick="document.getElementById('new-cat-emoji').value='🐾'" class="p-1 text-xs bg-slate-100 rounded hover:bg-slate-200">🐾</button>
-              <button type="button" onclick="document.getElementById('new-cat-emoji').value='✈️'" class="p-1 text-xs bg-slate-100 rounded hover:bg-slate-200">✈️</button>
-              <button type="button" onclick="document.getElementById('new-cat-emoji').value='🎁'" class="p-1 text-xs bg-slate-100 rounded hover:bg-slate-200">🎁</button>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">สีประจำหมวดหมู่</label>
-            <input 
-              type="color" 
-              id="new-cat-color" 
-              value="#0f172a" 
-              class="w-full h-8 p-1 bg-white border border-slate-200 rounded-lg cursor-pointer"
-            />
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" onclick="App.closeNewCategoryModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-            ยกเลิก
-          </button>
-          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all">
-            สร้างหมวดหมู่
-          </button>
-        </div>
-      </form>
     </div>
   </div>
 

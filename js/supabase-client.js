@@ -1,6 +1,6 @@
 /**
- * Supabase Client & Cloud Sync Integration for Money Memo
- * Handles Google OAuth, Realtime Cloud Sync, and Local-to-Cloud Migration
+ * Supabase Client & Cloud Sync Integration for Money Memo v2.7
+ * Handles Google OAuth, Legacy/Modern Key support, Session detection, and Cloud Sync
  */
 
 const SUPABASE_STORAGE_KEYS = {
@@ -8,10 +8,10 @@ const SUPABASE_STORAGE_KEYS = {
   ANON_KEY: 'money_memo_supabase_anon_key'
 };
 
-// Default fallback configuration (User can set directly in code or via UI Modal)
+// Default project configuration
 const DEFAULT_SUPABASE_CONFIG = {
-  url: '',      // e.g. 'https://xyzcompany.supabase.co'
-  anonKey: ''  // e.g. 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  url: 'https://kjplrnhkkaycltikaozw.supabase.co',
+  anonKey: ''
 };
 
 const SupabaseManager = {
@@ -56,7 +56,7 @@ const SupabaseManager = {
     return Boolean(config.url && config.anonKey && config.url.startsWith('https://'));
   },
 
-  init() {
+  async init() {
     const config = this.getConfig();
     if (!config.url || !config.anonKey) {
       this.client = null;
@@ -66,29 +66,58 @@ const SupabaseManager = {
       return;
     }
 
+    // Check if URL returned an OAuth error
+    if (window.location.hash.includes('error=') || window.location.search.includes('error=')) {
+      const urlParams = new URLSearchParams(window.location.search || window.location.hash.substring(1));
+      const errorDesc = urlParams.get('error_description') || urlParams.get('error') || 'Unknown OAuth Error';
+      console.warn('OAuth Return Error:', errorDesc);
+      alert((I18n.getLanguage() === 'en' ? 'OAuth Authentication Error: ' : 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ: ') + errorDesc);
+    }
+
     try {
       if (typeof supabase !== 'undefined') {
-        this.client = supabase.createClient(config.url, config.anonKey);
-        this.isInitialized = true;
-
-        // Check active session
-        this.client.auth.getSession().then(({ data: { session } }) => {
-          this.currentUser = session?.user || null;
-          this.renderAuthUI();
-          if (this.currentUser) {
-            this.syncFromCloud();
+        this.client = supabase.createClient(config.url, config.anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
           }
         });
+        this.isInitialized = true;
+
+        // Get session
+        const { data: { session }, error } = await this.client.auth.getSession();
+        if (error) {
+          console.error('Supabase getSession error:', error);
+        }
+
+        if (session?.user) {
+          this.currentUser = session.user;
+          this.renderAuthUI();
+          this.syncFromCloud();
+        } else {
+          this.currentUser = null;
+          this.renderAuthUI();
+        }
 
         // Listen for auth state changes
         this.client.auth.onAuthStateChange((event, session) => {
-          this.currentUser = session?.user || null;
-          this.renderAuthUI();
+          console.log('Supabase Auth Event:', event, session);
 
-          if (event === 'SIGNED_IN' && this.currentUser) {
-            this.handleUserSignedIn();
+          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session?.user) {
+            const isNewLogin = !this.currentUser && event === 'SIGNED_IN';
+            this.currentUser = session.user;
+            this.renderAuthUI();
+
+            if (isNewLogin) {
+              this.handleUserSignedIn();
+            } else {
+              this.syncFromCloud();
+            }
           } else if (event === 'SIGNED_OUT') {
-            App.showToast(I18n.getLanguage() === 'en' ? 'Logged out successfully' : 'ออกจากระบบเรียบร้อยแล้ว');
+            this.currentUser = null;
+            this.renderAuthUI();
+            App.showToast(I18n.getLanguage() === 'en' ? 'Logged out' : 'ออกจากระบบเรียบร้อยแล้ว');
             App.renderAll();
           }
         });
@@ -113,12 +142,17 @@ const SupabaseManager = {
     }
 
     if (!this.client) {
-      alert(I18n.getLanguage() === 'en' ? 'Supabase client not initialized' : 'ยังไม่ได้เชื่อมต่อ Supabase Client');
-      return;
+      this.init();
+      if (!this.client) {
+        alert(I18n.getLanguage() === 'en' ? 'Supabase client not initialized' : 'ยังไม่ได้เชื่อมต่อ Supabase Client');
+        return;
+      }
     }
 
     try {
       const redirectUrl = window.location.origin + window.location.pathname;
+      console.log('Redirecting to Google OAuth with redirect URL:', redirectUrl);
+
       const { data, error } = await this.client.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -146,7 +180,8 @@ const SupabaseManager = {
   },
 
   async handleUserSignedIn() {
-    App.showToast(I18n.getLanguage() === 'en' ? `Welcome back, ${this.currentUser.user_metadata?.full_name || 'User'}!` : `ยินดีต้อนรับคุณ ${this.currentUser.user_metadata?.full_name || 'ผู้ใช้งาน'}! ✨`);
+    const name = this.currentUser.user_metadata?.full_name || this.currentUser.email.split('@')[0];
+    App.showToast(I18n.getLanguage() === 'en' ? `Welcome back, ${name}!` : `ยินดีต้อนรับคุณ ${name}! ✨`);
     
     // Check if cloud has data, if not, ask to upload local data
     const cloudTxs = await this.fetchCloudTransactions();
@@ -227,8 +262,7 @@ const SupabaseManager = {
         this.fetchCloudRecurring()
       ]);
 
-      if (txs.length > 0) {
-        // Map snake_case to app structure
+      if (txs && txs.length > 0) {
         const mappedTxs = txs.map(t => ({
           id: t.id,
           type: t.type,
@@ -242,7 +276,7 @@ const SupabaseManager = {
         StorageManager.saveTransactions(mappedTxs);
       }
 
-      if (cats.length > 0) {
+      if (cats && cats.length > 0) {
         const mappedCats = cats.map(c => ({
           id: c.id,
           name: c.name,
@@ -255,7 +289,7 @@ const SupabaseManager = {
         StorageManager.saveCategories(mappedCats);
       }
 
-      if (recs.length > 0) {
+      if (recs && recs.length > 0) {
         const mappedRecs = recs.map(r => ({
           id: r.id,
           type: r.type,
@@ -480,7 +514,7 @@ const SupabaseManager = {
             <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"/>
             <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
           </svg>
-          <span class="hidden sm:inline">${lang === 'en' ? 'Google Login' : 'เข้าสู่ระบบ'}</span>
+          <span class="hidden sm:inline">${lang === 'en' ? 'Google Login' : 'Google Login'}</span>
         </button>
       `;
     }

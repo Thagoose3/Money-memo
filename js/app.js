@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Money Memo v2.3 (Bilingual & Category Manager)
+ * Main Application Controller for Money Memo v2.5 (Minimal Pastel & Mobile Optimized)
  */
 
 const App = {
@@ -48,7 +48,7 @@ const App = {
   },
 
   bindEvents() {
-    // Tab switching
+    // Tab switching (Both Desktop top pills and Mobile bottom bar)
     document.querySelectorAll('[data-tab-target]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget.getAttribute('data-tab-target');
@@ -179,11 +179,9 @@ const App = {
     }
 
     // Export / Import
-    const exportCsvBtn = document.getElementById('btn-export-csv');
     const exportJsonBtn = document.getElementById('btn-export-json');
     const importFile = document.getElementById('import-json-file');
 
-    if (exportCsvBtn) exportCsvBtn.addEventListener('click', () => StorageManager.exportToCSV());
     if (exportJsonBtn) exportJsonBtn.addEventListener('click', () => StorageManager.exportToJSON());
     if (importFile) {
       importFile.addEventListener('change', (e) => {
@@ -208,6 +206,8 @@ const App = {
 
   switchTab(tabName) {
     this.currentTab = tabName;
+    
+    // Sync both desktop tabs and mobile bottom bar
     document.querySelectorAll('[data-tab-target]').forEach(btn => {
       if (btn.getAttribute('data-tab-target') === tabName) {
         btn.classList.add('active');
@@ -223,6 +223,9 @@ const App = {
         pane.classList.add('hidden');
       }
     });
+
+    // Scroll to top gently on mobile
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (tabName === 'dashboard') {
       this.renderDashboard();
@@ -246,21 +249,29 @@ const App = {
     const submitBtn = document.getElementById('tx-submit-btn');
 
     if (type === 'expense') {
-      typeToggleExp.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_expense')}`;
-      typeToggleInc.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${I18n.t('type_income')}`;
+      if (typeToggleExp) {
+        typeToggleExp.className = 'py-2 px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_expense')}`;
+      }
+      if (typeToggleInc) {
+        typeToggleInc.className = 'py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${I18n.t('type_income')}`;
+      }
       if (submitBtn) {
-        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
+        submitBtn.className = 'w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = `<span>${I18n.t('btn_save_expense')}</span>`;
       }
     } else {
-      typeToggleExp.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> ${I18n.t('type_expense')}`;
-      typeToggleInc.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_income')}`;
+      if (typeToggleExp) {
+        typeToggleExp.className = 'py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${I18n.t('type_expense')}`;
+      }
+      if (typeToggleInc) {
+        typeToggleInc.className = 'py-2 px-3 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_income')}`;
+      }
       if (submitBtn) {
-        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
+        submitBtn.className = 'w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = `<span>${I18n.t('btn_save_income')}</span>`;
       }
     }
@@ -289,7 +300,7 @@ const App = {
         <button 
           type="button" 
           data-cat-id="${c.id}"
-          class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
+          class="cat-item-btn p-2 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100/80 bg-white hover:bg-slate-50'}"
           onclick="App.selectCategory('${containerId}', '${c.id}')"
           title="${displayName}"
         >
@@ -305,7 +316,7 @@ const App = {
       <button 
         type="button" 
         onclick="App.openAddCategoryModal('${type}')"
-        class="p-2 rounded-xl border border-dashed border-slate-300 hover:border-slate-500 bg-white/60 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition-all cursor-pointer group"
+        class="p-2 rounded-2xl border border-dashed border-slate-300 hover:border-slate-500 bg-white/60 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition-all cursor-pointer group"
         title="${lang === 'en' ? 'Create new category' : 'สร้างหมวดหมู่ใหม่'}"
       >
         <span class="text-lg leading-none group-hover:scale-110 transition-transform">➕</span>
@@ -339,11 +350,11 @@ const App = {
     const incBtn = document.getElementById('cat-tab-income');
 
     if (type === 'expense') {
-      if (expBtn) expBtn.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-rose-500 text-white shadow-xs transition-all cursor-pointer';
-      if (incBtn) incBtn.className = 'px-3.5 py-1.5 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (expBtn) expBtn.className = 'px-3.5 py-1.5 rounded-xl font-bold bg-rose-400 text-white shadow-xs transition-all cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3.5 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
     } else {
-      if (expBtn) expBtn.className = 'px-3.5 py-1.5 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
-      if (incBtn) incBtn.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-emerald-500 text-white shadow-xs transition-all cursor-pointer';
+      if (expBtn) expBtn.className = 'px-3.5 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3.5 py-1.5 rounded-xl font-bold bg-emerald-400 text-white shadow-xs transition-all cursor-pointer';
     }
 
     this.renderCategoriesTab();
@@ -365,7 +376,7 @@ const App = {
 
     if (categories.length === 0) {
       container.innerHTML = `
-        <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+        <div class="col-span-full text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
           <span class="text-3xl block mb-2">🏷️</span>
           <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No categories found' : 'ไม่พบหมวดหมู่ในกลุ่มนี้'}</p>
         </div>
@@ -379,9 +390,9 @@ const App = {
       const badgeText = cat.isDefault ? I18n.t('badge_default_cat') : I18n.t('badge_custom_cat');
 
       return `
-        <div class="minimal-card p-4 rounded-2xl flex items-center justify-between gap-3 group">
+        <div class="pastel-card p-4 rounded-3xl flex items-center justify-between gap-3 group">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-2xs border border-slate-100 flex-shrink-0" style="background-color: ${cat.color}15; border-color: ${cat.color}30;">
+            <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shadow-2xs border border-slate-100 flex-shrink-0" style="background-color: ${cat.color}15; border-color: ${cat.color}30;">
               ${cat.emoji}
             </div>
             <div class="min-w-0">
@@ -402,7 +413,7 @@ const App = {
             <button 
               type="button" 
               onclick="App.openEditCategoryModal('${cat.id}')" 
-              class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" 
+              class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" 
               title="${I18n.t('btn_edit_cat')}"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -410,7 +421,7 @@ const App = {
             <button 
               type="button" 
               onclick="App.openDeleteCategoryModal('${cat.id}')" 
-              class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
+              class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" 
               title="${I18n.t('btn_delete_cat')}"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -447,7 +458,7 @@ const App = {
     if (emojiInput) emojiInput.value = defaultEmoji;
     this.updateCategoryEmojiPreview(defaultEmoji);
 
-    const defaultColor = targetType === 'income' ? '#10b981' : '#f43f5e';
+    const defaultColor = targetType === 'income' ? '#34d399' : '#f87171';
     if (colorInput) colorInput.value = defaultColor;
 
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
@@ -551,11 +562,9 @@ const App = {
     }
 
     if (id) {
-      // Editing existing category
       StorageManager.updateCategory(id, { name, nameEn, emoji, color, type });
       this.showToast(I18n.t('toast_cat_updated'));
     } else {
-      // Creating new category
       const newCat = StorageManager.addCategory({ name, nameEn, emoji, color, type });
       if (type === this.currentEntryType) {
         this.initCategoryGrid('form-category-grid', type, newCat.id);
@@ -581,8 +590,8 @@ const App = {
 
     if (preview) {
       preview.innerHTML = `
-        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-left mt-2">
-          <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background-color: ${cat.color}20;">
+        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 text-left mt-2">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background-color: ${cat.color}20;">
             ${cat.emoji}
           </div>
           <div>
@@ -653,7 +662,7 @@ const App = {
         <button 
           type="button" 
           onclick="App.quickFillFromRecurring('${item.id}')"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 shadow-xs transition-all group cursor-pointer"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200/80 shadow-2xs transition-all group cursor-pointer"
           title="Autofill ${displayName} ฿${item.amount.toLocaleString()}"
         >
           <span>${cat.emoji}</span>
@@ -702,11 +711,11 @@ const App = {
     const catSelect = document.getElementById('inline-rec-category');
 
     if (type === 'expense') {
-      if (expBtn) expBtn.className = 'py-1.5 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
-      if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-lg font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer';
+      if (expBtn) expBtn.className = 'py-1.5 px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
+      if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-xl font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer';
     } else {
-      if (expBtn) expBtn.className = 'py-1.5 px-3 rounded-lg font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer';
-      if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
+      if (expBtn) expBtn.className = 'py-1.5 px-3 rounded-xl font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer';
+      if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
     }
 
     if (catSelect) {
@@ -729,37 +738,37 @@ const App = {
     if (this.inlineRecurringType === 'expense') {
       if (lang === 'en') {
         container.innerHTML = `
-          <button type="button" onclick="App.presetRecurringItem('Apartment Rent', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 Rent</button>
-          <button type="button" onclick="App.presetRecurringItem('Water & Electricity', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 Utilities</button>
-          <button type="button" onclick="App.presetRecurringItem('Internet & Mobile', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 Internet</button>
-          <button type="button" onclick="App.presetRecurringItem('Commute (BTS/Gas)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 Transport</button>
-          <button type="button" onclick="App.presetRecurringItem('Netflix / Streaming', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
-          <button type="button" onclick="App.presetRecurringItem('Health Insurance', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ Insurance</button>
+          <button type="button" onclick="App.presetRecurringItem('Apartment Rent', 2800, 'exp_housing')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🏠 Rent</button>
+          <button type="button" onclick="App.presetRecurringItem('Water & Electricity', 2200, 'exp_bills')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 💡 Utilities</button>
+          <button type="button" onclick="App.presetRecurringItem('Internet & Mobile', 300, 'exp_bills')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 📱 Internet</button>
+          <button type="button" onclick="App.presetRecurringItem('Commute (BTS/Gas)', 400, 'exp_transport')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🚗 Transport</button>
+          <button type="button" onclick="App.presetRecurringItem('Netflix / Streaming', 219, 'exp_ent')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🎬 Netflix</button>
+          <button type="button" onclick="App.presetRecurringItem('Health Insurance', 1500, 'exp_health')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🛡️ Insurance</button>
         `;
       } else {
         container.innerHTML = `
-          <button type="button" onclick="App.presetRecurringItem('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 ค่าเช่าห้อง</button>
-          <button type="button" onclick="App.presetRecurringItem('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 ค่าน้ำไฟ</button>
-          <button type="button" onclick="App.presetRecurringItem('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 ค่าเน็ต</button>
-          <button type="button" onclick="App.presetRecurringItem('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 ค่าเดินทาง</button>
-          <button type="button" onclick="App.presetRecurringItem('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
-          <button type="button" onclick="App.presetRecurringItem('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ ประกันสุขภาพ</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🏠 ค่าเช่าห้อง</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 💡 ค่าน้ำไฟ</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 📱 ค่าเน็ต</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🚗 ค่าเดินทาง</button>
+          <button type="button" onclick="App.presetRecurringItem('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🎬 Netflix</button>
+          <button type="button" onclick="App.presetRecurringItem('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">+ 🛡️ ประกันสุขภาพ</button>
         `;
       }
     } else {
       if (lang === 'en') {
         container.innerHTML = `
-          <button type="button" onclick="App.presetRecurringItem('Monthly Salary', 18000, 'inc_salary')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 💼 Salary</button>
-          <button type="button" onclick="App.presetRecurringItem('Side Gig / Freelance', 3000, 'inc_business')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🛒 Side Gig</button>
-          <button type="button" onclick="App.presetRecurringItem('Monthly Bonus', 2000, 'inc_bonus')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🎁 Bonus</button>
-          <button type="button" onclick="App.presetRecurringItem('Dividends / Interest', 1000, 'inc_invest')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 📈 Dividends</button>
+          <button type="button" onclick="App.presetRecurringItem('Monthly Salary', 18000, 'inc_salary')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 💼 Salary</button>
+          <button type="button" onclick="App.presetRecurringItem('Side Gig / Freelance', 3000, 'inc_business')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 🛒 Side Gig</button>
+          <button type="button" onclick="App.presetRecurringItem('Monthly Bonus', 2000, 'inc_bonus')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 🎁 Bonus</button>
+          <button type="button" onclick="App.presetRecurringItem('Dividends / Interest', 1000, 'inc_invest')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 📈 Dividends</button>
         `;
       } else {
         container.innerHTML = `
-          <button type="button" onclick="App.presetRecurringItem('เงินเดือนประจำ', 18000, 'inc_salary')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 💼 เงินเดือนประจำ</button>
-          <button type="button" onclick="App.presetRecurringItem('ค่าจ้างงานเสริมประจำ', 3000, 'inc_business')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🛒 รายได้งานเสริม</button>
-          <button type="button" onclick="App.presetRecurringItem('โบนัส / คอมมิชชั่นประจำ', 2000, 'inc_bonus')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🎁 โบนัส/คอมมิชชั่น</button>
-          <button type="button" onclick="App.presetRecurringItem('เงินปันผล / ดอกเบี้ยประจำ', 1000, 'inc_invest')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 📈 ปันผลประจำ</button>
+          <button type="button" onclick="App.presetRecurringItem('เงินเดือนประจำ', 18000, 'inc_salary')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 💼 เงินเดือนประจำ</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าจ้างงานเสริมประจำ', 3000, 'inc_business')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 🛒 รายได้งานเสริม</button>
+          <button type="button" onclick="App.presetRecurringItem('โบนัส / คอมมิชชั่นประจำ', 2000, 'inc_bonus')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 🎁 โบนัส/คอมมิชชั่น</button>
+          <button type="button" onclick="App.presetRecurringItem('เงินปันผล / ดอกเบี้ยประจำ', 1000, 'inc_invest')" class="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-xl border border-emerald-200 shadow-2xs transition-colors cursor-pointer">+ 📈 ปันผลประจำ</button>
         `;
       }
     }
@@ -826,12 +835,12 @@ const App = {
     const incBtn = document.getElementById('rec-filter-income');
 
     [allBtn, expBtn, incBtn].forEach(b => {
-      if (b) b.className = 'px-2.5 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 cursor-pointer';
+      if (b) b.className = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 cursor-pointer';
     });
 
-    if (filter === 'all' && allBtn) allBtn.className = 'px-2.5 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-xs cursor-pointer';
-    if (filter === 'expense' && expBtn) expBtn.className = 'px-2.5 py-1 rounded-lg font-bold bg-rose-500 text-white shadow-xs cursor-pointer';
-    if (filter === 'income' && incBtn) incBtn.className = 'px-2.5 py-1 rounded-lg font-bold bg-emerald-500 text-white shadow-xs cursor-pointer';
+    if (filter === 'all' && allBtn) allBtn.className = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs cursor-pointer';
+    if (filter === 'expense' && expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-bold bg-rose-400 text-white shadow-xs cursor-pointer';
+    if (filter === 'income' && incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-bold bg-emerald-400 text-white shadow-xs cursor-pointer';
 
     this.renderRecurringTab();
   },
@@ -871,7 +880,7 @@ const App = {
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+        <div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">
           <span class="text-3xl block mb-1">📌</span>
           <p class="font-bold text-slate-700 text-sm">${I18n.t('rec_empty_list')}</p>
           <p class="text-xs text-slate-400 mt-1">${I18n.t('rec_empty_list_desc')}</p>
@@ -889,10 +898,10 @@ const App = {
       const perMonthText = lang === 'en' ? '/ month' : '/ เดือน';
 
       return `
-        <div class="minimal-card p-4 rounded-2xl flex flex-col justify-between gap-3 group">
+        <div class="pastel-card p-4 rounded-3xl flex flex-col justify-between gap-3 group">
           <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-slate-50 border border-slate-100">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-xl bg-slate-50 border border-slate-100">
                 ${cat.emoji}
               </div>
               <div>
@@ -904,7 +913,7 @@ const App = {
                 </div>
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[11px] text-slate-500">${catName}</span>
-                  <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">${item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'}</span>
                 </div>
               </div>
             </div>
@@ -916,21 +925,21 @@ const App = {
             </div>
           </div>
 
-          <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+          <div class="flex items-center justify-between pt-2.5 border-t border-slate-100 text-xs">
             <button 
               type="button"
               onclick="App.quickLogRecurring('${item.id}')"
-              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${isExp ? 'bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700' : 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700'} font-semibold transition-all cursor-pointer"
+              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl ${isExp ? 'bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-700' : 'bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700'} font-semibold transition-all cursor-pointer shadow-2xs"
               title="${lang === 'en' ? 'Log to current month' : 'บันทึกยอดนี้เข้าบัญชีเดือนนี้ทันที'}"
             >
               <span>${I18n.t('btn_quick_log')}</span>
             </button>
 
             <div class="flex items-center gap-1">
-              <button type="button" onclick="App.openEditRecurringModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
+              <button type="button" onclick="App.openEditRecurringModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button type="button" onclick="App.deleteRecurring('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
+              <button type="button" onclick="App.deleteRecurring('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -1115,7 +1124,7 @@ const App = {
 
     if (allItems.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+        <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
           <p class="text-xs font-semibold text-slate-600">${I18n.t('rec_empty_list')}</p>
           <p class="text-[11px] text-slate-400 mt-0.5">${I18n.t('rec_empty_list_desc')}</p>
         </div>
@@ -1135,34 +1144,34 @@ const App = {
       `).join('');
 
       return `
-        <div class="flex items-center gap-2.5 p-2.5 bg-slate-50/80 hover:bg-slate-100/70 rounded-xl border border-slate-200/80 transition-all batch-item-row" data-id="${item.id}" data-type="${item.type}">
+        <div class="flex items-center gap-2.5 p-2.5 bg-slate-50/90 hover:bg-slate-100/80 rounded-2xl border border-slate-200/70 transition-all batch-item-row" data-id="${item.id}" data-type="${item.type}">
           <input 
             type="checkbox" 
             class="batch-item-checkbox rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
             checked
             onchange="App.updateBatchTotal()"
           />
-          <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
             ${isExp ? (lang === 'en' ? 'EXP' : 'จ่าย') : (lang === 'en' ? 'INC' : 'รับ')}
           </span>
           <div class="flex-1 min-w-0">
             <input 
               type="text" 
-              class="batch-item-name w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
+              class="batch-item-name w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
               value="${displayName}"
               placeholder="Name"
             />
           </div>
           <div class="w-32">
-            <select class="batch-item-category w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[11px] text-slate-700 font-medium focus:outline-none">
+            <select class="batch-item-category w-full bg-white border border-slate-200 rounded-xl px-2 py-1 text-[11px] text-slate-700 font-medium focus:outline-none">
               ${catOptionsHtml}
             </select>
           </div>
           <div class="relative w-24">
-            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
             <input 
               type="number" 
-              class="batch-item-amount w-full bg-white border border-slate-200 rounded-lg pl-5 pr-1.5 py-1 text-xs text-right font-bold text-slate-900 num-font focus:outline-none"
+              class="batch-item-amount w-full bg-white border border-slate-200 rounded-xl pl-6 pr-1.5 py-1 text-xs text-right font-bold text-slate-900 num-font focus:outline-none"
               value="${item.amount}"
               step="50"
               oninput="App.updateBatchTotal()"
@@ -1306,13 +1315,13 @@ const App = {
     const paneDaily = document.getElementById('dashboard-daily-pane');
 
     if (mode === 'overview') {
-      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all cursor-pointer';
-      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (viewOverview) viewOverview.className = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
+      if (viewDaily) viewDaily.className = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
       if (paneOverview) paneOverview.classList.remove('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
     } else {
-      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
-      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all cursor-pointer';
+      if (viewOverview) viewOverview.className = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (viewDaily) viewDaily.className = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.remove('hidden');
     }
@@ -1356,18 +1365,18 @@ const App = {
     if (expEl) expEl.textContent = '฿' + totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (netEl) {
       netEl.textContent = (netBalance >= 0 ? '+' : '') + '฿' + netBalance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      netEl.className = `text-2xl font-extrabold num-font ${netBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
+      netEl.className = `text-2xl sm:text-3xl font-extrabold num-font ${netBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
     }
     if (netStatusEl) {
       if (netBalance > 0) {
         netStatusEl.textContent = I18n.t('status_surplus');
-        netStatusEl.className = 'text-[11px] text-emerald-600 font-medium mt-0.5';
+        netStatusEl.className = 'text-[11px] text-emerald-600 font-semibold mt-0.5';
       } else if (netBalance === 0) {
         netStatusEl.textContent = I18n.t('status_balanced');
         netStatusEl.className = 'text-[11px] text-slate-400 font-medium mt-0.5';
       } else {
         netStatusEl.textContent = I18n.t('status_deficit');
-        netStatusEl.className = 'text-[11px] text-rose-600 font-medium mt-0.5';
+        netStatusEl.className = 'text-[11px] text-rose-600 font-semibold mt-0.5';
       }
     }
 
@@ -1391,12 +1400,14 @@ const App = {
     const catData = [];
     const catColors = [];
 
-    Object.keys(catMap).forEach(catId => {
+    const PASTEL_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#a78bfa', '#f472b6', '#94a3b8'];
+
+    Object.keys(catMap).forEach((catId, idx) => {
       const cat = StorageManager.getCategoryById(catId);
       const catName = StorageManager.getCategoryDisplayName(cat);
       catLabels.push(`${cat.emoji} ${catName}`);
       catData.push(catMap[catId]);
-      catColors.push(cat.color || '#334155');
+      catColors.push(cat.color || PASTEL_PALETTE[idx % PASTEL_PALETTE.length]);
     });
 
     const ctxDoughnut = document.getElementById('chart-category-doughnut');
@@ -1482,14 +1493,14 @@ const App = {
             {
               label: I18n.getLanguage() === 'en' ? 'Expense' : 'รายจ่าย (Expense)',
               data: dailySpending,
-              backgroundColor: '#f43f5e',
-              borderRadius: 3
+              backgroundColor: '#f87171',
+              borderRadius: 4
             },
             {
               label: I18n.getLanguage() === 'en' ? 'Income' : 'รายรับ (Income)',
               data: dailyIncome,
-              backgroundColor: '#10b981',
-              borderRadius: 3
+              backgroundColor: '#34d399',
+              borderRadius: 4
             }
           ]
         },
@@ -1562,7 +1573,7 @@ const App = {
             </div>
           </div>
           <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-            <div class="h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${cat.color || '#0f172a'};"></div>
+            <div class="h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${cat.color || '#f87171'};"></div>
           </div>
         </div>
       `;
@@ -1575,7 +1586,7 @@ const App = {
 
     if (monthlyTxs.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-100">
+        <div class="text-center py-10 text-slate-400 bg-white rounded-3xl border border-slate-100">
           <p class="text-xs font-medium text-slate-600">${I18n.t('daily_breakdown_empty')}</p>
         </div>
       `;
@@ -1621,15 +1632,15 @@ const App = {
         const isExp = t.type === 'expense';
 
         return `
-          <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
+          <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-2xl transition-colors group">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-base bg-slate-50 border border-slate-100">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-slate-50 border border-slate-100">
                 ${cat.emoji}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
                   <span class="font-semibold text-xs text-slate-800">${catName}</span>
-                  <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">${t.paymentMethod}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500">${t.paymentMethod}</span>
                   ${timeStr ? `<span class="text-[10px] text-slate-400">${timeStr}</span>` : ''}
                 </div>
                 ${t.note ? `<p class="text-[11px] text-slate-500 mt-0.5">${t.note}</p>` : ''}
@@ -1653,10 +1664,10 @@ const App = {
       }).join('');
 
       return `
-        <div class="minimal-card rounded-2xl overflow-hidden">
+        <div class="pastel-card rounded-3xl overflow-hidden">
           <div class="bg-slate-50/70 px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">${dayName}</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700">${dayName}</span>
               <span class="text-xs font-semibold text-slate-700">${dayDate}</span>
               <span class="text-[10px] text-slate-400">(${txs.length})</span>
             </div>
@@ -1698,7 +1709,7 @@ const App = {
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-10 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+        <div class="text-center py-10 text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
           <p class="text-xs font-medium text-slate-600">${I18n.t('history_empty_title')}</p>
           <p class="text-[11px] text-slate-400 mt-0.5">${I18n.t('history_empty_desc')}</p>
         </div>
@@ -1717,9 +1728,9 @@ const App = {
       const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
 
       return `
-        <div class="bg-white p-3 rounded-xl border border-slate-100 hover:border-slate-300 transition-all flex items-center justify-between group">
+        <div class="bg-white p-3 rounded-2xl border border-slate-100 hover:border-slate-300 transition-all flex items-center justify-between group shadow-2xs">
           <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-slate-50 border border-slate-100">
+            <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-lg bg-slate-50 border border-slate-100 flex-shrink-0">
               ${cat.emoji}
             </div>
             <div>
@@ -1731,8 +1742,8 @@ const App = {
                 <span class="text-[10px] text-slate-400">${dateFormatted}</span>
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${t.paymentMethod}</span>
-                ${t.note ? `<span class="text-[11px] text-slate-600">${t.note}</span>` : ''}
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">${t.paymentMethod}</span>
+                ${t.note ? `<span class="text-[11px] text-slate-600 font-medium">"${t.note}"</span>` : ''}
               </div>
             </div>
           </div>
@@ -1741,10 +1752,10 @@ const App = {
               ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
             <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
+              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
+              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -1833,7 +1844,7 @@ const App = {
       const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
 
       preview.innerHTML = `
-        <div class="flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-left">
+        <div class="flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-left">
           <span class="text-2xl">${cat.emoji}</span>
           <div class="flex-1">
             <p class="font-bold text-slate-800 text-xs">${catName} <span class="text-[10px] font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${typeBadge})</span></p>

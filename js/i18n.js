@@ -156,6 +156,23 @@ const TRANSLATIONS = {
     modal_del_cat_title: 'ยืนยันการลบหมวดหมู่?',
     modal_del_cat_desc: 'คุณต้องการลบหมวดหมู่นี้จริงๆ หรือไม่? รายการที่เคยบันทึกไว้ในหมวดนี้จะไม่หาย แต่จะแสดงเป็นหมวดหมู่อื่นๆ',
 
+    // Export Filter Modal
+    modal_export_title: 'ส่งออกข้อมูล CSV / Excel (Export Report)',
+    modal_export_desc: 'เลือกตัวกรองช่วงเวลา ประเภท และหมวดหมู่ที่ต้องการส่งออกเป็นตาราง Excel',
+    export_filter_date: 'ช่วงเวลาที่ต้องการส่งออก',
+    export_date_all: 'ทุกช่วงเวลา (All Time)',
+    export_date_this_month: 'เฉพาะเดือนนี้ (This Month)',
+    export_date_last_month: 'เฉพาะเดือนที่ผ่านมา (Last Month)',
+    export_date_custom: 'กำหนดช่วงวันที่เอง (Custom Range)',
+    export_from_date: 'ตั้งแต่วันที่',
+    export_to_date: 'ถึงวันที่',
+    export_filter_type: 'ประเภทรายการ',
+    export_filter_category: 'หมวดหมู่',
+    export_filter_payment: 'ช่องทางชำระเงิน',
+    export_all_cats: 'ทุกหมวดหมู่ (All Categories)',
+    export_all_payments: 'ทุกช่องทางชำระเงิน (All Methods)',
+    btn_download_export: '📥 ดาวน์โหลดไฟล์ CSV / Excel',
+
     // Modals
     modal_add_cat_title: 'เพิ่มหมวดหมู่ใหม่',
     modal_edit_cat_title: 'แก้ไขหมวดหมู่',
@@ -193,7 +210,8 @@ const TRANSLATIONS = {
     toast_cat_added: 'เพิ่มหมวดหมู่สำเร็จ 🎉',
     toast_cat_updated: 'อัปเดตหมวดหมู่สำเร็จ ✅',
     toast_cat_deleted: 'ลบหมวดหมู่เรียบร้อยแล้ว 🗑️',
-    toast_cat_restored: 'คืนค่าหมวดหมู่เริ่มต้นเรียบร้อยแล้ว 🔄'
+    toast_cat_restored: 'คืนค่าหมวดหมู่เริ่มต้นเรียบร้อยแล้ว 🔄',
+    toast_exported: 'ส่งออกไฟล์เรียบร้อยแล้ว 📥'
   },
 
   en: {
@@ -346,6 +364,23 @@ const TRANSLATIONS = {
     modal_del_cat_title: 'Delete this category?',
     modal_del_cat_desc: 'Are you sure you want to delete this category? Past transactions with this category will remain safe.',
 
+    // Export Filter Modal
+    modal_export_title: 'Export Report (CSV / Excel)',
+    modal_export_desc: 'Filter by date range, type, category, or payment method before downloading',
+    export_filter_date: 'Date Range',
+    export_date_all: 'All Time',
+    export_date_this_month: 'This Month',
+    export_date_last_month: 'Last Month',
+    export_date_custom: 'Custom Range',
+    export_from_date: 'From Date',
+    export_to_date: 'To Date',
+    export_filter_type: 'Transaction Type',
+    export_filter_category: 'Category',
+    export_filter_payment: 'Payment Method',
+    export_all_cats: 'All Categories',
+    export_all_payments: 'All Payment Methods',
+    btn_download_export: '📥 Download CSV / Excel',
+
     // Modals
     modal_add_cat_title: 'Add New Category',
     modal_edit_cat_title: 'Edit Category',
@@ -383,7 +418,8 @@ const TRANSLATIONS = {
     toast_cat_added: 'Category added successfully 🎉',
     toast_cat_updated: 'Category updated successfully ✅',
     toast_cat_deleted: 'Category deleted successfully 🗑️',
-    toast_cat_restored: 'Default categories restored 🔄'
+    toast_cat_restored: 'Default categories restored 🔄',
+    toast_exported: 'Report exported successfully 📥'
   }
 };
 

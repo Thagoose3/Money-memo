@@ -1865,6 +1865,102 @@ const App = {
     this.showToast(I18n.t('toast_deleted'));
   },
 
+  // --- Export Filter Modal ---
+  openExportModal() {
+    const modal = document.getElementById('export-modal');
+    if (!modal) return;
+
+    this.populateExportCategoryDropdown('all');
+    this.updateExportPreview();
+    modal.classList.add('show');
+  },
+
+  closeExportModal() {
+    const modal = document.getElementById('export-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  handleExportDateRangeChange(val) {
+    const customContainer = document.getElementById('export-custom-date-container');
+    if (customContainer) {
+      if (val === 'custom') {
+        customContainer.classList.remove('hidden');
+      } else {
+        customContainer.classList.add('hidden');
+      }
+    }
+    this.updateExportPreview();
+  },
+
+  handleExportTypeChange(type) {
+    this.populateExportCategoryDropdown(type);
+    this.updateExportPreview();
+  },
+
+  populateExportCategoryDropdown(type) {
+    const catSelect = document.getElementById('export-category');
+    if (!catSelect) return;
+
+    let categories = StorageManager.getCategories();
+    if (type !== 'all') {
+      categories = categories.filter(c => c.type === type);
+    }
+
+    const allText = I18n.t('export_all_cats');
+    const optionsHtml = `<option value="all">${allText}</option>` + categories.map(c => {
+      const catName = StorageManager.getCategoryDisplayName(c);
+      return `<option value="${c.id}">${c.emoji} ${catName}</option>`;
+    }).join('');
+
+    catSelect.innerHTML = optionsHtml;
+  },
+
+  getExportFilters() {
+    const dateRange = document.getElementById('export-date-range')?.value || 'this_month';
+    const startDate = document.getElementById('export-start-date')?.value || '';
+    const endDate = document.getElementById('export-end-date')?.value || '';
+    const type = document.getElementById('export-type')?.value || 'all';
+    const categoryId = document.getElementById('export-category')?.value || 'all';
+    const paymentMethod = document.getElementById('export-payment')?.value || 'all';
+
+    return { dateRange, startDate, endDate, type, categoryId, paymentMethod };
+  },
+
+  updateExportPreview() {
+    const filters = this.getExportFilters();
+    const filtered = StorageManager.getFilteredTransactions(filters);
+    const lang = I18n.getLanguage();
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    filtered.forEach(t => {
+      if (t.type === 'income') totalIncome += t.amount;
+      else totalExpense += t.amount;
+    });
+
+    const countEl = document.getElementById('export-preview-count');
+    const amountsEl = document.getElementById('export-preview-amounts');
+
+    if (countEl) {
+      countEl.textContent = lang === 'en' ? `Found ${filtered.length} items` : `พบ ${filtered.length} รายการ`;
+    }
+    if (amountsEl) {
+      const incLabel = lang === 'en' ? 'Income' : 'รายรับ';
+      const expLabel = lang === 'en' ? 'Expense' : 'รายจ่าย';
+      amountsEl.innerHTML = `<span class="text-emerald-600 font-bold">${incLabel} ฿${totalIncome.toLocaleString()}</span> / <span class="text-rose-600 font-bold">${expLabel} ฿${totalExpense.toLocaleString()}</span>`;
+    }
+  },
+
+  confirmExportCSV() {
+    const filters = this.getExportFilters();
+    const success = StorageManager.exportFilteredCSV(filters);
+    if (success) {
+      this.closeExportModal();
+      this.showToast(I18n.t('toast_exported'));
+    }
+  },
+
   renderAll() {
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.renderTransactionList();

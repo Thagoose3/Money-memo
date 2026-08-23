@@ -143,7 +143,7 @@
         <span data-i18n="btn_sample">✨ โหลดตัวอย่าง</span>
       </button>
 
-      <button id="btn-export-csv" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer" title="Export CSV / Excel">
+      <button id="btn-export-csv" onclick="App.openExportModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer" title="Export CSV / Excel with Filters">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
         <span data-i18n="btn_export_csv">CSV / Excel</span>
       </button>
@@ -1311,6 +1311,99 @@
           <span data-i18n="modal_del_confirm">ยืนยันการลบ</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 📥 ส่งออกรายงานแบบเลือกตัวกรอง (Export Filter Modal) -->
+  <!-- ========================================== -->
+  <div id="export-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full rounded-2xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div>
+          <h3 data-i18n="modal_export_title" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+            <span>📊</span> ส่งออกข้อมูล CSV / Excel (Export Report)
+          </h3>
+          <p data-i18n="modal_export_desc" class="text-[11px] text-slate-400 mt-0.5">เลือกตัวกรองช่วงเวลา ประเภท และหมวดหมู่ที่ต้องการส่งออก</p>
+        </div>
+        <button type="button" onclick="App.closeExportModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">✕</button>
+      </div>
+
+      <form id="export-filter-form" class="space-y-3.5">
+        
+        <!-- Date Range Filter -->
+        <div>
+          <label data-i18n="export_filter_date" class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">ช่วงเวลาที่ต้องการส่งออก</label>
+          <select id="export-date-range" onchange="App.handleExportDateRangeChange(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
+            <option value="all" data-i18n="export_date_all">ทุกช่วงเวลา (All Time)</option>
+            <option value="this_month" selected data-i18n="export_date_this_month">เฉพาะเดือนนี้ (This Month)</option>
+            <option value="last_month" data-i18n="export_date_last_month">เฉพาะเดือนที่ผ่านมา (Last Month)</option>
+            <option value="custom" data-i18n="export_date_custom">กำหนดช่วงวันที่เอง (Custom Range)</option>
+          </select>
+        </div>
+
+        <!-- Custom Date Range Picker (hidden by default unless 'custom' selected) -->
+        <div id="export-custom-date-container" class="grid grid-cols-2 gap-2 hidden p-2 bg-slate-50 rounded-xl border border-slate-100">
+          <div>
+            <label data-i18n="export_from_date" class="block text-[10px] font-semibold text-slate-500 mb-1">ตั้งแต่วันที่</label>
+            <input type="date" id="export-start-date" onchange="App.updateExportPreview()" class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs" />
+          </div>
+          <div>
+            <label data-i18n="export_to_date" class="block text-[10px] font-semibold text-slate-500 mb-1">ถึงวันที่</label>
+            <input type="date" id="export-end-date" onchange="App.updateExportPreview()" class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs" />
+          </div>
+        </div>
+
+        <!-- Type Filter & Category Filter -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label data-i18n="export_filter_type" class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">ประเภทรายการ</label>
+            <select id="export-type" onchange="App.handleExportTypeChange(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold">
+              <option value="all" data-i18n="filter_all">ทั้งหมด</option>
+              <option value="expense" data-i18n="filter_expense">🔴 รายจ่าย</option>
+              <option value="income" data-i18n="filter_income">🟢 รายรับ</option>
+            </select>
+          </div>
+
+          <div>
+            <label data-i18n="export_filter_category" class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">หมวดหมู่</label>
+            <select id="export-category" onchange="App.updateExportPreview()" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Payment Method Filter -->
+        <div>
+          <label data-i18n="export_filter_payment" class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">ช่องทางชำระเงิน</label>
+          <select id="export-payment" onchange="App.updateExportPreview()" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+            <option value="all" data-i18n="export_all_payments">ทุกช่องทางชำระเงิน (All Methods)</option>
+            <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน / ธนาคาร (Bank)</option>
+            <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / QR (PromptPay)</option>
+            <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
+            <option value="บัตรเครดิต">💳 บัตรเครดิต (Credit Card)</option>
+            <option value="วอลเล็ท (TrueMoney/ShopeePay)">👛 TrueMoney / E-Wallet</option>
+            <option value="อื่นๆ">📦 อื่นๆ (Other)</option>
+          </select>
+        </div>
+
+        <!-- Preview Count & Totals -->
+        <div id="export-preview-box" class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+          <span id="export-preview-count" class="font-semibold text-slate-700">พบ 0 รายการ</span>
+          <div class="text-right">
+            <span id="export-preview-amounts" class="font-bold text-slate-900 num-font block text-xs">รายรับ ฿0 / รายจ่าย ฿0</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="App.closeExportModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
+            <span data-i18n="btn_cancel">ยกเลิก</span>
+          </button>
+          <button type="button" onclick="App.confirmExportCSV()" class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+            <span data-i18n="btn_download_export">📥 ดาวน์โหลดไฟล์ CSV / Excel</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

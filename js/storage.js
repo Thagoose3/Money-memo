@@ -1,5 +1,5 @@
 /**
- * Storage & Data Management for Money Memo v2.3 (Bilingual & Category Manager)
+ * Storage & Data Management for Money Memo v2.4 (Bilingual, Category Manager, Filtered Export)
  */
 
 const STORAGE_KEYS = {
@@ -68,7 +68,6 @@ const StorageManager = {
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Hydrate English names and default flags if missing
         let needsSave = false;
         parsed.forEach(c => {
           const def = DEFAULT_CATEGORIES.find(d => d.id === c.id);
@@ -223,7 +222,6 @@ const StorageManager = {
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Hydrate English names if missing
         let needsSave = false;
         parsed.forEach(item => {
           const def = DEFAULT_RECURRING_ITEMS.find(d => d.id === item.id);
@@ -413,22 +411,85 @@ const StorageManager = {
     }
   },
 
-  // --- นำเข้า / ส่งออก ข้อมูล ---
-  exportToCSV() {
+  // --- นำเข้า / ส่งออก ข้อมูล พร้อมตัวกรองและหัวตารางสมบูรณ์ ---
+  getFilteredTransactions(filters = {}) {
     const transactions = this.getTransactions();
-    if (transactions.length === 0) {
-      alert(I18n.getLanguage() === 'en' ? 'No transactions to export' : 'ไม่มีข้อมูลรายการสำหรับส่งออก');
-      return;
+
+    return transactions.filter(t => {
+      // Date filter
+      if (filters.dateRange === 'this_month') {
+        const now = new Date();
+        const d = new Date(t.date);
+        if (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth()) return false;
+      } else if (filters.dateRange === 'last_month') {
+        const now = new Date();
+        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const d = new Date(t.date);
+        if (d.getFullYear() !== prevMonth.getFullYear() || d.getMonth() !== prevMonth.getMonth()) return false;
+      } else if (filters.dateRange === 'custom') {
+        if (filters.startDate && t.date.slice(0, 10) < filters.startDate) return false;
+        if (filters.endDate && t.date.slice(0, 10) > filters.endDate) return false;
+      }
+
+      // Type filter
+      if (filters.type && filters.type !== 'all' && t.type !== filters.type) return false;
+
+      // Category filter
+      if (filters.categoryId && filters.categoryId !== 'all' && t.categoryId !== filters.categoryId) return false;
+
+      // Payment filter
+      if (filters.paymentMethod && filters.paymentMethod !== 'all' && t.paymentMethod !== filters.paymentMethod) return false;
+
+      return true;
+    });
+  },
+
+  exportFilteredCSV(filters = {}) {
+    const lang = (typeof I18n !== 'undefined') ? I18n.getLanguage() : 'th';
+    const filtered = this.getFilteredTransactions(filters);
+
+    if (filtered.length === 0) {
+      alert(lang === 'en' ? 'No transactions match the selected filters' : 'ไม่พบรายการที่ตรงกับตัวกรองที่เลือก');
+      return false;
     }
 
-    const headers = ['Date-Time', 'Type', 'Category', 'Amount (THB)', 'Payment Method', 'Note'];
-    
-    const rows = transactions.map(t => {
+    // Sort by date ascending
+    filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Headers with bilingual support
+    const headerTitle = lang === 'en' ? 'Money Memo Financial Report' : 'รายงานการเงิน Money Memo';
+    const exportTime = new Date().toLocaleString(lang === 'en' ? 'en-US' : 'th-TH');
+
+    let filterDesc = '';
+    if (filters.dateRange === 'this_month') filterDesc = lang === 'en' ? 'Period: This Month' : 'ช่วงเวลา: เดือนนี้';
+    else if (filters.dateRange === 'last_month') filterDesc = lang === 'en' ? 'Period: Last Month' : 'ช่วงเวลา: เดือนที่ผ่านมา';
+    else if (filters.dateRange === 'custom') filterDesc = `${lang === 'en' ? 'Period' : 'ช่วงเวลา'}: ${filters.startDate || '-'} to ${filters.endDate || '-'}`;
+    else filterDesc = lang === 'en' ? 'Period: All Time' : 'ช่วงเวลา: ทั้งหมด';
+
+    const headers = [
+      lang === 'en' ? 'Date & Time' : 'วันที่และเวลา',
+      lang === 'en' ? 'Type' : 'ประเภท',
+      lang === 'en' ? 'Category' : 'หมวดหมู่',
+      lang === 'en' ? 'Amount (THB)' : 'จำนวนเงิน (บาท)',
+      lang === 'en' ? 'Payment Method' : 'ช่องทางชำระเงิน',
+      lang === 'en' ? 'Note / Memo' : 'บันทึกช่วยจำ'
+    ];
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    const rows = filtered.map(t => {
       const cat = this.getCategoryById(t.categoryId);
       const catName = this.getCategoryDisplayName(cat);
-      const typeStr = t.type === 'income' ? 'Income' : 'Expense';
+      const isExp = t.type === 'expense';
+      
+      if (isExp) totalExpense += t.amount;
+      else totalIncome += t.amount;
+
+      const typeStr = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
       const formattedDate = t.date.replace('T', ' ');
       const cleanNote = (t.note || '').replace(/"/g, '""');
+
       return [
         `"${formattedDate}"`,
         `"${typeStr}"`,
@@ -439,22 +500,48 @@ const StorageManager = {
       ].join(',');
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const netBalance = totalIncome - totalExpense;
+
+    // Summary Rows with Headers
+    const emptyRow = '"","","","","",""';
+    const summaryHeader = `"${lang === 'en' ? '=== SUMMARY ===' : '=== สรุปยอดรวม ==='}","","","","",""`;
+    const incomeSummary = `"${lang === 'en' ? 'Total Income' : 'รายรับรวม'}","","","${totalIncome.toFixed(2)}","",""`;
+    const expenseSummary = `"${lang === 'en' ? 'Total Expense' : 'รายจ่ายรวม'}","","","${totalExpense.toFixed(2)}","",""`;
+    const netSummary = `"${lang === 'en' ? 'Net Balance' : 'คงเหลือสุทธิ'}","","","${netBalance.toFixed(2)}","",""`;
+
+    const csvContent = '\uFEFF' + [
+      `"${headerTitle}"`,
+      `"${filterDesc} | ${lang === 'en' ? 'Generated on' : 'สร้างเมื่อ'}: ${exportTime} | ${lang === 'en' ? 'Total records' : 'จำนวนรายการ'}: ${filtered.length}"`,
+      emptyRow,
+      headers.join(','),
+      ...rows,
+      emptyRow,
+      summaryHeader,
+      incomeSummary,
+      expenseSummary,
+      netSummary
+    ].join('\r\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const dateStr = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `money_memo_${dateStr}.csv`;
+    a.download = `money_memo_report_${dateStr}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    return true;
+  },
+
+  exportToCSV() {
+    return this.exportFilteredCSV({ dateRange: 'all', type: 'all', categoryId: 'all', paymentMethod: 'all' });
   },
 
   exportToJSON() {
     const backupData = {
-      version: '2.3',
+      version: '2.4',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),

@@ -8,10 +8,10 @@ const SUPABASE_STORAGE_KEYS = {
   ANON_KEY: 'money_memo_supabase_anon_key'
 };
 
-// Default project configuration
+// Default project configuration (1-Click Google Login for all users)
 const DEFAULT_SUPABASE_CONFIG = {
   url: 'https://kjplrnhkkaycltikaozw.supabase.co',
-  anonKey: ''
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtqcGxybmhra2F5Y2x0aWthb3p3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0NzYxOTIsImV4cCI6MjEwMzA1MjE5Mn0.7bF50MpAqq7Q26P2X4oGZk9igP9ANXiflSCccoGE1Rk'
 };
 
 const SupabaseManager = {

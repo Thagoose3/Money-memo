@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Money Memo v2.0
+ * Main Application Controller for Money Memo v2.1
  */
 
 const App = {
@@ -77,6 +77,15 @@ const App = {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         this.handleSaveTransaction();
+      });
+    }
+
+    // Add Category Modal Form Submit
+    const addCatForm = document.getElementById('add-category-form');
+    if (addCatForm) {
+      addCatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleSaveNewCategory();
       });
     }
 
@@ -255,28 +264,40 @@ const App = {
     if (!container) return;
 
     const categories = StorageManager.getCategories().filter(c => c.type === type);
-    if (categories.length === 0) {
-      container.innerHTML = `<div class="col-span-full text-center py-4 text-xs text-slate-400">ไม่มีหมวดหมู่ประเภทนี้</div>`;
-      return;
-    }
-
+    
     if (!preselectedId || !categories.some(c => c.id === preselectedId)) {
-      this.selectedCategoryId = categories[0].id;
+      this.selectedCategoryId = categories.length > 0 ? categories[0].id : null;
     } else {
       this.selectedCategoryId = preselectedId;
     }
 
-    container.innerHTML = categories.map(c => `
+    const itemsHtml = categories.map(c => `
       <button 
         type="button" 
         data-cat-id="${c.id}"
         class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
         onclick="App.selectCategory('${containerId}', '${c.id}')"
+        title="${c.name}"
       >
-        <span class="text-xl">${c.emoji}</span>
+        <span class="text-xl leading-none">${c.emoji}</span>
         <span class="text-[11px] font-medium text-slate-700 text-center truncate max-w-full leading-tight">${c.name}</span>
       </button>
     `).join('');
+
+    // Append quick "+ เพิ่มหมวด" tile at the end of the grid
+    const addTileHtml = `
+      <button 
+        type="button" 
+        onclick="App.openAddCategoryModal('${type}')"
+        class="p-2 rounded-xl border border-dashed border-slate-300 hover:border-slate-500 bg-white/60 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition-all cursor-pointer group"
+        title="สร้างหมวดหมู่ใหม่"
+      >
+        <span class="text-lg leading-none group-hover:scale-110 transition-transform">➕</span>
+        <span class="text-[10px] font-bold">เพิ่มหมวด</span>
+      </button>
+    `;
+
+    container.innerHTML = itemsHtml + addTileHtml;
   },
 
   selectCategory(containerId, catId) {
@@ -291,6 +312,105 @@ const App = {
         el.classList.remove('selected');
       }
     });
+  },
+
+  // --- Add Custom Category Feature ---
+  openAddCategoryModal(defaultType = null) {
+    const modal = document.getElementById('add-category-modal');
+    const nameInput = document.getElementById('new-cat-name-input');
+    const emojiInput = document.getElementById('new-cat-emoji-input');
+    const colorInput = document.getElementById('new-cat-color-input');
+    const typeRadios = document.querySelectorAll('input[name="new-cat-type"]');
+
+    const targetType = defaultType || this.currentEntryType || 'expense';
+
+    typeRadios.forEach(r => {
+      r.checked = (r.value === targetType);
+    });
+
+    if (nameInput) nameInput.value = '';
+    
+    const defaultEmoji = targetType === 'income' ? '💰' : '🐾';
+    if (emojiInput) emojiInput.value = defaultEmoji;
+    this.updateCategoryEmojiPreview(defaultEmoji);
+
+    const defaultColor = targetType === 'income' ? '#10b981' : '#f43f5e';
+    if (colorInput) colorInput.value = defaultColor;
+
+    // Reset swatch selection
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    const firstSwatch = document.querySelector('.color-swatch');
+    if (firstSwatch) firstSwatch.classList.add('selected');
+
+    if (modal) modal.classList.add('show');
+    if (nameInput) setTimeout(() => nameInput.focus(), 100);
+  },
+
+  closeAddCategoryModal() {
+    const modal = document.getElementById('add-category-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  handleNewCategoryTypeChange(type) {
+    const defaultEmoji = type === 'income' ? '💰' : '🐾';
+    const emojiInput = document.getElementById('new-cat-emoji-input');
+    if (emojiInput) emojiInput.value = defaultEmoji;
+    this.updateCategoryEmojiPreview(defaultEmoji);
+  },
+
+  setNewCategoryEmoji(emoji) {
+    const emojiInput = document.getElementById('new-cat-emoji-input');
+    if (emojiInput) emojiInput.value = emoji;
+    this.updateCategoryEmojiPreview(emoji);
+  },
+
+  updateCategoryEmojiPreview(emoji) {
+    const preview = document.getElementById('new-cat-emoji-preview');
+    if (preview) preview.textContent = emoji || '📦';
+  },
+
+  setNewCategoryColor(color, el) {
+    const colorInput = document.getElementById('new-cat-color-input');
+    if (colorInput) colorInput.value = color;
+
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+  },
+
+  handleSaveNewCategory() {
+    const nameInput = document.getElementById('new-cat-name-input');
+    const emojiInput = document.getElementById('new-cat-emoji-input');
+    const colorInput = document.getElementById('new-cat-color-input');
+    const typeRadio = document.querySelector('input[name="new-cat-type"]:checked');
+
+    const name = (nameInput?.value || '').trim();
+    const emoji = (emojiInput?.value || '').trim() || '📦';
+    const color = colorInput?.value || '#64748b';
+    const type = typeRadio ? typeRadio.value : this.currentEntryType;
+
+    if (!name) {
+      alert('กรุณาระบุชื่อหมวดหมู่');
+      nameInput.focus();
+      return;
+    }
+
+    const newCat = StorageManager.addCategory({
+      name,
+      emoji,
+      color,
+      type
+    });
+
+    this.closeAddCategoryModal();
+
+    // If matches current form type, select it immediately
+    if (type === this.currentEntryType) {
+      this.initCategoryGrid('form-category-grid', type, newCat.id);
+    }
+
+    // Refresh other tabs
+    this.setInlineRecurringType(this.inlineRecurringType);
+    this.showToast(`เพิ่มหมวดหมู่ "${newCat.emoji} ${newCat.name}" สำเร็จ 🎉`);
   },
 
   // --- Quick Recurring Chips (ปุ่มลัดแยกตามประเภท รายจ่าย หรือ รายรับ) ---

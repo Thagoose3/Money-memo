@@ -1,5 +1,5 @@
 /**
- * Storage & Data Management for Money Memo
+ * Storage & Data Management for Money Memo v2.1
  */
 
 const STORAGE_KEYS = {
@@ -17,6 +17,7 @@ const DEFAULT_CATEGORIES = [
   { id: 'exp_transport', name: 'เดินทาง & คมนาคม', emoji: '🚗', color: '#06b6d4', type: 'expense', isDefault: true },
   { id: 'exp_shopping', name: 'ช้อปปิ้ง & เสื้อผ้า', emoji: '🛍️', color: '#ec4899', type: 'expense', isDefault: true },
   { id: 'exp_ent', name: 'บันเทิง & สตรีมมิ่ง', emoji: '🎬', color: '#a855f7', type: 'expense', isDefault: true },
+  { id: 'exp_pets', name: 'สัตว์เลี้ยง & อาหารสัตว์', emoji: '🐾', color: '#10b981', type: 'expense', isDefault: true },
   { id: 'exp_health', name: 'สุขภาพ & ประกัน', emoji: '🛡️', color: '#ef4444', type: 'expense', isDefault: true },
   { id: 'exp_edu', name: 'การศึกษา & พัฒนาตน', emoji: '📚', color: '#3b82f6', type: 'expense', isDefault: true },
   { id: 'exp_other', name: 'ค่าใช้จ่ายอื่นๆ', emoji: '📦', color: '#64748b', type: 'expense', isDefault: true },
@@ -65,7 +66,12 @@ const StorageManager = {
         this.saveCategories(DEFAULT_CATEGORIES);
         return DEFAULT_CATEGORIES;
       }
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+      this.saveCategories(DEFAULT_CATEGORIES);
+      return DEFAULT_CATEGORIES;
     } catch (e) {
       return DEFAULT_CATEGORIES;
     }
@@ -77,6 +83,32 @@ const StorageManager = {
     } catch (e) {
       console.error('Error saving categories:', e);
     }
+  },
+
+  addCategory(category) {
+    const categories = this.getCategories();
+    const type = category.type === 'income' ? 'income' : 'expense';
+    const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : 'รายจ่ายใหม่');
+    
+    const newCat = {
+      id: 'cat_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: name,
+      emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
+      color: category.color || (type === 'income' ? '#10b981' : '#64748b'),
+      type: type,
+      isDefault: false
+    };
+
+    categories.push(newCat);
+    this.saveCategories(categories);
+    return newCat;
+  },
+
+  deleteCategory(id) {
+    let categories = this.getCategories();
+    categories = categories.filter(c => c.id !== id);
+    this.saveCategories(categories);
+    return { success: true };
   },
 
   getCategoryById(id) {
@@ -100,11 +132,12 @@ const StorageManager = {
       return 'inc_other';
     }
 
+    if (/หมา|แมว|สัตว์|เพ็ท|pet|หญ้า|ทรายแมว/.test(lower)) return 'exp_pets';
     if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท|บ้าน/.test(lower)) return 'exp_housing';
     if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi|ais|true|dtac/.test(lower)) return 'exp_bills';
     if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว|ผ่อนรถ/.test(lower)) return 'exp_transport';
-    if (/กิน|อาหาร|ข้าว|กาแฟ|ชา|บุฟเฟต์|สุกี้/.test(lower)) return 'exp_food';
-    if (/ซักผ้า|ของใช้|ช้อป|ซื้อ|เสื้อผ้า/.test(lower)) return 'exp_shopping';
+    if (/กิน|อาหาร|ข้าว|กาแฟ|ชา|บุฟเฟต์|สุกี้|หมูกระทะ/.test(lower)) return 'exp_food';
+    if (/ซักผ้า|ของใช้|ช้อป|ซื้อ|เสื้อผ้า|เครื่องสำอาง/.test(lower)) return 'exp_shopping';
     if (/netflix|spotify|youtube|disney|ดูหนัง|เกม|สตรีม/.test(lower)) return 'exp_ent';
     if (/ยา|หมอ|สุขภาพ|ประกัน|aia|fwd|วิตามิน|คลินิก|ฟิตเนส/.test(lower)) return 'exp_health';
     if (/เรียน|หนังสือ|คอร์ส|ติว|การศึกษา/.test(lower)) return 'exp_edu';
@@ -336,7 +369,7 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '2.0',
+      version: '2.1',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
@@ -369,7 +402,6 @@ const StorageManager = {
         if (Array.isArray(data.categories)) this.saveCategories(data.categories);
         if (Array.isArray(data.recurringItems)) this.saveRecurringItems(data.recurringItems);
         if (Array.isArray(data.fixedExpenses)) {
-          // Migration from v1
           const migrated = data.fixedExpenses.map(e => ({
             id: e.id,
             type: 'expense',
@@ -458,5 +490,6 @@ const StorageManager = {
 
     this.saveTransactions(sampleTxs);
     this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
+    this.saveCategories(DEFAULT_CATEGORIES);
   }
 };

@@ -96,6 +96,20 @@
     .modal-overlay.show {
       display: flex !important;
     }
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .color-swatch:hover {
+      transform: scale(1.15);
+    }
+    .color-swatch.selected {
+      outline: 2px solid #0f172a;
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-[#f8fafc] flex flex-col text-slate-800 antialiased selection:bg-slate-900 selection:text-white">
@@ -253,11 +267,21 @@
               </div>
             </div>
 
-            <!-- เลือกหมวดหมู่ (Category Grid) -->
+            <!-- เลือกหมวดหมู่ (Category Grid with Add Category Button) -->
             <div>
-              <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">เลือกหมวดหมู่ *</label>
-              <div id="form-category-grid" class="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-100">
-                <!-- JS Populates Category items -->
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">เลือกหมวดหมู่ *</label>
+                <button 
+                  type="button" 
+                  onclick="App.openAddCategoryModal()" 
+                  class="text-[11px] text-blue-600 hover:text-blue-700 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                  title="สร้างหมวดหมู่ใหม่"
+                >
+                  <span>➕ เพิ่มหมวดหมู่</span>
+                </button>
+              </div>
+              <div id="form-category-grid" class="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-100">
+                <!-- JS Populates Category items + Add Category Tile -->
               </div>
             </div>
 
@@ -792,6 +816,125 @@
   </main>
 
   <!-- ========================================================== -->
+  <!-- MODAL: ➕ เพิ่มหมวดหมู่ใหม่ (Add Custom Category Modal) -->
+  <!-- ========================================================== -->
+  <div id="add-category-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <span>➕</span> เพิ่มหมวดหมู่ใหม่
+        </h3>
+        <button type="button" onclick="App.closeAddCategoryModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">✕</button>
+      </div>
+
+      <form id="add-category-form" class="space-y-3.5">
+        
+        <!-- Category Type Toggle -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ประเภทหมวดหมู่</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-1.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer">
+              <input type="radio" name="new-cat-type" value="expense" checked onchange="App.handleNewCategoryTypeChange('expense')" class="text-rose-600 focus:ring-rose-500" />
+              <span class="text-xs font-bold text-rose-600">🔴 รายจ่าย (Expense)</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer">
+              <input type="radio" name="new-cat-type" value="income" onchange="App.handleNewCategoryTypeChange('income')" class="text-emerald-600 focus:ring-emerald-500" />
+              <span class="text-xs font-bold text-emerald-600">🟢 รายรับ (Income)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Emoji Selector -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ไอคอนอิโมจิ (Emoji) *</label>
+          <div class="flex items-center gap-2 mb-2">
+            <div id="new-cat-emoji-preview" class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl">
+              🐾
+            </div>
+            <input 
+              type="text" 
+              id="new-cat-emoji-input" 
+              value="🐾" 
+              maxlength="4"
+              class="w-16 text-center px-2 py-2 bg-white border border-slate-200 rounded-xl text-lg font-bold"
+              oninput="App.updateCategoryEmojiPreview(this.value)"
+            />
+            <span class="text-[11px] text-slate-400">เลือกจากด้านล่างหรือพิมพ์เองได้</span>
+          </div>
+
+          <!-- Quick Emoji Palette -->
+          <div class="flex flex-wrap gap-1 p-2 bg-slate-50 rounded-xl border border-slate-100 max-h-24 overflow-y-auto">
+            <button type="button" onclick="App.setNewCategoryEmoji('🐾')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🐾</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🐱')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🐱</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🐶')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🐶</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('☕')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">☕</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🎮')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🎮</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('💄')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">💄</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🏋️')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🏋️</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('✈️')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">✈️</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🍣')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🍣</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🍔')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🍔</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('👕')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">👕</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('💻')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">💻</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('📱')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">📱</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('👶')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">👶</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('💈')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">💈</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🎁')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🎁</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('💰')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">💰</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('📈')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">📈</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🛒')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🛒</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🍺')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🍺</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🎧')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🎧</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🚗')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🚗</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🪴')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🪴</button>
+            <button type="button" onclick="App.setNewCategoryEmoji('🎨')" class="w-7 h-7 hover:bg-white rounded-lg text-base cursor-pointer">🎨</button>
+          </div>
+        </div>
+
+        <!-- Category Name -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อหมวดหมู่ *</label>
+          <input 
+            type="text" 
+            id="new-cat-name-input" 
+            placeholder="เช่น ค่าอาหารสัตว์เลี้ยง, ชาบู/บุฟเฟต์..." 
+            class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800" 
+            required
+          />
+        </div>
+
+        <!-- Color Selection -->
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">สีประจำหมวดหมู่</label>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 flex-1">
+              <span class="color-swatch bg-rose-500 selected" onclick="App.setNewCategoryColor('#f43f5e', this)"></span>
+              <span class="color-swatch bg-orange-500" onclick="App.setNewCategoryColor('#f97316', this)"></span>
+              <span class="color-swatch bg-amber-500" onclick="App.setNewCategoryColor('#eab308', this)"></span>
+              <span class="color-swatch bg-emerald-500" onclick="App.setNewCategoryColor('#10b981', this)"></span>
+              <span class="color-swatch bg-cyan-500" onclick="App.setNewCategoryColor('#06b6d4', this)"></span>
+              <span class="color-swatch bg-blue-500" onclick="App.setNewCategoryColor('#3b82f6', this)"></span>
+              <span class="color-swatch bg-purple-500" onclick="App.setNewCategoryColor('#8b5cf6', this)"></span>
+              <span class="color-swatch bg-pink-500" onclick="App.setNewCategoryColor('#ec4899', this)"></span>
+              <span class="color-swatch bg-slate-600" onclick="App.setNewCategoryColor('#475569', this)"></span>
+            </div>
+            <input type="hidden" id="new-cat-color-input" value="#f43f5e" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="App.closeAddCategoryModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all cursor-pointer">
+            ➕ บันทึกหมวดหมู่
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
   <!-- MODAL: ⚡ นำเข้ารายการประจำเดือน (Batch Import Recurring Items) -->
   <!-- ========================================================== -->
   <div id="quick-fixed-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
@@ -971,8 +1114,11 @@
         </div>
 
         <div>
-          <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">หมวดหมู่</label>
-          <div id="edit-category-grid" class="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto p-1 bg-slate-50 rounded-lg border border-slate-100">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase">หมวดหมู่</label>
+            <button type="button" onclick="App.openAddCategoryModal()" class="text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer">+ เพิ่มหมวด</button>
+          </div>
+          <div id="edit-category-grid" class="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-slate-50 rounded-lg border border-slate-100">
             <!-- Edit category grid -->
           </div>
         </div>
@@ -1048,8 +1194,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/storage.js?v=2.0"></script>
-  <script src="js/budget-simulator.js?v=2.0"></script>
-  <script src="js/app.js?v=2.0"></script>
+  <script src="js/storage.js?v=2.1"></script>
+  <script src="js/budget-simulator.js?v=2.1"></script>
+  <script src="js/app.js?v=2.1"></script>
 </body>
 </html>

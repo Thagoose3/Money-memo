@@ -1,18 +1,22 @@
 /**
- * Main Application Controller for Money Memo
+ * Main Application Controller for Money Memo v2.0
  */
 
 const App = {
-  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'fixed-expenses'
+  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'recurring'
   dashboardViewMode: 'overview', // 'overview' (Monthly charts) or 'daily' (Daily breakdown)
   selectedDate: new Date(), // สำหรับ Dashboard
   currentEntryType: 'expense', // 'expense' or 'income' for transaction form
   selectedCategoryId: null,
   
+  // Tab 4 (Recurring Items) state
+  inlineRecurringType: 'expense', // 'expense' or 'income'
+  recurringCardFilter: 'all', // 'all', 'expense', 'income'
+  editingRecurringId: null,
+
   // Modals & Pending actions
   editingTransactionId: null,
   deletingTransactionId: null,
-  editingFixedExpenseId: null,
 
   // Chart instances
   categoryChart: null,
@@ -21,7 +25,6 @@ const App = {
   init() {
     this.initDateTimeInput();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
-    this.initFixedCategoryDropdowns();
     this.bindEvents();
     this.renderMonthSelector();
     this.renderAll();
@@ -36,17 +39,6 @@ const App = {
     if (dateInput) {
       dateInput.value = localDateTime;
     }
-  },
-
-  initFixedCategoryDropdowns() {
-    const categories = StorageManager.getCategories().filter(c => c.type === 'expense');
-    const inlineSelect = document.getElementById('inline-fixed-category');
-    const modalSelect = document.getElementById('fixed-modal-category');
-
-    const optionsHtml = categories.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
-
-    if (inlineSelect) inlineSelect.innerHTML = optionsHtml;
-    if (modalSelect) modalSelect.innerHTML = optionsHtml;
   },
 
   bindEvents() {
@@ -66,7 +58,7 @@ const App = {
       typeToggleInc.addEventListener('click', () => this.setEntryType('income'));
     }
 
-    // Quick Amount Chips
+    // Quick Amount Chips in Form
     document.querySelectorAll('.amount-chip').forEach(chip => {
       chip.addEventListener('click', (e) => {
         const addVal = parseFloat(e.currentTarget.getAttribute('data-val')) || 0;
@@ -88,21 +80,21 @@ const App = {
       });
     }
 
-    // Fixed Expense Inline Form Submit
-    const inlineFixedForm = document.getElementById('fixed-inline-add-form');
-    if (inlineFixedForm) {
-      inlineFixedForm.addEventListener('submit', (e) => {
+    // Recurring Inline Add Form Submit
+    const inlineRecForm = document.getElementById('recurring-inline-add-form');
+    if (inlineRecForm) {
+      inlineRecForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleSaveInlineFixedExpense();
+        this.handleSaveInlineRecurring();
       });
     }
 
-    // Fixed Expense Modal Form Submit
-    const fixedModalForm = document.getElementById('fixed-expense-form');
-    if (fixedModalForm) {
-      fixedModalForm.addEventListener('submit', (e) => {
+    // Recurring Modal Form Submit
+    const modalRecForm = document.getElementById('recurring-modal-form');
+    if (modalRecForm) {
+      modalRecForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        this.handleSaveModalFixedExpense();
+        this.handleSaveModalRecurring();
       });
     }
 
@@ -220,9 +212,9 @@ const App = {
     } else if (tabName === 'transactions') {
       this.renderTransactionList();
       this.renderQuickFixedChips();
-    } else if (tabName === 'fixed-expenses') {
-      this.initFixedCategoryDropdowns();
-      this.renderFixedExpensesTab();
+    } else if (tabName === 'recurring') {
+      this.setInlineRecurringType(this.inlineRecurringType);
+      this.renderRecurringTab();
     } else if (tabName === 'simulator') {
       BudgetSimulator.render();
     }
@@ -236,18 +228,18 @@ const App = {
 
     if (type === 'expense') {
       typeToggleExp.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายจ่าย (Expense)';
+      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> 🔴 รายจ่าย (Expense)';
       typeToggleInc.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> รายรับ (Income)';
+      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 🟢 รายรับ (Income)';
       if (submitBtn) {
         submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = '<span>➕ บันทึกรายจ่าย</span>';
       }
     } else {
       typeToggleExp.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> รายจ่าย (Expense)';
+      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 🔴 รายจ่าย (Expense)';
       typeToggleInc.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายรับ (Income)';
+      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> 🟢 รายรับ (Income)';
       if (submitBtn) {
         submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = '<span>➕ บันทึกรายรับ</span>';
@@ -255,6 +247,7 @@ const App = {
     }
 
     this.initCategoryGrid('form-category-grid', type);
+    this.renderQuickFixedChips();
   },
 
   initCategoryGrid(containerId, type, preselectedId = null) {
@@ -300,67 +293,122 @@ const App = {
     });
   },
 
-  // --- Quick Fixed Chips (ปุ่มลัดรายจ่ายประจำในหน้าแรก) ---
+  // --- Quick Recurring Chips (ปุ่มลัดแยกตามประเภท รายจ่าย หรือ รายรับ) ---
   renderQuickFixedChips() {
     const container = document.getElementById('quick-fixed-chips-list');
+    const titleEl = document.getElementById('quick-chips-title');
     if (!container) return;
 
-    const fixedExpenses = StorageManager.getFixedExpenses();
+    const isExpense = this.currentEntryType === 'expense';
+    if (titleEl) {
+      titleEl.textContent = isExpense ? 'ปุ่มลัดรายจ่ายประจำ:' : 'ปุ่มลัดรายรับประจำ:';
+    }
 
-    if (fixedExpenses.length === 0) {
+    const allRecurring = StorageManager.getRecurringItems();
+    const filtered = allRecurring.filter(item => item.type === this.currentEntryType);
+
+    if (filtered.length === 0) {
       container.innerHTML = `
-        <span class="text-xs text-slate-400">ยังไม่มีปุ่มลัด (กด "+ เพิ่มปุ่มลัด" เพื่อตั้งค่า)</span>
+        <span class="text-xs text-slate-400">ยังไม่มีปุ่มลัด${isExpense ? 'รายจ่าย' : 'รายรับ'} (กด "+ ตั้งค่าปุ่มลัด" เพื่อเพิ่ม)</span>
       `;
       return;
     }
 
-    container.innerHTML = fixedExpenses.map(item => {
-      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name));
+    container.innerHTML = filtered.map(item => {
+      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name, item.type));
       return `
         <button 
           type="button" 
-          onclick="App.quickFillFromFixed('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.amount})"
+          onclick="App.quickFillFromRecurring('${item.id}')"
           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 shadow-xs transition-all group cursor-pointer"
           title="กดเพื่อกรอก ${item.name} ฿${item.amount.toLocaleString()} ลงฟอร์มทันที"
         >
           <span>${cat.emoji}</span>
           <span class="truncate max-w-[120px]">${item.name}</span>
-          <span class="num-font text-[11px] font-bold text-slate-500 group-hover:text-slate-300">฿${item.amount.toLocaleString()}</span>
+          <span class="num-font text-[11px] font-bold ${isExpense ? 'text-rose-500 group-hover:text-rose-300' : 'text-emerald-500 group-hover:text-emerald-300'}">฿${item.amount.toLocaleString()}</span>
         </button>
       `;
     }).join('');
   },
 
-  quickFillFromFixed(id, name, amount) {
-    this.setEntryType('expense');
+  quickFillFromRecurring(id) {
+    const item = StorageManager.getRecurringItems().find(e => e.id === id);
+    if (!item) return;
+
+    this.setEntryType(item.type || 'expense');
+
     const amountInput = document.getElementById('tx-amount');
     const noteInput = document.getElementById('tx-note');
     const paymentInput = document.getElementById('tx-payment-method');
 
-    const fixedItem = StorageManager.getFixedExpenses().find(e => e.id === id);
-
     if (amountInput) {
-      amountInput.value = amount;
+      amountInput.value = item.amount;
       amountInput.focus();
     }
     if (noteInput) {
-      noteInput.value = name;
+      noteInput.value = item.name;
     }
-    if (paymentInput && fixedItem && fixedItem.paymentMethod) {
-      paymentInput.value = fixedItem.paymentMethod;
+    if (paymentInput && item.paymentMethod) {
+      paymentInput.value = item.paymentMethod;
     }
 
-    const catId = (fixedItem && fixedItem.categoryId) ? fixedItem.categoryId : StorageManager.guessCategoryByName(name);
+    const catId = item.categoryId || StorageManager.guessCategoryByName(item.name, item.type);
     this.selectCategory('form-category-grid', catId);
 
-    this.showToast(`กรอก "${name}" ฿${amount.toLocaleString()} ลงฟอร์มแล้ว ✨`);
+    this.showToast(`กรอก "${item.name}" ฿${item.amount.toLocaleString()} ลงฟอร์มแล้ว ✨`);
   },
 
-  // --- Fixed Expenses Tab Management (แท็บจัดการรายจ่ายประจำเดือน) ---
-  presetFixedExpense(name, amount, catId) {
-    const nameInput = document.getElementById('inline-fixed-name');
-    const amountInput = document.getElementById('inline-fixed-amount');
-    const catSelect = document.getElementById('inline-fixed-category');
+  // --- TAB 4: Recurring Transactions Management (รายรับ & รายจ่าย ประจำเดือน) ---
+  setInlineRecurringType(type) {
+    this.inlineRecurringType = type;
+    const expBtn = document.getElementById('inline-rec-type-exp');
+    const incBtn = document.getElementById('inline-rec-type-inc');
+    const catSelect = document.getElementById('inline-rec-category');
+
+    if (type === 'expense') {
+      if (expBtn) expBtn.className = 'py-1.5 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
+      if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-lg font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer';
+    } else {
+      if (expBtn) expBtn.className = 'py-1.5 px-3 rounded-lg font-medium text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer';
+      if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
+    }
+
+    // Populate Category Dropdown based on chosen type
+    if (catSelect) {
+      const categories = StorageManager.getCategories().filter(c => c.type === type);
+      catSelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+    }
+
+    this.renderInlinePresets();
+  },
+
+  renderInlinePresets() {
+    const container = document.getElementById('inline-rec-presets-container');
+    if (!container) return;
+
+    if (this.inlineRecurringType === 'expense') {
+      container.innerHTML = `
+        <button type="button" onclick="App.presetRecurringItem('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 ค่าเช่าห้อง</button>
+        <button type="button" onclick="App.presetRecurringItem('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 ค่าน้ำไฟ</button>
+        <button type="button" onclick="App.presetRecurringItem('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 ค่าเน็ต</button>
+        <button type="button" onclick="App.presetRecurringItem('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 ค่าเดินทาง</button>
+        <button type="button" onclick="App.presetRecurringItem('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
+        <button type="button" onclick="App.presetRecurringItem('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ ประกันสุขภาพ</button>
+      `;
+    } else {
+      container.innerHTML = `
+        <button type="button" onclick="App.presetRecurringItem('เงินเดือนประจำ', 18000, 'inc_salary')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 💼 เงินเดือนประจำ</button>
+        <button type="button" onclick="App.presetRecurringItem('ค่าจ้างงานเสริมประจำ', 3000, 'inc_business')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🛒 รายได้งานเสริม</button>
+        <button type="button" onclick="App.presetRecurringItem('โบนัส / คอมมิชชั่นประจำ', 2000, 'inc_bonus')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🎁 โบนัส/คอมมิชชั่น</button>
+        <button type="button" onclick="App.presetRecurringItem('เงินปันผล / ดอกเบี้ยประจำ', 1000, 'inc_invest')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 📈 ปันผลประจำ</button>
+      `;
+    }
+  },
+
+  presetRecurringItem(name, amount, catId) {
+    const nameInput = document.getElementById('inline-rec-name');
+    const amountInput = document.getElementById('inline-rec-amount');
+    const catSelect = document.getElementById('inline-rec-category');
 
     if (nameInput) nameInput.value = name;
     if (amountInput) {
@@ -369,17 +417,17 @@ const App = {
     }
     if (catSelect && catId) catSelect.value = catId;
 
-    this.showToast(`เลือก "${name}" แล้ว สามารถปรับแก้ตัวเลขแล้วกดบันทึกได้เลย`);
+    this.showToast(`เลือกตัวอย่าง "${name}" แล้ว สามารถปรับแก้ตัวเลขแล้วกดบันทึกได้เลย`);
   },
 
-  handleSaveInlineFixedExpense() {
-    const nameInput = document.getElementById('inline-fixed-name');
-    const amountInput = document.getElementById('inline-fixed-amount');
-    const catSelect = document.getElementById('inline-fixed-category');
+  handleSaveInlineRecurring() {
+    const nameInput = document.getElementById('inline-rec-name');
+    const amountInput = document.getElementById('inline-rec-amount');
+    const catSelect = document.getElementById('inline-rec-category');
 
     const name = (nameInput?.value || '').trim();
     const amount = Math.max(0, parseFloat(amountInput?.value) || 0);
-    const categoryId = catSelect?.value || StorageManager.guessCategoryByName(name);
+    const categoryId = catSelect?.value || StorageManager.guessCategoryByName(name, this.inlineRecurringType);
 
     if (!name) {
       alert('กรุณากรอกชื่อรายการ');
@@ -392,7 +440,8 @@ const App = {
       return;
     }
 
-    StorageManager.addFixedExpense({
+    StorageManager.addRecurringItem({
+      type: this.inlineRecurringType,
       name,
       amount,
       categoryId,
@@ -403,36 +452,72 @@ const App = {
     if (amountInput) amountInput.value = '';
 
     this.renderAll();
-    BudgetSimulator.render();
-    this.showToast(`เพิ่มรายจ่ายประจำ "${name}" ฿${amount.toLocaleString()} สำเร็จ 🎉`);
+    this.showToast(`เพิ่ม${this.inlineRecurringType === 'expense' ? 'รายจ่าย' : 'รายรับ'}ประจำ "${name}" ฿${amount.toLocaleString()} สำเร็จ 🎉`);
   },
 
-  renderFixedExpensesTab() {
-    const container = document.getElementById('fixed-expenses-cards-list');
-    const totalAmountEl = document.getElementById('fixed-tab-total-amount');
-    const totalCountEl = document.getElementById('fixed-tab-total-count');
+  setRecurringCardFilter(filter) {
+    this.recurringCardFilter = filter;
+    
+    const allBtn = document.getElementById('rec-filter-all');
+    const expBtn = document.getElementById('rec-filter-expense');
+    const incBtn = document.getElementById('rec-filter-income');
 
-    const fixedExpenses = StorageManager.getFixedExpenses();
-    const totalAmount = fixedExpenses.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    [allBtn, expBtn, incBtn].forEach(b => {
+      if (b) b.className = 'px-2.5 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 cursor-pointer';
+    });
 
-    if (totalAmountEl) totalAmountEl.textContent = '฿' + totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 });
-    if (totalCountEl) totalCountEl.textContent = `${fixedExpenses.length} รายการ`;
+    if (filter === 'all' && allBtn) allBtn.className = 'px-2.5 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-xs cursor-pointer';
+    if (filter === 'expense' && expBtn) expBtn.className = 'px-2.5 py-1 rounded-lg font-bold bg-rose-500 text-white shadow-xs cursor-pointer';
+    if (filter === 'income' && incBtn) incBtn.className = 'px-2.5 py-1 rounded-lg font-bold bg-emerald-500 text-white shadow-xs cursor-pointer';
+
+    this.renderRecurringTab();
+  },
+
+  renderRecurringTab() {
+    const container = document.getElementById('recurring-items-cards-list');
+    const totalIncomeEl = document.getElementById('rec-tab-total-income');
+    const totalExpenseEl = document.getElementById('rec-tab-total-expense');
+    const netEl = document.getElementById('rec-tab-net-amount');
+
+    const allItems = StorageManager.getRecurringItems();
+    
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    allItems.forEach(item => {
+      if (item.type === 'income') totalIncome += (item.amount || 0);
+      else totalExpense += (item.amount || 0);
+    });
+
+    const net = totalIncome - totalExpense;
+
+    if (totalIncomeEl) totalIncomeEl.textContent = '฿' + totalIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    if (totalExpenseEl) totalExpenseEl.textContent = '฿' + totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    if (netEl) {
+      netEl.textContent = (net >= 0 ? '+' : '') + '฿' + net.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+      netEl.className = `text-2xl font-extrabold num-font ${net >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
+    }
 
     if (!container) return;
 
-    if (fixedExpenses.length === 0) {
+    let filtered = allItems;
+    if (this.recurringCardFilter === 'expense') filtered = allItems.filter(e => e.type === 'expense');
+    if (this.recurringCardFilter === 'income') filtered = allItems.filter(e => e.type === 'income');
+
+    if (filtered.length === 0) {
       container.innerHTML = `
         <div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
           <span class="text-3xl block mb-1">📌</span>
-          <p class="font-bold text-slate-700 text-sm">ยังไม่มีรายการรายจ่ายประจำเดือน</p>
+          <p class="font-bold text-slate-700 text-sm">ยังไม่มีรายการประจำในหมวดนี้</p>
           <p class="text-xs text-slate-400 mt-1">กรอกข้อมูลที่กล่องด้านบน หรือกดเลือกตัวอย่างเพื่อเริ่มเพิ่มรายการ</p>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = fixedExpenses.map(item => {
-      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name));
+    container.innerHTML = filtered.map(item => {
+      const isExp = item.type === 'expense';
+      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name, item.type));
       return `
         <div class="minimal-card p-4 rounded-2xl flex flex-col justify-between gap-3 group">
           <div class="flex items-start justify-between gap-3">
@@ -441,7 +526,12 @@ const App = {
                 ${cat.emoji}
               </div>
               <div>
-                <h4 class="font-bold text-slate-900 text-sm">${item.name}</h4>
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-slate-900 text-sm">${item.name}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded-full font-bold ${isExp ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">
+                    ${isExp ? 'รายจ่าย' : 'รายรับ'}
+                  </span>
+                </div>
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[11px] text-slate-500">${cat.name}</span>
                   <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'}</span>
@@ -449,7 +539,9 @@ const App = {
               </div>
             </div>
             <div class="text-right">
-              <span class="text-lg font-extrabold text-slate-900 num-font">฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+              <span class="text-lg font-extrabold num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+                ${isExp ? '-' : '+'}฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              </span>
               <span class="text-[10px] text-slate-400 block">/ เดือน</span>
             </div>
           </div>
@@ -457,18 +549,18 @@ const App = {
           <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
             <button 
               type="button"
-              onclick="App.quickLogFixedExpense('${item.id}')"
-              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-semibold transition-all cursor-pointer"
+              onclick="App.quickLogRecurring('${item.id}')"
+              class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${isExp ? 'bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700' : 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700'} font-semibold transition-all cursor-pointer"
               title="บันทึกยอดนี้เข้าบัญชีเดือนนี้ทันที"
             >
               <span>⚡ บันทึกลงบัญชีทันที</span>
             </button>
 
             <div class="flex items-center gap-1">
-              <button type="button" onclick="App.openEditFixedExpenseModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="แก้ไข">
+              <button type="button" onclick="App.openEditRecurringModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="แก้ไข">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button type="button" onclick="App.deleteFixedExpense('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
+              <button type="button" onclick="App.deleteRecurring('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -478,76 +570,89 @@ const App = {
     }).join('');
   },
 
-  openAddFixedExpenseModal() {
-    this.editingFixedExpenseId = null;
-    const titleEl = document.getElementById('fixed-modal-title');
-    const idInput = document.getElementById('fixed-modal-id');
-    const nameInput = document.getElementById('fixed-modal-name');
-    const amountInput = document.getElementById('fixed-modal-amount');
-    const catSelect = document.getElementById('fixed-modal-category');
-    const paymentSelect = document.getElementById('fixed-modal-payment');
+  openAddRecurringModal() {
+    this.editingRecurringId = null;
+    const titleEl = document.getElementById('recurring-modal-title');
+    const idInput = document.getElementById('recurring-modal-id');
+    const nameInput = document.getElementById('recurring-modal-name');
+    const amountInput = document.getElementById('recurring-modal-amount');
+    const paymentSelect = document.getElementById('recurring-modal-payment');
+    const typeRadios = document.querySelectorAll('input[name="modal-rec-type"]');
 
-    if (titleEl) titleEl.textContent = 'เพิ่มรายจ่ายประจำเดือน';
+    if (titleEl) titleEl.textContent = 'เพิ่มรายการประจำเดือน';
     if (idInput) idInput.value = '';
     if (nameInput) nameInput.value = '';
     if (amountInput) amountInput.value = '';
     
-    this.initFixedCategoryDropdowns();
+    typeRadios.forEach(r => {
+      r.checked = (r.value === this.inlineRecurringType);
+    });
+
+    this.handleModalTypeChange(this.inlineRecurringType);
+
     if (paymentSelect) paymentSelect.value = 'โอนเงิน / บัญชีธนาคาร';
 
-    const modal = document.getElementById('fixed-expense-modal');
-    if (modal) {
-      modal.classList.add('show');
+    const modal = document.getElementById('recurring-modal');
+    if (modal) modal.classList.add('show');
+  },
+
+  handleModalTypeChange(type) {
+    const catSelect = document.getElementById('recurring-modal-category');
+    if (catSelect) {
+      const categories = StorageManager.getCategories().filter(c => c.type === type);
+      catSelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
     }
   },
 
-  openEditFixedExpenseModal(id) {
-    const fixedExpenses = StorageManager.getFixedExpenses();
-    const item = fixedExpenses.find(e => e.id === id);
+  openEditRecurringModal(id) {
+    const item = StorageManager.getRecurringItems().find(e => e.id === id);
     if (!item) return;
 
-    this.editingFixedExpenseId = id;
-    const titleEl = document.getElementById('fixed-modal-title');
-    const idInput = document.getElementById('fixed-modal-id');
-    const nameInput = document.getElementById('fixed-modal-name');
-    const amountInput = document.getElementById('fixed-modal-amount');
-    const catSelect = document.getElementById('fixed-modal-category');
-    const paymentSelect = document.getElementById('fixed-modal-payment');
+    this.editingRecurringId = id;
+    const titleEl = document.getElementById('recurring-modal-title');
+    const idInput = document.getElementById('recurring-modal-id');
+    const nameInput = document.getElementById('recurring-modal-name');
+    const amountInput = document.getElementById('recurring-modal-amount');
+    const catSelect = document.getElementById('recurring-modal-category');
+    const paymentSelect = document.getElementById('recurring-modal-payment');
+    const typeRadios = document.querySelectorAll('input[name="modal-rec-type"]');
 
-    if (titleEl) titleEl.textContent = 'แก้ไขรายจ่ายประจำเดือน';
+    if (titleEl) titleEl.textContent = 'แก้ไขรายการประจำเดือน';
     if (idInput) idInput.value = item.id;
     if (nameInput) nameInput.value = item.name;
     if (amountInput) amountInput.value = item.amount;
 
-    this.initFixedCategoryDropdowns();
+    typeRadios.forEach(r => {
+      r.checked = (r.value === item.type);
+    });
+
+    this.handleModalTypeChange(item.type);
     if (catSelect) {
-      catSelect.value = item.categoryId || StorageManager.guessCategoryByName(item.name);
+      catSelect.value = item.categoryId || StorageManager.guessCategoryByName(item.name, item.type);
     }
     if (paymentSelect) paymentSelect.value = item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร';
 
-    const modal = document.getElementById('fixed-expense-modal');
-    if (modal) {
-      modal.classList.add('show');
-    }
+    const modal = document.getElementById('recurring-modal');
+    if (modal) modal.classList.add('show');
   },
 
-  closeFixedExpenseModal() {
-    this.editingFixedExpenseId = null;
-    const modal = document.getElementById('fixed-expense-modal');
-    if (modal) {
-      modal.classList.remove('show');
-    }
+  closeRecurringModal() {
+    this.editingRecurringId = null;
+    const modal = document.getElementById('recurring-modal');
+    if (modal) modal.classList.remove('show');
   },
 
-  handleSaveModalFixedExpense() {
-    const nameInput = document.getElementById('fixed-modal-name');
-    const amountInput = document.getElementById('fixed-modal-amount');
-    const catSelect = document.getElementById('fixed-modal-category');
-    const paymentSelect = document.getElementById('fixed-modal-payment');
+  handleSaveModalRecurring() {
+    const nameInput = document.getElementById('recurring-modal-name');
+    const amountInput = document.getElementById('recurring-modal-amount');
+    const catSelect = document.getElementById('recurring-modal-category');
+    const paymentSelect = document.getElementById('recurring-modal-payment');
+    const typeRadio = document.querySelector('input[name="modal-rec-type"]:checked');
 
+    const type = typeRadio ? typeRadio.value : 'expense';
     const name = (nameInput?.value || '').trim();
     const amount = Math.max(0, parseFloat(amountInput?.value) || 0);
-    const categoryId = catSelect?.value || 'exp_bills';
+    const categoryId = catSelect?.value || (type === 'income' ? 'inc_salary' : 'exp_bills');
     const paymentMethod = paymentSelect?.value || 'โอนเงิน / บัญชีธนาคาร';
 
     if (!name) {
@@ -555,34 +660,37 @@ const App = {
       nameInput.focus();
       return;
     }
-
-    if (this.editingFixedExpenseId) {
-      StorageManager.updateFixedExpense(this.editingFixedExpenseId, { name, amount, categoryId, paymentMethod });
-      this.showToast(`อัปเดต "${name}" เรียบร้อย ✅`);
-    } else {
-      StorageManager.addFixedExpense({ name, amount, categoryId, paymentMethod });
-      this.showToast(`เพิ่มรายจ่ายประจำ "${name}" เรียบร้อย 🎉`);
+    if (amount <= 0) {
+      alert('กรุณาระบุจำนวนเงินที่มากกว่า 0 บาท');
+      amountInput.focus();
+      return;
     }
 
-    this.closeFixedExpenseModal();
+    if (this.editingRecurringId) {
+      StorageManager.updateRecurringItem(this.editingRecurringId, { type, name, amount, categoryId, paymentMethod });
+      this.showToast(`อัปเดต "${name}" เรียบร้อย ✅`);
+    } else {
+      StorageManager.addRecurringItem({ type, name, amount, categoryId, paymentMethod });
+      this.showToast(`เพิ่มรายการประจำ "${name}" เรียบร้อย 🎉`);
+    }
+
+    this.closeRecurringModal();
     this.renderAll();
-    BudgetSimulator.render();
   },
 
-  deleteFixedExpense(id) {
-    const item = StorageManager.getFixedExpenses().find(e => e.id === id);
+  deleteRecurring(id) {
+    const item = StorageManager.getRecurringItems().find(e => e.id === id);
     const name = item ? item.name : 'รายการนี้';
 
-    if (confirm(`คุณต้องการลบรายจ่ายประจำ "${name}" ใช่หรือไม่?`)) {
-      StorageManager.deleteFixedExpense(id);
+    if (confirm(`คุณต้องการลบรายการประจำ "${name}" ใช่หรือไม่?`)) {
+      StorageManager.deleteRecurringItem(id);
       this.renderAll();
-      BudgetSimulator.render();
       this.showToast(`ลบ "${name}" เรียบร้อยแล้ว`);
     }
   },
 
-  quickLogFixedExpense(id) {
-    const item = StorageManager.getFixedExpenses().find(e => e.id === id);
+  quickLogRecurring(id) {
+    const item = StorageManager.getRecurringItems().find(e => e.id === id);
     if (!item) return;
 
     const now = new Date();
@@ -590,9 +698,9 @@ const App = {
     const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
     StorageManager.addTransaction({
-      type: 'expense',
+      type: item.type || 'expense',
       amount: item.amount,
-      categoryId: item.categoryId || StorageManager.guessCategoryByName(item.name),
+      categoryId: item.categoryId || StorageManager.guessCategoryByName(item.name, item.type),
       date: dateStr,
       paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
       note: item.name
@@ -602,7 +710,7 @@ const App = {
     this.showToast(`บันทึก "${item.name}" ฿${item.amount.toLocaleString()} ลงบัญชีแล้ว ⚡`);
   },
 
-  // --- Batch Import Modal (นำเข้ารายจ่ายประจำหลายรายการ) ---
+  // --- Batch Import Modal (นำเข้ารายการประจำพร้อมกันหลายรายการ) ---
   openQuickFixedModal() {
     const modal = document.getElementById('quick-fixed-modal');
     const dateInput = document.getElementById('batch-import-date');
@@ -613,69 +721,71 @@ const App = {
     }
 
     this.renderQuickFixedModalList();
-    if (modal) {
-      modal.classList.add('show');
-    }
+    if (modal) modal.classList.add('show');
   },
 
   closeQuickFixedModal() {
     const modal = document.getElementById('quick-fixed-modal');
-    if (modal) {
-      modal.classList.remove('show');
-    }
+    if (modal) modal.classList.remove('show');
   },
 
   renderQuickFixedModalList() {
     const container = document.getElementById('batch-fixed-items-list');
     if (!container) return;
 
-    const fixedExpenses = StorageManager.getFixedExpenses();
-    const categories = StorageManager.getCategories().filter(c => c.type === 'expense');
+    const allItems = StorageManager.getRecurringItems();
+    const expCategories = StorageManager.getCategories().filter(c => c.type === 'expense');
+    const incCategories = StorageManager.getCategories().filter(c => c.type === 'income');
 
-    if (fixedExpenses.length === 0) {
+    if (allItems.length === 0) {
       container.innerHTML = `
         <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-          <p class="text-xs font-semibold text-slate-600">ยังไม่มีรายการรายจ่ายประจำ</p>
-          <p class="text-[11px] text-slate-400 mt-0.5">คุณสามารถตั้งค่ารายการได้ที่แท็บ "รายจ่ายประจำเดือน"</p>
+          <p class="text-xs font-semibold text-slate-600">ยังไม่มีรายการประจำเดือน</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">คุณสามารถตั้งค่ารายการได้ที่แท็บ "รายการประจำเดือน"</p>
         </div>
       `;
       this.updateBatchTotal();
       return;
     }
 
-    container.innerHTML = fixedExpenses.map((item) => {
-      const currentCatId = item.categoryId || StorageManager.guessCategoryByName(item.name);
+    container.innerHTML = allItems.map((item) => {
+      const isExp = item.type === 'expense';
+      const categories = isExp ? expCategories : incCategories;
+      const currentCatId = item.categoryId || StorageManager.guessCategoryByName(item.name, item.type);
       
       const catOptionsHtml = categories.map(c => `
         <option value="${c.id}" ${c.id === currentCatId ? 'selected' : ''}>${c.emoji} ${c.name}</option>
       `).join('');
 
       return `
-        <div class="flex items-center gap-2.5 p-2.5 bg-slate-50/80 hover:bg-slate-100/70 rounded-xl border border-slate-200/80 transition-all batch-item-row" data-id="${item.id}">
+        <div class="flex items-center gap-2.5 p-2.5 bg-slate-50/80 hover:bg-slate-100/70 rounded-xl border border-slate-200/80 transition-all batch-item-row" data-id="${item.id}" data-type="${item.type}">
           <input 
             type="checkbox" 
             class="batch-item-checkbox rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
             checked
             onchange="App.updateBatchTotal()"
           />
+          <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+            ${isExp ? 'จ่าย' : 'รับ'}
+          </span>
           <div class="flex-1 min-w-0">
             <input 
               type="text" 
-              class="batch-item-name w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
+              class="batch-item-name w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
               value="${item.name}"
               placeholder="ชื่อรายการ"
             />
           </div>
-          <div class="w-36">
+          <div class="w-32">
             <select class="batch-item-category w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-[11px] text-slate-700 font-medium focus:outline-none">
               ${catOptionsHtml}
             </select>
           </div>
-          <div class="relative w-28">
-            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+          <div class="relative w-24">
+            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
             <input 
               type="number" 
-              class="batch-item-amount w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-xs text-right font-bold text-slate-900 num-font focus:outline-none"
+              class="batch-item-amount w-full bg-white border border-slate-200 rounded-lg pl-5 pr-1.5 py-1 text-xs text-right font-bold text-slate-900 num-font focus:outline-none"
               value="${item.amount}"
               step="50"
               oninput="App.updateBatchTotal()"
@@ -728,15 +838,16 @@ const App = {
       const nameInput = row.querySelector('.batch-item-name');
       const catSelect = row.querySelector('.batch-item-category');
       const amountInput = row.querySelector('.batch-item-amount');
+      const type = row.getAttribute('data-type') || 'expense';
 
       if (cb && cb.checked) {
         const name = (nameInput?.value || '').trim();
-        const categoryId = catSelect?.value || 'exp_bills';
+        const categoryId = catSelect?.value || (type === 'income' ? 'inc_salary' : 'exp_bills');
         const amount = Math.max(0, parseFloat(amountInput?.value) || 0);
 
         if (amount > 0) {
           txsToSave.push({
-            type: 'expense',
+            type: type,
             amount: amount,
             categoryId: categoryId,
             date: batchDate,
@@ -755,7 +866,7 @@ const App = {
     const count = StorageManager.addTransactionsBatch(txsToSave);
     this.closeQuickFixedModal();
     this.renderAll();
-    this.showToast(`นำเข้ารายจ่ายประจำเดือนสำเร็จ ${count} รายการ 🎉`);
+    this.showToast(`นำเข้ารายการประจำเดือนสำเร็จ ${count} รายการ 🎉`);
   },
 
   // --- Transactions Tab Logic ---
@@ -1271,17 +1382,13 @@ const App = {
 
     this.initCategoryGrid('edit-category-grid', tx.type, tx.categoryId);
 
-    if (modal) {
-      modal.classList.add('show');
-    }
+    if (modal) modal.classList.add('show');
   },
 
   closeEditModal() {
     this.editingTransactionId = null;
     const modal = document.getElementById('edit-modal');
-    if (modal) {
-      modal.classList.remove('show');
-    }
+    if (modal) modal.classList.remove('show');
   },
 
   handleUpdateTransaction() {
@@ -1338,17 +1445,13 @@ const App = {
       `;
     }
 
-    if (modal) {
-      modal.classList.add('show');
-    }
+    if (modal) modal.classList.add('show');
   },
 
   closeDeleteModal() {
     this.deletingTransactionId = null;
     const modal = document.getElementById('delete-modal');
-    if (modal) {
-      modal.classList.remove('show');
-    }
+    if (modal) modal.classList.remove('show');
   },
 
   confirmDeleteTransaction() {
@@ -1364,7 +1467,7 @@ const App = {
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.renderTransactionList();
     this.renderDashboard();
-    this.renderFixedExpensesTab();
+    this.renderRecurringTab();
     this.renderQuickFixedChips();
   },
 

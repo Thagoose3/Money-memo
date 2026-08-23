@@ -6,7 +6,7 @@ const STORAGE_KEYS = {
   TRANSACTIONS: 'smart_expense_transactions_v1',
   CATEGORIES: 'smart_expense_categories_v1',
   BUDGET_SIMULATOR: 'smart_expense_budget_sim_v1',
-  FIXED_EXPENSES: 'smart_expense_fixed_list_v1'
+  RECURRING_ITEMS: 'smart_expense_recurring_list_v2'
 };
 
 const DEFAULT_CATEGORIES = [
@@ -29,18 +29,31 @@ const DEFAULT_CATEGORIES = [
   { id: 'inc_other', name: 'รายรับอื่นๆ', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
 ];
 
-const DEFAULT_FIXED_EXPENSES = [
-  { id: 'fe_1', name: 'ค่าเช่าห้อง / คอนโด', amount: 2800, categoryId: 'exp_housing', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
-  { id: 'fe_2', name: 'ค่าน้ำ + ค่าไฟ', amount: 2200, categoryId: 'exp_bills', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
-  { id: 'fe_3', name: 'ค่าเน็ตบ้าน + มือถือ', amount: 300, categoryId: 'exp_bills', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
-  { id: 'fe_4', name: 'ค่าเดินทางประจำ (BTS/น้ำมัน)', amount: 400, categoryId: 'exp_transport', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
-  { id: 'fe_5', name: 'ค่าซักผ้า & ของใช้ในห้อง', amount: 300, categoryId: 'exp_shopping', paymentMethod: 'เงินสด (Cash)' }
+// รายการประจำเริ่มต้น (แยก รายจ่าย & รายรับ ชัดเจน)
+const DEFAULT_RECURRING_ITEMS = [
+  // รายจ่ายประจำ (Expenses)
+  { id: 'rec_exp_1', type: 'expense', name: 'ค่าเช่าห้อง / คอนโด', amount: 2800, categoryId: 'exp_housing', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'rec_exp_2', type: 'expense', name: 'ค่าน้ำ + ค่าไฟ', amount: 2200, categoryId: 'exp_bills', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'rec_exp_3', type: 'expense', name: 'ค่าเน็ตบ้าน + มือถือ', amount: 300, categoryId: 'exp_bills', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
+  { id: 'rec_exp_4', type: 'expense', name: 'ค่าเดินทางประจำ (BTS/น้ำมัน)', amount: 400, categoryId: 'exp_transport', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
+  { id: 'rec_exp_5', type: 'expense', name: 'ค่าซักผ้า & ของใช้ในห้อง', amount: 300, categoryId: 'exp_shopping', paymentMethod: 'เงินสด (Cash)' },
+
+  // รายรับประจำ (Incomes)
+  { id: 'rec_inc_1', type: 'income', name: 'เงินเดือนประจำ', amount: 18000, categoryId: 'inc_salary', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'rec_inc_2', type: 'income', name: 'ค่าจ้างงานเสริมประจำ', amount: 3000, categoryId: 'inc_business', paymentMethod: 'พร้อมเพย์ / สแกน QR' }
 ];
 
+// ข้อมูลจำลองงบประมาณ (อิสระ 100% ไม่ผูกกับรายการจริง)
 const DEFAULT_BUDGET_SIMULATOR = {
   monthlyIncome: 18000,
   savingsGoal: 5000,
-  daysInMonth: 30
+  daysInMonth: 30,
+  fixedExpenses: [
+    { id: 'sim_fe_1', name: 'ค่าเช่าห้องจำลอง', amount: 2800 },
+    { id: 'sim_fe_2', name: 'ค่าน้ำไฟจำลอง', amount: 2200 },
+    { id: 'sim_fe_3', name: 'ค่าเน็ตจำลอง', amount: 300 },
+    { id: 'sim_fe_4', name: 'ค่าเดินทางจำลอง', amount: 400 }
+  ]
 };
 
 const StorageManager = {
@@ -77,8 +90,16 @@ const StorageManager = {
     };
   },
 
-  guessCategoryByName(name = '') {
+  guessCategoryByName(name = '', type = 'expense') {
     const lower = name.toLowerCase();
+    if (type === 'income') {
+      if (/เงินเดือน|ค่าจ้าง|salary|wage/.test(lower)) return 'inc_salary';
+      if (/โบนัส|คอมมิชชั่น|bonus|รางวัล/.test(lower)) return 'inc_bonus';
+      if (/ขายของ|ธุรกิจ|ร้าน|ช้อป|freelance|ฟรีแลนซ์/.test(lower)) return 'inc_business';
+      if (/ปันผล|ดอกเบี้ย|หุ้น|กองทุน|คริปโต/.test(lower)) return 'inc_invest';
+      return 'inc_other';
+    }
+
     if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท|บ้าน/.test(lower)) return 'exp_housing';
     if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi|ais|true|dtac/.test(lower)) return 'exp_bills';
     if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว|ผ่อนรถ/.test(lower)) return 'exp_transport';
@@ -90,75 +111,80 @@ const StorageManager = {
     return 'exp_other';
   },
 
-  // --- รายจ่ายประจำเดือน (Fixed Expenses Management) ---
-  getFixedExpenses() {
+  // --- รายรับ & รายจ่าย ประจำเดือน (Recurring Items Management) ---
+  getRecurringItems() {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.FIXED_EXPENSES);
+      const data = localStorage.getItem(STORAGE_KEYS.RECURRING_ITEMS);
       if (!data) {
-        this.saveFixedExpenses(DEFAULT_FIXED_EXPENSES);
-        return DEFAULT_FIXED_EXPENSES;
+        this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
+        return DEFAULT_RECURRING_ITEMS;
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
-      // If empty array or corrupted, load defaults
-      this.saveFixedExpenses(DEFAULT_FIXED_EXPENSES);
-      return DEFAULT_FIXED_EXPENSES;
+      this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
+      return DEFAULT_RECURRING_ITEMS;
     } catch (e) {
-      console.error('Error loading fixed expenses:', e);
-      return DEFAULT_FIXED_EXPENSES;
+      console.error('Error loading recurring items:', e);
+      return DEFAULT_RECURRING_ITEMS;
     }
   },
 
-  saveFixedExpenses(list) {
+  saveRecurringItems(list) {
     try {
-      localStorage.setItem(STORAGE_KEYS.FIXED_EXPENSES, JSON.stringify(list));
+      localStorage.setItem(STORAGE_KEYS.RECURRING_ITEMS, JSON.stringify(list));
     } catch (e) {
-      console.error('Error saving fixed expenses:', e);
+      console.error('Error saving recurring items:', e);
     }
   },
 
-  addFixedExpense(item) {
-    const list = this.getFixedExpenses();
-    const name = (item.name || '').trim() || 'รายจ่ายประจำใหม่';
+  addRecurringItem(item) {
+    const list = this.getRecurringItems();
+    const type = item.type === 'income' ? 'income' : 'expense';
+    const name = (item.name || '').trim() || (type === 'income' ? 'รายรับประจำใหม่' : 'รายจ่ายประจำใหม่');
+    
     const newItem = {
-      id: 'fe_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'rec_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      type: type,
       name: name,
       amount: Math.max(0, parseFloat(item.amount) || 0),
-      categoryId: item.categoryId || this.guessCategoryByName(name),
+      categoryId: item.categoryId || this.guessCategoryByName(name, type),
       paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
     };
     list.push(newItem);
-    this.saveFixedExpenses(list);
+    this.saveRecurringItems(list);
     return newItem;
   },
 
-  updateFixedExpense(id, updatedData) {
-    const list = this.getFixedExpenses();
+  updateRecurringItem(id, updatedData) {
+    const list = this.getRecurringItems();
     const index = list.findIndex(e => e.id === id);
     if (index === -1) return { success: false, message: 'ไม่พบรายการ' };
 
+    const type = updatedData.type || list[index].type || 'expense';
+
     list[index] = {
       ...list[index],
+      type: type,
       name: updatedData.name ? updatedData.name.trim() : list[index].name,
       amount: updatedData.amount !== undefined ? Math.max(0, parseFloat(updatedData.amount) || 0) : list[index].amount,
       categoryId: updatedData.categoryId || list[index].categoryId,
       paymentMethod: updatedData.paymentMethod || list[index].paymentMethod
     };
 
-    this.saveFixedExpenses(list);
+    this.saveRecurringItems(list);
     return { success: true, item: list[index] };
   },
 
-  deleteFixedExpense(id) {
-    let list = this.getFixedExpenses();
+  deleteRecurringItem(id) {
+    let list = this.getRecurringItems();
     list = list.filter(e => e.id !== id);
-    this.saveFixedExpenses(list);
+    this.saveRecurringItems(list);
     return { success: true };
   },
 
-  // --- รายการบันทึก (Transactions) ---
+  // --- รายการบันทึกจริง (Transactions) ---
   getTransactions() {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
@@ -248,7 +274,7 @@ const StorageManager = {
     return transactions.find(t => t.id === id) || null;
   },
 
-  // --- ระบบวิเคราะห์งบประมาณ (Budget Simulator) ---
+  // --- ระบบวิเคราะห์งบประมาณจำลอง (Budget Simulator Sandbox - แยกอิสระ 100%) ---
   getBudgetSimulator() {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.BUDGET_SIMULATOR);
@@ -310,11 +336,11 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '1.2',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
-      fixedExpenses: this.getFixedExpenses(),
+      recurringItems: this.getRecurringItems(),
       budgetSimulator: this.getBudgetSimulator()
     };
 
@@ -341,7 +367,19 @@ const StorageManager = {
       } else {
         if (Array.isArray(data.transactions)) this.saveTransactions(data.transactions);
         if (Array.isArray(data.categories)) this.saveCategories(data.categories);
-        if (Array.isArray(data.fixedExpenses)) this.saveFixedExpenses(data.fixedExpenses);
+        if (Array.isArray(data.recurringItems)) this.saveRecurringItems(data.recurringItems);
+        if (Array.isArray(data.fixedExpenses)) {
+          // Migration from v1
+          const migrated = data.fixedExpenses.map(e => ({
+            id: e.id,
+            type: 'expense',
+            name: e.name,
+            amount: e.amount,
+            categoryId: e.categoryId || this.guessCategoryByName(e.name, 'expense'),
+            paymentMethod: e.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
+          }));
+          this.saveRecurringItems(migrated);
+        }
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
       }
       return { success: true };
@@ -419,6 +457,6 @@ const StorageManager = {
     ];
 
     this.saveTransactions(sampleTxs);
-    this.saveFixedExpenses(DEFAULT_FIXED_EXPENSES);
+    this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
   }
 };

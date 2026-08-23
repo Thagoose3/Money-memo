@@ -1,16 +1,26 @@
 /**
- * Budget Simulator & Financial Analyzer Engine
+ * Budget Simulator & Financial Sandbox Engine (100% อิสระสำหรับจำลองการคำนวณ)
  */
 
 const BudgetSimulator = {
-  simSettings: {
+  data: {
     monthlyIncome: 18000,
     savingsGoal: 5000,
-    daysInMonth: 30
+    daysInMonth: 30,
+    fixedExpenses: []
   },
 
   init() {
-    this.simSettings = StorageManager.getBudgetSimulator();
+    this.data = StorageManager.getBudgetSimulator();
+    if (!this.data.fixedExpenses || this.data.fixedExpenses.length === 0) {
+      this.data.fixedExpenses = [
+        { id: 'sim_fe_1', name: 'ค่าเช่าห้องจำลอง', amount: 2800 },
+        { id: 'sim_fe_2', name: 'ค่าน้ำไฟจำลอง', amount: 2200 },
+        { id: 'sim_fe_3', name: 'ค่าเน็ตจำลอง', amount: 300 },
+        { id: 'sim_fe_4', name: 'ค่าเดินทางจำลอง', amount: 400 }
+      ];
+      this.save();
+    }
     this.render();
     this.bindEvents();
   },
@@ -23,25 +33,25 @@ const BudgetSimulator = {
     const resetBtn = document.getElementById('sim-reset-btn');
 
     if (incomeInput) {
-      incomeInput.value = this.simSettings.monthlyIncome;
+      incomeInput.value = this.data.monthlyIncome;
       incomeInput.addEventListener('input', (e) => {
-        this.simSettings.monthlyIncome = Math.max(0, parseFloat(e.target.value) || 0);
+        this.data.monthlyIncome = Math.max(0, parseFloat(e.target.value) || 0);
         this.saveAndRecalculate();
       });
     }
 
     if (savingsInput) {
-      savingsInput.value = this.simSettings.savingsGoal;
+      savingsInput.value = this.data.savingsGoal;
       savingsInput.addEventListener('input', (e) => {
-        this.simSettings.savingsGoal = Math.max(0, parseFloat(e.target.value) || 0);
+        this.data.savingsGoal = Math.max(0, parseFloat(e.target.value) || 0);
         this.saveAndRecalculate();
       });
     }
 
     if (daysSelect) {
-      daysSelect.value = this.simSettings.daysInMonth || 30;
+      daysSelect.value = this.data.daysInMonth || 30;
       daysSelect.addEventListener('change', (e) => {
-        this.simSettings.daysInMonth = parseInt(e.target.value, 10) || 30;
+        this.data.daysInMonth = parseInt(e.target.value, 10) || 30;
         this.saveAndRecalculate();
       });
     }
@@ -54,9 +64,9 @@ const BudgetSimulator = {
 
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
-        if (confirm('คุณต้องการรีเซ็ตการตั้งค่างบประมาณกลับเป็นค่าเริ่มต้นหรือไม่?')) {
-          this.simSettings = JSON.parse(JSON.stringify(DEFAULT_BUDGET_SIMULATOR));
-          StorageManager.saveBudgetSimulator(this.simSettings);
+        if (confirm('คุณต้องการรีเซ็ตการตั้งค่างบประมาณจำลองกลับเป็นค่าเริ่มต้นหรือไม่?')) {
+          this.data = JSON.parse(JSON.stringify(DEFAULT_BUDGET_SIMULATOR));
+          this.save();
           this.render();
         }
       });
@@ -64,39 +74,43 @@ const BudgetSimulator = {
   },
 
   addFixedExpenseRow(name = '', amount = 0) {
-    StorageManager.addFixedExpense({ name: name || 'ค่าใช้จ่ายประจำใหม่', amount: amount });
-    this.render();
-    if (window.App) {
-      App.renderAll();
-    }
+    const newId = 'sim_fe_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5);
+    this.data.fixedExpenses.push({
+      id: newId,
+      name: name || 'ค่าใช้จ่ายจำลองใหม่',
+      amount: amount
+    });
+    this.saveAndRecalculate();
+    this.renderExpenseRows();
+    
+    setTimeout(() => {
+      const row = document.querySelector(`[data-expense-id="${newId}"] input[type="text"]`);
+      if (row) row.focus();
+    }, 50);
   },
 
   deleteFixedExpenseRow(id) {
-    StorageManager.deleteFixedExpense(id);
-    this.render();
-    if (window.App) {
-      App.renderAll();
-    }
+    this.data.fixedExpenses = this.data.fixedExpenses.filter(e => e.id !== id);
+    this.saveAndRecalculate();
+    this.renderExpenseRows();
   },
 
   updateFixedExpenseRow(id, field, value) {
-    const data = {};
-    if (field === 'name') data.name = value;
-    if (field === 'amount') data.amount = Math.max(0, parseFloat(value) || 0);
-    StorageManager.updateFixedExpense(id, data);
-    this.calculateAndRenderResults();
-    if (window.App) {
-      App.renderQuickFixedChips();
-      App.renderFixedExpensesTab();
+    const item = this.data.fixedExpenses.find(e => e.id === id);
+    if (item) {
+      if (field === 'name') item.name = value;
+      if (field === 'amount') item.amount = Math.max(0, parseFloat(value) || 0);
+      this.saveAndRecalculate();
     }
   },
 
+  save() {
+    StorageManager.saveBudgetSimulator(this.data);
+  },
+
   saveAndRecalculate() {
-    StorageManager.saveBudgetSimulator(this.simSettings);
+    this.save();
     this.calculateAndRenderResults();
-    if (window.App) {
-      App.renderQuickFixedChips();
-    }
   },
 
   render() {
@@ -104,9 +118,9 @@ const BudgetSimulator = {
     const savingsInput = document.getElementById('sim-savings-goal');
     const daysSelect = document.getElementById('sim-days-in-month');
 
-    if (incomeInput) incomeInput.value = this.simSettings.monthlyIncome;
-    if (savingsInput) savingsInput.value = this.simSettings.savingsGoal;
-    if (daysSelect) daysSelect.value = this.simSettings.daysInMonth || 30;
+    if (incomeInput) incomeInput.value = this.data.monthlyIncome;
+    if (savingsInput) savingsInput.value = this.data.savingsGoal;
+    if (daysSelect) daysSelect.value = this.data.daysInMonth || 30;
 
     this.renderExpenseRows();
     this.calculateAndRenderResults();
@@ -116,25 +130,23 @@ const BudgetSimulator = {
     const container = document.getElementById('sim-fixed-expenses-list');
     if (!container) return;
 
-    const fixedExpenses = StorageManager.getFixedExpenses();
-
-    if (fixedExpenses.length === 0) {
+    if (!this.data.fixedExpenses || this.data.fixedExpenses.length === 0) {
       container.innerHTML = `
         <div class="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
-          ยังไม่มีรายการรายจ่ายประจำเดือน กดปุ่มด้านล่างเพื่อเพิ่ม
+          ยังไม่มีรายการรายจ่ายจำลอง กดปุ่มด้านล่างเพื่อเพิ่ม
         </div>
       `;
       return;
     }
 
-    container.innerHTML = fixedExpenses.map((item, index) => `
+    container.innerHTML = this.data.fixedExpenses.map((item, index) => `
       <div class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/70 p-2 rounded-xl border border-slate-100 transition-all" data-expense-id="${item.id}">
         <span class="text-[10px] font-semibold text-slate-400 w-4 text-center">${index + 1}</span>
         <input 
           type="text" 
           class="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-medium focus:outline-none placeholder-slate-400"
           value="${item.name}" 
-          placeholder="ชื่อรายจ่าย (เช่น ค่าเช่าห้อง, ค่าน้ำไฟ)"
+          placeholder="ชื่อรายจ่ายจำลอง"
           onchange="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'name', this.value)"
         />
         <div class="relative w-28">
@@ -152,7 +164,7 @@ const BudgetSimulator = {
         <button 
           type="button" 
           onclick="BudgetSimulator.deleteFixedExpenseRow('${item.id}')"
-          class="p-1 text-slate-400 hover:text-red-500 rounded transition-colors"
+          class="p-1 text-slate-400 hover:text-red-500 rounded transition-colors cursor-pointer"
           title="ลบแถวนี้"
         >
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,12 +176,11 @@ const BudgetSimulator = {
   },
 
   calculateAndRenderResults() {
-    const income = this.simSettings.monthlyIncome || 0;
-    const savings = this.simSettings.savingsGoal || 0;
-    const days = this.simSettings.daysInMonth || 30;
+    const income = this.data.monthlyIncome || 0;
+    const savings = this.data.savingsGoal || 0;
+    const days = this.data.daysInMonth || 30;
 
-    const fixedExpenses = StorageManager.getFixedExpenses();
-    const totalFixed = fixedExpenses.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+    const totalFixed = (this.data.fixedExpenses || []).reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
     const totalCommitted = totalFixed + savings;
     const remainingForLiving = Math.max(0, income - totalCommitted);
     const deficit = (totalCommitted > income) ? (totalCommitted - income) : 0;
@@ -215,20 +226,20 @@ const BudgetSimulator = {
     if (healthBadgeEl && healthTipEl) {
       if (deficit > 0) {
         healthBadgeEl.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-700';
-        healthBadgeEl.textContent = 'งบประมาณติดลบ ⚠️';
-        healthTipEl.innerHTML = `⚠️ รายจ่ายประจำ + เงินออม เกินรายได้ไป <strong>฿${deficit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong> แนะนำลดรายจ่ายประจำหรือปรับเป้าเงินออม`;
+        healthBadgeEl.textContent = 'งบจำลองติดลบ ⚠️';
+        healthTipEl.innerHTML = `⚠️ รายจ่ายจำลอง + เงินออม เกินรายได้ไป <strong>฿${deficit.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong> แนะนำปรับลดรายจ่ายหรือเป้าเงินออม`;
       } else if (dailyAllowance < 150) {
         healthBadgeEl.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800';
         healthBadgeEl.textContent = 'ค่อนข้างตึงตัว';
-        healthTipEl.innerHTML = `💡 มีเงินกินใช้เฉลี่ยวันละ <strong>฿${dailyAllowance.toFixed(0)}</strong> แนะนำตรวจสอบรายจ่ายประจำว่ามีส่วนใดลดลงได้`;
+        healthTipEl.innerHTML = `💡 มีเงินกินใช้เฉลี่ยวันละ <strong>฿${dailyAllowance.toFixed(0)}</strong> สามารถทดลองปรับตัวเลขเพื่อค้นหาสมดุล`;
       } else if (dailyAllowance >= 150 && dailyAllowance <= 500) {
         healthBadgeEl.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-800';
         healthBadgeEl.textContent = 'สมดุลดีเยี่ยม';
-        healthTipEl.innerHTML = `✨ วางแผนได้ดีมาก! มีเงินกินใช้วันละ <strong>฿${dailyAllowance.toFixed(2)}</strong> (สัปดาห์ละ <strong>฿${weeklyAllowance.toFixed(0)}</strong>) และออมได้ <strong>${savingsPct.toFixed(1)}%</strong>`;
+        healthTipEl.innerHTML = `✨ วางแผนจำลองได้ดีมาก! เงินกินใช้วันละ <strong>฿${dailyAllowance.toFixed(2)}</strong> (สัปดาห์ละ <strong>฿${weeklyAllowance.toFixed(0)}</strong>) และออมได้ <strong>${savingsPct.toFixed(1)}%</strong>`;
       } else {
         healthBadgeEl.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800';
         healthBadgeEl.textContent = 'สภาพคล่องสูง';
-        healthTipEl.innerHTML = `🎉 ยอดเยี่ยม! มีเงินกินใช้สบายๆ ถึงวันละ <strong>฿${dailyAllowance.toFixed(2)}</strong> สามารถเพิ่มสัดส่วนเงินออมหรือลงทุนได้อีก`;
+        healthTipEl.innerHTML = `🎉 ยอดเยี่ยม! จำลองว่ามีเงินกินใช้วันละ <strong>฿${dailyAllowance.toFixed(2)}</strong> สามารถเพิ่มเป้าเงินออมได้`;
       }
     }
   }

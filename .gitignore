@@ -1,11 +1,12 @@
-﻿# OS metadata
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+npm-debug.log*
+
+# OS Files
 .DS_Store
 Thumbs.db
-*.tmp
-*.log
-
-# IDE & Editor files
-.vscode/
-.idea/
-*.swp
-*.swo

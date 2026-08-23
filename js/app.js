@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Money Memo v2.1
+ * Main Application Controller for Money Memo v2.2 (Bilingual Support)
  */
 
 const App = {
@@ -23,6 +23,7 @@ const App = {
   dailyTrendChart: null,
 
   init() {
+    I18n.init();
     this.initDateTimeInput();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.bindEvents();
@@ -161,11 +162,13 @@ const App = {
     const loadSampleBtn = document.getElementById('btn-load-sample');
     if (loadSampleBtn) {
       loadSampleBtn.addEventListener('click', () => {
-        if (confirm('ต้องการโหลดข้อมูลตัวอย่างสำหรับทดลองใช้งานใช่หรือไม่?')) {
+        const lang = I18n.getLanguage();
+        const confirmMsg = lang === 'en' ? 'Load sample demo data for testing?' : 'ต้องการโหลดข้อมูลตัวอย่างสำหรับทดลองใช้งานใช่หรือไม่?';
+        if (confirm(confirmMsg)) {
           StorageManager.loadSampleData();
           this.renderAll();
           BudgetSimulator.render();
-          this.showToast('โหลดข้อมูลตัวอย่างเรียบร้อยแล้ว ✨');
+          this.showToast(I18n.t('toast_sample_loaded'));
         }
       });
     }
@@ -187,9 +190,9 @@ const App = {
           if (res.success) {
             this.renderAll();
             BudgetSimulator.init();
-            this.showToast('กู้คืนข้อมูลสำเร็จเรียบร้อยแล้ว 🎉');
+            this.showToast(I18n.t('toast_restored'));
           } else {
-            alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + res.message);
+            alert((I18n.getLanguage() === 'en' ? 'Error importing file: ' : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ') + res.message);
           }
           importFile.value = '';
         };
@@ -237,21 +240,21 @@ const App = {
 
     if (type === 'expense') {
       typeToggleExp.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> 🔴 รายจ่าย (Expense)';
+      typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_expense')}`;
       typeToggleInc.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 🟢 รายรับ (Income)';
+      typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${I18n.t('type_income')}`;
       if (submitBtn) {
         submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
-        submitBtn.innerHTML = '<span>➕ บันทึกรายจ่าย</span>';
+        submitBtn.innerHTML = `<span>${I18n.t('btn_save_expense')}</span>`;
       }
     } else {
       typeToggleExp.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> 🔴 รายจ่าย (Expense)';
+      typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> ${I18n.t('type_expense')}`;
       typeToggleInc.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> 🟢 รายรับ (Income)';
+      typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_income')}`;
       if (submitBtn) {
         submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
-        submitBtn.innerHTML = '<span>➕ บันทึกรายรับ</span>';
+        submitBtn.innerHTML = `<span>${I18n.t('btn_save_income')}</span>`;
       }
     }
 
@@ -271,29 +274,35 @@ const App = {
       this.selectedCategoryId = preselectedId;
     }
 
-    const itemsHtml = categories.map(c => `
-      <button 
-        type="button" 
-        data-cat-id="${c.id}"
-        class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
-        onclick="App.selectCategory('${containerId}', '${c.id}')"
-        title="${c.name}"
-      >
-        <span class="text-xl leading-none">${c.emoji}</span>
-        <span class="text-[11px] font-medium text-slate-700 text-center truncate max-w-full leading-tight">${c.name}</span>
-      </button>
-    `).join('');
+    const lang = I18n.getLanguage();
+
+    const itemsHtml = categories.map(c => {
+      const displayName = StorageManager.getCategoryDisplayName(c);
+      return `
+        <button 
+          type="button" 
+          data-cat-id="${c.id}"
+          class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
+          onclick="App.selectCategory('${containerId}', '${c.id}')"
+          title="${displayName}"
+        >
+          <span class="text-xl leading-none">${c.emoji}</span>
+          <span class="text-[11px] font-medium text-slate-700 text-center truncate max-w-full leading-tight">${displayName}</span>
+        </button>
+      `;
+    }).join('');
 
     // Append quick "+ เพิ่มหมวด" tile at the end of the grid
+    const addText = lang === 'en' ? 'Add Cat' : 'เพิ่มหมวด';
     const addTileHtml = `
       <button 
         type="button" 
         onclick="App.openAddCategoryModal('${type}')"
         class="p-2 rounded-xl border border-dashed border-slate-300 hover:border-slate-500 bg-white/60 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition-all cursor-pointer group"
-        title="สร้างหมวดหมู่ใหม่"
+        title="${lang === 'en' ? 'Create new category' : 'สร้างหมวดหมู่ใหม่'}"
       >
         <span class="text-lg leading-none group-hover:scale-110 transition-transform">➕</span>
-        <span class="text-[10px] font-bold">เพิ่มหมวด</span>
+        <span class="text-[10px] font-bold">${addText}</span>
       </button>
     `;
 
@@ -337,7 +346,6 @@ const App = {
     const defaultColor = targetType === 'income' ? '#10b981' : '#f43f5e';
     if (colorInput) colorInput.value = defaultColor;
 
-    // Reset swatch selection
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
     const firstSwatch = document.querySelector('.color-swatch');
     if (firstSwatch) firstSwatch.classList.add('selected');
@@ -389,13 +397,14 @@ const App = {
     const type = typeRadio ? typeRadio.value : this.currentEntryType;
 
     if (!name) {
-      alert('กรุณาระบุชื่อหมวดหมู่');
+      alert(I18n.getLanguage() === 'en' ? 'Please enter a category name' : 'กรุณาระบุชื่อหมวดหมู่');
       nameInput.focus();
       return;
     }
 
     const newCat = StorageManager.addCategory({
       name,
+      nameEn: name,
       emoji,
       color,
       type
@@ -403,17 +412,15 @@ const App = {
 
     this.closeAddCategoryModal();
 
-    // If matches current form type, select it immediately
     if (type === this.currentEntryType) {
       this.initCategoryGrid('form-category-grid', type, newCat.id);
     }
 
-    // Refresh other tabs
     this.setInlineRecurringType(this.inlineRecurringType);
-    this.showToast(`เพิ่มหมวดหมู่ "${newCat.emoji} ${newCat.name}" สำเร็จ 🎉`);
+    this.showToast(I18n.getLanguage() === 'en' ? `Category "${newCat.emoji} ${newCat.name}" added!` : `เพิ่มหมวดหมู่ "${newCat.emoji} ${newCat.name}" สำเร็จ 🎉`);
   },
 
-  // --- Quick Recurring Chips (ปุ่มลัดแยกตามประเภท รายจ่าย หรือ รายรับ) ---
+  // --- Quick Recurring Chips ---
   renderQuickFixedChips() {
     const container = document.getElementById('quick-fixed-chips-list');
     const titleEl = document.getElementById('quick-chips-title');
@@ -421,7 +428,7 @@ const App = {
 
     const isExpense = this.currentEntryType === 'expense';
     if (titleEl) {
-      titleEl.textContent = isExpense ? 'ปุ่มลัดรายจ่ายประจำ:' : 'ปุ่มลัดรายรับประจำ:';
+      titleEl.textContent = isExpense ? I18n.t('quick_chips_expense_title') : I18n.t('quick_chips_income_title');
     }
 
     const allRecurring = StorageManager.getRecurringItems();
@@ -429,22 +436,23 @@ const App = {
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <span class="text-xs text-slate-400">ยังไม่มีปุ่มลัด${isExpense ? 'รายจ่าย' : 'รายรับ'} (กด "+ ตั้งค่าปุ่มลัด" เพื่อเพิ่ม)</span>
+        <span class="text-xs text-slate-400">${isExpense ? I18n.t('no_shortcuts_expense') : I18n.t('no_shortcuts_income')}</span>
       `;
       return;
     }
 
     container.innerHTML = filtered.map(item => {
       const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name, item.type));
+      const displayName = StorageManager.getItemDisplayName(item);
       return `
         <button 
           type="button" 
           onclick="App.quickFillFromRecurring('${item.id}')"
           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 shadow-xs transition-all group cursor-pointer"
-          title="กดเพื่อกรอก ${item.name} ฿${item.amount.toLocaleString()} ลงฟอร์มทันที"
+          title="Autofill ${displayName} ฿${item.amount.toLocaleString()}"
         >
           <span>${cat.emoji}</span>
-          <span class="truncate max-w-[120px]">${item.name}</span>
+          <span class="truncate max-w-[120px]">${displayName}</span>
           <span class="num-font text-[11px] font-bold ${isExpense ? 'text-rose-500 group-hover:text-rose-300' : 'text-emerald-500 group-hover:text-emerald-300'}">฿${item.amount.toLocaleString()}</span>
         </button>
       `;
@@ -461,12 +469,14 @@ const App = {
     const noteInput = document.getElementById('tx-note');
     const paymentInput = document.getElementById('tx-payment-method');
 
+    const displayName = StorageManager.getItemDisplayName(item);
+
     if (amountInput) {
       amountInput.value = item.amount;
       amountInput.focus();
     }
     if (noteInput) {
-      noteInput.value = item.name;
+      noteInput.value = displayName;
     }
     if (paymentInput && item.paymentMethod) {
       paymentInput.value = item.paymentMethod;
@@ -475,10 +485,11 @@ const App = {
     const catId = item.categoryId || StorageManager.guessCategoryByName(item.name, item.type);
     this.selectCategory('form-category-grid', catId);
 
-    this.showToast(`กรอก "${item.name}" ฿${item.amount.toLocaleString()} ลงฟอร์มแล้ว ✨`);
+    const msg = I18n.getLanguage() === 'en' ? `Autofilled "${displayName}" ฿${item.amount.toLocaleString()}` : `กรอก "${displayName}" ฿${item.amount.toLocaleString()} ลงฟอร์มแล้ว ✨`;
+    this.showToast(msg);
   },
 
-  // --- TAB 4: Recurring Transactions Management (รายรับ & รายจ่าย ประจำเดือน) ---
+  // --- TAB 4: Recurring Transactions Management ---
   setInlineRecurringType(type) {
     this.inlineRecurringType = type;
     const expBtn = document.getElementById('inline-rec-type-exp');
@@ -493,10 +504,12 @@ const App = {
       if (incBtn) incBtn.className = 'py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
     }
 
-    // Populate Category Dropdown based on chosen type
     if (catSelect) {
       const categories = StorageManager.getCategories().filter(c => c.type === type);
-      catSelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+      catSelect.innerHTML = categories.map(c => {
+        const catName = StorageManager.getCategoryDisplayName(c);
+        return `<option value="${c.id}">${c.emoji} ${catName}</option>`;
+      }).join('');
     }
 
     this.renderInlinePresets();
@@ -506,22 +519,44 @@ const App = {
     const container = document.getElementById('inline-rec-presets-container');
     if (!container) return;
 
+    const lang = I18n.getLanguage();
+
     if (this.inlineRecurringType === 'expense') {
-      container.innerHTML = `
-        <button type="button" onclick="App.presetRecurringItem('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 ค่าเช่าห้อง</button>
-        <button type="button" onclick="App.presetRecurringItem('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 ค่าน้ำไฟ</button>
-        <button type="button" onclick="App.presetRecurringItem('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 ค่าเน็ต</button>
-        <button type="button" onclick="App.presetRecurringItem('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 ค่าเดินทาง</button>
-        <button type="button" onclick="App.presetRecurringItem('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
-        <button type="button" onclick="App.presetRecurringItem('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ ประกันสุขภาพ</button>
-      `;
+      if (lang === 'en') {
+        container.innerHTML = `
+          <button type="button" onclick="App.presetRecurringItem('Apartment Rent', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 Rent</button>
+          <button type="button" onclick="App.presetRecurringItem('Water & Electricity', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 Utilities</button>
+          <button type="button" onclick="App.presetRecurringItem('Internet & Mobile', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 Internet</button>
+          <button type="button" onclick="App.presetRecurringItem('Commute (BTS/Gas)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 Transport</button>
+          <button type="button" onclick="App.presetRecurringItem('Netflix / Streaming', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
+          <button type="button" onclick="App.presetRecurringItem('Health Insurance', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ Insurance</button>
+        `;
+      } else {
+        container.innerHTML = `
+          <button type="button" onclick="App.presetRecurringItem('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 ค่าเช่าห้อง</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 ค่าน้ำไฟ</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 ค่าเน็ต</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 ค่าเดินทาง</button>
+          <button type="button" onclick="App.presetRecurringItem('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
+          <button type="button" onclick="App.presetRecurringItem('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ ประกันสุขภาพ</button>
+        `;
+      }
     } else {
-      container.innerHTML = `
-        <button type="button" onclick="App.presetRecurringItem('เงินเดือนประจำ', 18000, 'inc_salary')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 💼 เงินเดือนประจำ</button>
-        <button type="button" onclick="App.presetRecurringItem('ค่าจ้างงานเสริมประจำ', 3000, 'inc_business')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🛒 รายได้งานเสริม</button>
-        <button type="button" onclick="App.presetRecurringItem('โบนัส / คอมมิชชั่นประจำ', 2000, 'inc_bonus')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🎁 โบนัส/คอมมิชชั่น</button>
-        <button type="button" onclick="App.presetRecurringItem('เงินปันผล / ดอกเบี้ยประจำ', 1000, 'inc_invest')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 📈 ปันผลประจำ</button>
-      `;
+      if (lang === 'en') {
+        container.innerHTML = `
+          <button type="button" onclick="App.presetRecurringItem('Monthly Salary', 18000, 'inc_salary')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 💼 Salary</button>
+          <button type="button" onclick="App.presetRecurringItem('Side Gig / Freelance', 3000, 'inc_business')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🛒 Side Gig</button>
+          <button type="button" onclick="App.presetRecurringItem('Monthly Bonus', 2000, 'inc_bonus')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🎁 Bonus</button>
+          <button type="button" onclick="App.presetRecurringItem('Dividends / Interest', 1000, 'inc_invest')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 📈 Dividends</button>
+        `;
+      } else {
+        container.innerHTML = `
+          <button type="button" onclick="App.presetRecurringItem('เงินเดือนประจำ', 18000, 'inc_salary')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 💼 เงินเดือนประจำ</button>
+          <button type="button" onclick="App.presetRecurringItem('ค่าจ้างงานเสริมประจำ', 3000, 'inc_business')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🛒 รายได้งานเสริม</button>
+          <button type="button" onclick="App.presetRecurringItem('โบนัส / คอมมิชชั่นประจำ', 2000, 'inc_bonus')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 🎁 โบนัส/คอมมิชชั่น</button>
+          <button type="button" onclick="App.presetRecurringItem('เงินปันผล / ดอกเบี้ยประจำ', 1000, 'inc_invest')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition-colors cursor-pointer">+ 📈 ปันผลประจำ</button>
+        `;
+      }
     }
   },
 
@@ -537,7 +572,8 @@ const App = {
     }
     if (catSelect && catId) catSelect.value = catId;
 
-    this.showToast(`เลือกตัวอย่าง "${name}" แล้ว สามารถปรับแก้ตัวเลขแล้วกดบันทึกได้เลย`);
+    const msg = I18n.getLanguage() === 'en' ? `Selected "${name}". Adjust amount and click save.` : `เลือกตัวอย่าง "${name}" แล้ว สามารถปรับแก้ตัวเลขแล้วกดบันทึกได้เลย`;
+    this.showToast(msg);
   },
 
   handleSaveInlineRecurring() {
@@ -550,12 +586,12 @@ const App = {
     const categoryId = catSelect?.value || StorageManager.guessCategoryByName(name, this.inlineRecurringType);
 
     if (!name) {
-      alert('กรุณากรอกชื่อรายการ');
+      alert(I18n.getLanguage() === 'en' ? 'Please enter item name' : 'กรุณากรอกชื่อรายการ');
       nameInput.focus();
       return;
     }
     if (amount <= 0) {
-      alert('กรุณาระบุจำนวนเงินที่มากกว่า 0 บาท');
+      alert(I18n.getLanguage() === 'en' ? 'Please enter an amount greater than 0' : 'กรุณาระบุจำนวนเงินที่มากกว่า 0 บาท');
       amountInput.focus();
       return;
     }
@@ -563,6 +599,7 @@ const App = {
     StorageManager.addRecurringItem({
       type: this.inlineRecurringType,
       name,
+      nameEn: name,
       amount,
       categoryId,
       paymentMethod: 'โอนเงิน / บัญชีธนาคาร'
@@ -572,7 +609,8 @@ const App = {
     if (amountInput) amountInput.value = '';
 
     this.renderAll();
-    this.showToast(`เพิ่ม${this.inlineRecurringType === 'expense' ? 'รายจ่าย' : 'รายรับ'}ประจำ "${name}" ฿${amount.toLocaleString()} สำเร็จ 🎉`);
+    const typeLabel = this.inlineRecurringType === 'expense' ? (I18n.getLanguage() === 'en' ? 'Expense' : 'รายจ่ายประจำ') : (I18n.getLanguage() === 'en' ? 'Income' : 'รายรับประจำ');
+    this.showToast(I18n.getLanguage() === 'en' ? `Recurring ${typeLabel} "${name}" added!` : `เพิ่ม${typeLabel} "${name}" ฿${amount.toLocaleString()} สำเร็จ 🎉`);
   },
 
   setRecurringCardFilter(filter) {
@@ -624,12 +662,14 @@ const App = {
     if (this.recurringCardFilter === 'expense') filtered = allItems.filter(e => e.type === 'expense');
     if (this.recurringCardFilter === 'income') filtered = allItems.filter(e => e.type === 'income');
 
+    const lang = I18n.getLanguage();
+
     if (filtered.length === 0) {
       container.innerHTML = `
         <div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
           <span class="text-3xl block mb-1">📌</span>
-          <p class="font-bold text-slate-700 text-sm">ยังไม่มีรายการประจำในหมวดนี้</p>
-          <p class="text-xs text-slate-400 mt-1">กรอกข้อมูลที่กล่องด้านบน หรือกดเลือกตัวอย่างเพื่อเริ่มเพิ่มรายการ</p>
+          <p class="font-bold text-slate-700 text-sm">${I18n.t('rec_empty_list')}</p>
+          <p class="text-xs text-slate-400 mt-1">${I18n.t('rec_empty_list_desc')}</p>
         </div>
       `;
       return;
@@ -638,6 +678,11 @@ const App = {
     container.innerHTML = filtered.map(item => {
       const isExp = item.type === 'expense';
       const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name, item.type));
+      const displayName = StorageManager.getItemDisplayName(item);
+      const catName = StorageManager.getCategoryDisplayName(cat);
+      const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+      const perMonthText = lang === 'en' ? '/ month' : '/ เดือน';
+
       return `
         <div class="minimal-card p-4 rounded-2xl flex flex-col justify-between gap-3 group">
           <div class="flex items-start justify-between gap-3">
@@ -647,13 +692,13 @@ const App = {
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-slate-900 text-sm">${item.name}</span>
+                  <span class="font-bold text-slate-900 text-sm">${displayName}</span>
                   <span class="text-[9px] px-1.5 py-0.2 rounded-full font-bold ${isExp ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">
-                    ${isExp ? 'รายจ่าย' : 'รายรับ'}
+                    ${typeBadge}
                   </span>
                 </div>
                 <div class="flex items-center gap-2 mt-0.5">
-                  <span class="text-[11px] text-slate-500">${cat.name}</span>
+                  <span class="text-[11px] text-slate-500">${catName}</span>
                   <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'}</span>
                 </div>
               </div>
@@ -662,7 +707,7 @@ const App = {
               <span class="text-lg font-extrabold num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
                 ${isExp ? '-' : '+'}฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </span>
-              <span class="text-[10px] text-slate-400 block">/ เดือน</span>
+              <span class="text-[10px] text-slate-400 block">${perMonthText}</span>
             </div>
           </div>
 
@@ -671,16 +716,16 @@ const App = {
               type="button"
               onclick="App.quickLogRecurring('${item.id}')"
               class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg ${isExp ? 'bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700' : 'bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700'} font-semibold transition-all cursor-pointer"
-              title="บันทึกยอดนี้เข้าบัญชีเดือนนี้ทันที"
+              title="${lang === 'en' ? 'Log to current month' : 'บันทึกยอดนี้เข้าบัญชีเดือนนี้ทันที'}"
             >
-              <span>⚡ บันทึกลงบัญชีทันที</span>
+              <span>${I18n.t('btn_quick_log')}</span>
             </button>
 
             <div class="flex items-center gap-1">
-              <button type="button" onclick="App.openEditRecurringModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="แก้ไข">
+              <button type="button" onclick="App.openEditRecurringModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button type="button" onclick="App.deleteRecurring('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
+              <button type="button" onclick="App.deleteRecurring('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -699,7 +744,7 @@ const App = {
     const paymentSelect = document.getElementById('recurring-modal-payment');
     const typeRadios = document.querySelectorAll('input[name="modal-rec-type"]');
 
-    if (titleEl) titleEl.textContent = 'เพิ่มรายการประจำเดือน';
+    if (titleEl) titleEl.textContent = I18n.getLanguage() === 'en' ? 'Add Recurring Item' : 'เพิ่มรายการประจำเดือน';
     if (idInput) idInput.value = '';
     if (nameInput) nameInput.value = '';
     if (amountInput) amountInput.value = '';
@@ -720,7 +765,10 @@ const App = {
     const catSelect = document.getElementById('recurring-modal-category');
     if (catSelect) {
       const categories = StorageManager.getCategories().filter(c => c.type === type);
-      catSelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+      catSelect.innerHTML = categories.map(c => {
+        const catName = StorageManager.getCategoryDisplayName(c);
+        return `<option value="${c.id}">${c.emoji} ${catName}</option>`;
+      }).join('');
     }
   },
 
@@ -737,9 +785,9 @@ const App = {
     const paymentSelect = document.getElementById('recurring-modal-payment');
     const typeRadios = document.querySelectorAll('input[name="modal-rec-type"]');
 
-    if (titleEl) titleEl.textContent = 'แก้ไขรายการประจำเดือน';
+    if (titleEl) titleEl.textContent = I18n.getLanguage() === 'en' ? 'Edit Recurring Item' : 'แก้ไขรายการประจำเดือน';
     if (idInput) idInput.value = item.id;
-    if (nameInput) nameInput.value = item.name;
+    if (nameInput) nameInput.value = StorageManager.getItemDisplayName(item);
     if (amountInput) amountInput.value = item.amount;
 
     typeRadios.forEach(r => {
@@ -776,22 +824,22 @@ const App = {
     const paymentMethod = paymentSelect?.value || 'โอนเงิน / บัญชีธนาคาร';
 
     if (!name) {
-      alert('กรุณาระบุชื่อรายการ');
+      alert(I18n.getLanguage() === 'en' ? 'Please specify item name' : 'กรุณาระบุชื่อรายการ');
       nameInput.focus();
       return;
     }
     if (amount <= 0) {
-      alert('กรุณาระบุจำนวนเงินที่มากกว่า 0 บาท');
+      alert(I18n.getLanguage() === 'en' ? 'Please specify amount greater than 0' : 'กรุณาระบุจำนวนเงินที่มากกว่า 0 บาท');
       amountInput.focus();
       return;
     }
 
     if (this.editingRecurringId) {
-      StorageManager.updateRecurringItem(this.editingRecurringId, { type, name, amount, categoryId, paymentMethod });
-      this.showToast(`อัปเดต "${name}" เรียบร้อย ✅`);
+      StorageManager.updateRecurringItem(this.editingRecurringId, { type, name, nameEn: name, amount, categoryId, paymentMethod });
+      this.showToast(I18n.getLanguage() === 'en' ? `Updated "${name}"!` : `อัปเดต "${name}" เรียบร้อย ✅`);
     } else {
-      StorageManager.addRecurringItem({ type, name, amount, categoryId, paymentMethod });
-      this.showToast(`เพิ่มรายการประจำ "${name}" เรียบร้อย 🎉`);
+      StorageManager.addRecurringItem({ type, name, nameEn: name, amount, categoryId, paymentMethod });
+      this.showToast(I18n.getLanguage() === 'en' ? `Added recurring item "${name}"!` : `เพิ่มรายการประจำ "${name}" เรียบร้อย 🎉`);
     }
 
     this.closeRecurringModal();
@@ -800,12 +848,13 @@ const App = {
 
   deleteRecurring(id) {
     const item = StorageManager.getRecurringItems().find(e => e.id === id);
-    const name = item ? item.name : 'รายการนี้';
+    const displayName = item ? StorageManager.getItemDisplayName(item) : 'this item';
+    const confirmMsg = I18n.getLanguage() === 'en' ? `Are you sure you want to delete "${displayName}"?` : `คุณต้องการลบรายการประจำ "${displayName}" ใช่หรือไม่?`;
 
-    if (confirm(`คุณต้องการลบรายการประจำ "${name}" ใช่หรือไม่?`)) {
+    if (confirm(confirmMsg)) {
       StorageManager.deleteRecurringItem(id);
       this.renderAll();
-      this.showToast(`ลบ "${name}" เรียบร้อยแล้ว`);
+      this.showToast(I18n.getLanguage() === 'en' ? `Deleted "${displayName}"` : `ลบ "${displayName}" เรียบร้อยแล้ว`);
     }
   },
 
@@ -816,6 +865,7 @@ const App = {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const displayName = StorageManager.getItemDisplayName(item);
 
     StorageManager.addTransaction({
       type: item.type || 'expense',
@@ -823,14 +873,14 @@ const App = {
       categoryId: item.categoryId || StorageManager.guessCategoryByName(item.name, item.type),
       date: dateStr,
       paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
-      note: item.name
+      note: displayName
     });
 
     this.renderAll();
-    this.showToast(`บันทึก "${item.name}" ฿${item.amount.toLocaleString()} ลงบัญชีแล้ว ⚡`);
+    this.showToast(I18n.getLanguage() === 'en' ? `Logged "${displayName}" ฿${item.amount.toLocaleString()} ⚡` : `บันทึก "${displayName}" ฿${item.amount.toLocaleString()} ลงบัญชีแล้ว ⚡`);
   },
 
-  // --- Batch Import Modal (นำเข้ารายการประจำพร้อมกันหลายรายการ) ---
+  // --- Batch Import Modal ---
   openQuickFixedModal() {
     const modal = document.getElementById('quick-fixed-modal');
     const dateInput = document.getElementById('batch-import-date');
@@ -856,12 +906,13 @@ const App = {
     const allItems = StorageManager.getRecurringItems();
     const expCategories = StorageManager.getCategories().filter(c => c.type === 'expense');
     const incCategories = StorageManager.getCategories().filter(c => c.type === 'income');
+    const lang = I18n.getLanguage();
 
     if (allItems.length === 0) {
       container.innerHTML = `
         <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-          <p class="text-xs font-semibold text-slate-600">ยังไม่มีรายการประจำเดือน</p>
-          <p class="text-[11px] text-slate-400 mt-0.5">คุณสามารถตั้งค่ารายการได้ที่แท็บ "รายการประจำเดือน"</p>
+          <p class="text-xs font-semibold text-slate-600">${I18n.t('rec_empty_list')}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">${I18n.t('rec_empty_list_desc')}</p>
         </div>
       `;
       this.updateBatchTotal();
@@ -872,9 +923,10 @@ const App = {
       const isExp = item.type === 'expense';
       const categories = isExp ? expCategories : incCategories;
       const currentCatId = item.categoryId || StorageManager.guessCategoryByName(item.name, item.type);
+      const displayName = StorageManager.getItemDisplayName(item);
       
       const catOptionsHtml = categories.map(c => `
-        <option value="${c.id}" ${c.id === currentCatId ? 'selected' : ''}>${c.emoji} ${c.name}</option>
+        <option value="${c.id}" ${c.id === currentCatId ? 'selected' : ''}>${c.emoji} ${StorageManager.getCategoryDisplayName(c)}</option>
       `).join('');
 
       return `
@@ -886,14 +938,14 @@ const App = {
             onchange="App.updateBatchTotal()"
           />
           <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
-            ${isExp ? 'จ่าย' : 'รับ'}
+            ${isExp ? (lang === 'en' ? 'EXP' : 'จ่าย') : (lang === 'en' ? 'INC' : 'รับ')}
           </span>
           <div class="flex-1 min-w-0">
             <input 
               type="text" 
               class="batch-item-name w-full bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 font-semibold focus:outline-none"
-              value="${item.name}"
-              placeholder="ชื่อรายการ"
+              value="${displayName}"
+              placeholder="Name"
             />
           </div>
           <div class="w-32">
@@ -941,9 +993,10 @@ const App = {
 
     const summaryEl = document.getElementById('batch-selected-summary');
     const totalEl = document.getElementById('batch-total-amount');
+    const lang = I18n.getLanguage();
 
-    if (summaryEl) summaryEl.textContent = `(เลือก ${selectedCount}/${rows.length} รายการ)`;
-    if (totalEl) totalEl.textContent = `ยอดรวมที่เลือก: ฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+    if (summaryEl) summaryEl.textContent = lang === 'en' ? `(Selected ${selectedCount}/${rows.length})` : `(เลือก ${selectedCount}/${rows.length} รายการ)`;
+    if (totalEl) totalEl.textContent = lang === 'en' ? `Selected Total: ฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `ยอดรวมที่เลือก: ฿${total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
   },
 
   handleSaveBatchFixedExpenses() {
@@ -979,14 +1032,14 @@ const App = {
     });
 
     if (txsToSave.length === 0) {
-      alert('กรุณาเลือกอย่างน้อย 1 รายการ และมียอดเงินมากกว่า 0 บาท');
+      alert(I18n.getLanguage() === 'en' ? 'Please select at least 1 item with amount > 0' : 'กรุณาเลือกอย่างน้อย 1 รายการ และมียอดเงินมากกว่า 0 บาท');
       return;
     }
 
     const count = StorageManager.addTransactionsBatch(txsToSave);
     this.closeQuickFixedModal();
     this.renderAll();
-    this.showToast(`นำเข้ารายการประจำเดือนสำเร็จ ${count} รายการ 🎉`);
+    this.showToast(I18n.getLanguage() === 'en' ? `Imported ${count} items successfully!` : `นำเข้ารายการประจำเดือนสำเร็จ ${count} รายการ 🎉`);
   },
 
   // --- Transactions Tab Logic ---
@@ -998,7 +1051,7 @@ const App = {
 
     const amount = parseFloat(amountInput.value);
     if (isNaN(amount) || amount <= 0) {
-      alert('กรุณาระบุจำนวนเงินที่ถูกต้อง');
+      alert(I18n.getLanguage() === 'en' ? 'Please enter a valid amount' : 'กรุณาระบุจำนวนเงินที่ถูกต้อง');
       amountInput.focus();
       return;
     }
@@ -1019,23 +1072,25 @@ const App = {
     this.initDateTimeInput();
 
     this.renderAll();
-    this.showToast(this.currentEntryType === 'expense' ? 'บันทึกรายจ่ายเรียบร้อย 🔴' : 'บันทึกรายรับเรียบร้อย 🟢');
+    this.showToast(this.currentEntryType === 'expense' ? I18n.t('toast_exp_saved') : I18n.t('toast_inc_saved'));
   },
 
   renderMonthSelector() {
     const monthEl = document.getElementById('dashboard-current-month');
     if (!monthEl) return;
 
-    const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-    ];
-
+    const lang = I18n.getLanguage();
     const monthIndex = this.selectedDate.getMonth();
     const year = this.selectedDate.getFullYear();
-    const thaiYear = year + 543;
 
-    monthEl.textContent = `${thaiMonths[monthIndex]} ${thaiYear} (${year})`;
+    if (lang === 'en') {
+      const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      monthEl.textContent = `${enMonths[monthIndex]} ${year}`;
+    } else {
+      const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      const thaiYear = year + 543;
+      monthEl.textContent = `${thaiMonths[monthIndex]} ${thaiYear} (${year})`;
+    }
   },
 
   setDashboardViewMode(mode) {
@@ -1100,13 +1155,13 @@ const App = {
     }
     if (netStatusEl) {
       if (netBalance > 0) {
-        netStatusEl.textContent = 'คงเหลือสุทธิเป็นบวก (Surplus ✨)';
+        netStatusEl.textContent = I18n.t('status_surplus');
         netStatusEl.className = 'text-[11px] text-emerald-600 font-medium mt-0.5';
       } else if (netBalance === 0) {
-        netStatusEl.textContent = 'รายรับเท่ากับรายจ่ายพอดี (Balanced)';
+        netStatusEl.textContent = I18n.t('status_balanced');
         netStatusEl.className = 'text-[11px] text-slate-400 font-medium mt-0.5';
       } else {
-        netStatusEl.textContent = 'รายจ่ายมากกว่ารายรับ (Deficit ⚠️)';
+        netStatusEl.textContent = I18n.t('status_deficit');
         netStatusEl.className = 'text-[11px] text-rose-600 font-medium mt-0.5';
       }
     }
@@ -1133,7 +1188,8 @@ const App = {
 
     Object.keys(catMap).forEach(catId => {
       const cat = StorageManager.getCategoryById(catId);
-      catLabels.push(`${cat.emoji} ${cat.name}`);
+      const catName = StorageManager.getCategoryDisplayName(cat);
+      catLabels.push(`${cat.emoji} ${catName}`);
       catData.push(catMap[catId]);
       catColors.push(cat.color || '#334155');
     });
@@ -1219,13 +1275,13 @@ const App = {
           labels: dayLabels,
           datasets: [
             {
-              label: 'รายจ่าย (Expense)',
+              label: I18n.getLanguage() === 'en' ? 'Expense' : 'รายจ่าย (Expense)',
               data: dailySpending,
               backgroundColor: '#f43f5e',
               borderRadius: 3
             },
             {
-              label: 'รายรับ (Income)',
+              label: I18n.getLanguage() === 'en' ? 'Income' : 'รายรับ (Income)',
               data: dailyIncome,
               backgroundColor: '#10b981',
               borderRadius: 3
@@ -1280,19 +1336,20 @@ const App = {
       .slice(0, 5);
 
     if (sortedCats.length === 0) {
-      container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีข้อมูลการใช้จ่ายในเดือนนี้</div>`;
+      container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">${I18n.t('top_categories_empty')}</div>`;
       return;
     }
 
     container.innerHTML = sortedCats.map(([catId, amount]) => {
       const cat = StorageManager.getCategoryById(catId);
+      const catName = StorageManager.getCategoryDisplayName(cat);
       const pct = totalExpense > 0 ? ((amount / totalExpense) * 100).toFixed(1) : 0;
       return `
         <div class="space-y-1">
           <div class="flex items-center justify-between text-xs">
             <div class="flex items-center gap-1.5 font-medium text-slate-700">
               <span>${cat.emoji}</span>
-              <span>${cat.name}</span>
+              <span>${catName}</span>
             </div>
             <div class="text-right">
               <span class="font-bold text-slate-900 num-font">฿${amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
@@ -1314,7 +1371,7 @@ const App = {
     if (monthlyTxs.length === 0) {
       container.innerHTML = `
         <div class="text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-100">
-          <p class="text-xs font-medium text-slate-600">ไม่มีรายการใช้จ่ายในเดือนนี้</p>
+          <p class="text-xs font-medium text-slate-600">${I18n.t('daily_breakdown_empty')}</p>
         </div>
       `;
       return;
@@ -1328,21 +1385,33 @@ const App = {
     });
 
     const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+    const lang = I18n.getLanguage();
 
     container.innerHTML = sortedDates.map(dateStr => {
       const txs = groups[dateStr];
       const d = new Date(dateStr + 'T00:00:00');
       
-      const thaiDayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-      const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      const dayName = thaiDayNames[d.getDay()];
-      const dayDate = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+      let dayName = '';
+      let dayDate = '';
+
+      if (lang === 'en') {
+        const enDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        dayName = enDayNames[d.getDay()];
+        dayDate = `${d.getDate()} ${enMonths[d.getMonth()]} ${d.getFullYear()}`;
+      } else {
+        const thaiDayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        dayName = thaiDayNames[d.getDay()];
+        dayDate = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+      }
 
       const dayIncome = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
       const dayExpense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
 
       const itemsHtml = txs.map(t => {
         const cat = StorageManager.getCategoryById(t.categoryId);
+        const catName = StorageManager.getCategoryDisplayName(cat);
         const timeStr = t.date.length >= 16 ? t.date.slice(11, 16) : '';
         const isExp = t.type === 'expense';
 
@@ -1354,9 +1423,9 @@ const App = {
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
-                  <span class="font-semibold text-xs text-slate-800">${cat.name}</span>
+                  <span class="font-semibold text-xs text-slate-800">${catName}</span>
                   <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">${t.paymentMethod}</span>
-                  ${timeStr ? `<span class="text-[10px] text-slate-400">${timeStr} น.</span>` : ''}
+                  ${timeStr ? `<span class="text-[10px] text-slate-400">${timeStr}</span>` : ''}
                 </div>
                 ${t.note ? `<p class="text-[11px] text-slate-500 mt-0.5">${t.note}</p>` : ''}
               </div>
@@ -1366,10 +1435,10 @@ const App = {
                 ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </span>
               <div class="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
-                <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded transition-colors cursor-pointer" title="แก้ไข">
+                <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 </button>
-                <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer" title="ลบ">
+                <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
@@ -1412,7 +1481,7 @@ const App = {
       if (searchVal) {
         const cat = StorageManager.getCategoryById(t.categoryId);
         const matchNote = (t.note || '').toLowerCase().includes(searchVal);
-        const matchCat = cat.name.toLowerCase().includes(searchVal);
+        const matchCat = (cat.name || '').toLowerCase().includes(searchVal) || (cat.nameEn || '').toLowerCase().includes(searchVal);
         const matchPayment = (t.paymentMethod || '').toLowerCase().includes(searchVal);
         if (!matchNote && !matchCat && !matchPayment) return false;
       }
@@ -1425,18 +1494,22 @@ const App = {
     if (filtered.length === 0) {
       container.innerHTML = `
         <div class="text-center py-10 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
-          <p class="text-xs font-medium text-slate-600">ยังไม่มีรายการบันทึก</p>
-          <p class="text-[11px] text-slate-400 mt-0.5">กดบันทึกรายการ หรือคลิก "โหลดตัวอย่าง" ด้านบน</p>
+          <p class="text-xs font-medium text-slate-600">${I18n.t('history_empty_title')}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">${I18n.t('history_empty_desc')}</p>
         </div>
       `;
       return;
     }
 
+    const lang = I18n.getLanguage();
+
     container.innerHTML = filtered.map(t => {
       const cat = StorageManager.getCategoryById(t.categoryId);
+      const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
       const d = new Date(t.date);
-      const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear() + 543} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
 
       return `
         <div class="bg-white p-3 rounded-xl border border-slate-100 hover:border-slate-300 transition-all flex items-center justify-between group">
@@ -1446,9 +1519,9 @@ const App = {
             </div>
             <div>
               <div class="flex items-center gap-1.5">
-                <span class="font-bold text-slate-800 text-xs">${cat.name}</span>
+                <span class="font-bold text-slate-800 text-xs">${catName}</span>
                 <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isExp ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} font-semibold">
-                  ${isExp ? 'รายจ่าย' : 'รายรับ'}
+                  ${typeBadge}
                 </span>
                 <span class="text-[10px] text-slate-400">${dateFormatted}</span>
               </div>
@@ -1463,10 +1536,10 @@ const App = {
               ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
             <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="แก้ไข">
+              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="ลบ">
+              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -1521,7 +1594,7 @@ const App = {
     const note = document.getElementById('edit-tx-note').value;
 
     if (isNaN(amount) || amount <= 0) {
-      alert('กรุณาระบุจำนวนเงินที่ถูกต้อง');
+      alert(I18n.getLanguage() === 'en' ? 'Please enter a valid amount' : 'กรุณาระบุจำนวนเงินที่ถูกต้อง');
       return;
     }
 
@@ -1536,7 +1609,7 @@ const App = {
 
     this.closeEditModal();
     this.renderAll();
-    this.showToast('อัปเดตรายการเรียบร้อยแล้ว ✅');
+    this.showToast(I18n.t('toast_updated'));
   },
 
   openDeleteModal(id) {
@@ -1549,12 +1622,16 @@ const App = {
 
     if (preview) {
       const cat = StorageManager.getCategoryById(tx.categoryId);
+      const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = tx.type === 'expense';
+      const lang = I18n.getLanguage();
+      const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+
       preview.innerHTML = `
         <div class="flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-left">
           <span class="text-2xl">${cat.emoji}</span>
           <div class="flex-1">
-            <p class="font-bold text-slate-800 text-xs">${cat.name} <span class="text-[10px] font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${isExp ? 'รายจ่าย' : 'รายรับ'})</span></p>
+            <p class="font-bold text-slate-800 text-xs">${catName} <span class="text-[10px] font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${typeBadge})</span></p>
             <p class="text-[10px] text-slate-400">${tx.date.replace('T', ' ')} · ${tx.paymentMethod}</p>
             ${tx.note ? `<p class="text-[11px] text-slate-600">"${tx.note}"</p>` : ''}
           </div>
@@ -1580,7 +1657,7 @@ const App = {
     StorageManager.deleteTransaction(this.deletingTransactionId);
     this.closeDeleteModal();
     this.renderAll();
-    this.showToast('ลบรายการเรียบร้อย 🗑️');
+    this.showToast(I18n.t('toast_deleted'));
   },
 
   renderAll() {

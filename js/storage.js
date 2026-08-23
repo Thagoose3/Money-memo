@@ -1,5 +1,5 @@
 /**
- * Storage & Data Management for Money Memo v2.1
+ * Storage & Data Management for Money Memo v2.2 (Bilingual Support)
  */
 
 const STORAGE_KEYS = {
@@ -11,37 +11,37 @@ const STORAGE_KEYS = {
 
 const DEFAULT_CATEGORIES = [
   // รายจ่าย (Expenses)
-  { id: 'exp_housing', name: 'ค่าเช่าห้อง & ที่พัก', emoji: '🏠', color: '#8b5cf6', type: 'expense', isDefault: true },
-  { id: 'exp_bills', name: 'บิล น้ำ/ไฟ/เน็ต', emoji: '💡', color: '#eab308', type: 'expense', isDefault: true },
-  { id: 'exp_food', name: 'อาหาร & เครื่องดื่ม', emoji: '🍔', color: '#f97316', type: 'expense', isDefault: true },
-  { id: 'exp_transport', name: 'เดินทาง & คมนาคม', emoji: '🚗', color: '#06b6d4', type: 'expense', isDefault: true },
-  { id: 'exp_shopping', name: 'ช้อปปิ้ง & เสื้อผ้า', emoji: '🛍️', color: '#ec4899', type: 'expense', isDefault: true },
-  { id: 'exp_ent', name: 'บันเทิง & สตรีมมิ่ง', emoji: '🎬', color: '#a855f7', type: 'expense', isDefault: true },
-  { id: 'exp_pets', name: 'สัตว์เลี้ยง & อาหารสัตว์', emoji: '🐾', color: '#10b981', type: 'expense', isDefault: true },
-  { id: 'exp_health', name: 'สุขภาพ & ประกัน', emoji: '🛡️', color: '#ef4444', type: 'expense', isDefault: true },
-  { id: 'exp_edu', name: 'การศึกษา & พัฒนาตน', emoji: '📚', color: '#3b82f6', type: 'expense', isDefault: true },
-  { id: 'exp_other', name: 'ค่าใช้จ่ายอื่นๆ', emoji: '📦', color: '#64748b', type: 'expense', isDefault: true },
+  { id: 'exp_housing', name: 'ค่าเช่าห้อง & ที่พัก', nameEn: 'Housing & Rent', emoji: '🏠', color: '#8b5cf6', type: 'expense', isDefault: true },
+  { id: 'exp_bills', name: 'บิล น้ำ/ไฟ/เน็ต', nameEn: 'Utilities & Bills', emoji: '💡', color: '#eab308', type: 'expense', isDefault: true },
+  { id: 'exp_food', name: 'อาหาร & เครื่องดื่ม', nameEn: 'Food & Dining', emoji: '🍔', color: '#f97316', type: 'expense', isDefault: true },
+  { id: 'exp_transport', name: 'เดินทาง & คมนาคม', nameEn: 'Transportation', emoji: '🚗', color: '#06b6d4', type: 'expense', isDefault: true },
+  { id: 'exp_shopping', name: 'ช้อปปิ้ง & เสื้อผ้า', nameEn: 'Shopping & Goods', emoji: '🛍️', color: '#ec4899', type: 'expense', isDefault: true },
+  { id: 'exp_ent', name: 'บันเทิง & สตรีมมิ่ง', nameEn: 'Entertainment', emoji: '🎬', color: '#a855f7', type: 'expense', isDefault: true },
+  { id: 'exp_pets', name: 'สัตว์เลี้ยง & อาหารสัตว์', nameEn: 'Pets & Supplies', emoji: '🐾', color: '#10b981', type: 'expense', isDefault: true },
+  { id: 'exp_health', name: 'สุขภาพ & ประกัน', nameEn: 'Health & Insurance', emoji: '🛡️', color: '#ef4444', type: 'expense', isDefault: true },
+  { id: 'exp_edu', name: 'การศึกษา & พัฒนาตน', nameEn: 'Education & Learning', emoji: '📚', color: '#3b82f6', type: 'expense', isDefault: true },
+  { id: 'exp_other', name: 'ค่าใช้จ่ายอื่นๆ', nameEn: 'Other Expenses', emoji: '📦', color: '#64748b', type: 'expense', isDefault: true },
 
   // รายรับ (Incomes)
-  { id: 'inc_salary', name: 'เงินเดือน & ค่าจ้าง', emoji: '💼', color: '#10b981', type: 'income', isDefault: true },
-  { id: 'inc_bonus', name: 'โบนัส & คอมมิชชั่น', emoji: '🎁', color: '#14b8a6', type: 'income', isDefault: true },
-  { id: 'inc_business', name: 'ธุรกิจ & ค้าขาย', emoji: '🛒', color: '#059669', type: 'income', isDefault: true },
-  { id: 'inc_invest', name: 'เงินปันผล & ดอกเบี้ย', emoji: '📈', color: '#6366f1', type: 'income', isDefault: true },
-  { id: 'inc_other', name: 'รายรับอื่นๆ', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
+  { id: 'inc_salary', name: 'เงินเดือน & ค่าจ้าง', nameEn: 'Salary & Wages', emoji: '💼', color: '#10b981', type: 'income', isDefault: true },
+  { id: 'inc_bonus', name: 'โบนัส & คอมมิชชั่น', nameEn: 'Bonus & Commission', emoji: '🎁', color: '#14b8a6', type: 'income', isDefault: true },
+  { id: 'inc_business', name: 'ธุรกิจ & ค้าขาย', nameEn: 'Business & Sales', emoji: '🛒', color: '#059669', type: 'income', isDefault: true },
+  { id: 'inc_invest', name: 'เงินปันผล & ดอกเบี้ย', nameEn: 'Dividends & Interest', emoji: '📈', color: '#6366f1', type: 'income', isDefault: true },
+  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
 ];
 
 // รายการประจำเริ่มต้น (แยก รายจ่าย & รายรับ ชัดเจน)
 const DEFAULT_RECURRING_ITEMS = [
   // รายจ่ายประจำ (Expenses)
-  { id: 'rec_exp_1', type: 'expense', name: 'ค่าเช่าห้อง / คอนโด', amount: 2800, categoryId: 'exp_housing', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
-  { id: 'rec_exp_2', type: 'expense', name: 'ค่าน้ำ + ค่าไฟ', amount: 2200, categoryId: 'exp_bills', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
-  { id: 'rec_exp_3', type: 'expense', name: 'ค่าเน็ตบ้าน + มือถือ', amount: 300, categoryId: 'exp_bills', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
-  { id: 'rec_exp_4', type: 'expense', name: 'ค่าเดินทางประจำ (BTS/น้ำมัน)', amount: 400, categoryId: 'exp_transport', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
-  { id: 'rec_exp_5', type: 'expense', name: 'ค่าซักผ้า & ของใช้ในห้อง', amount: 300, categoryId: 'exp_shopping', paymentMethod: 'เงินสด (Cash)' },
+  { id: 'rec_exp_1', type: 'expense', name: 'ค่าเช่าห้อง / คอนโด', nameEn: 'Apartment Rent', amount: 2800, categoryId: 'exp_housing', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'rec_exp_2', type: 'expense', name: 'ค่าน้ำ + ค่าไฟ', nameEn: 'Electricity & Water', amount: 2200, categoryId: 'exp_bills', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'rec_exp_3', type: 'expense', name: 'ค่าเน็ตบ้าน + มือถือ', nameEn: 'Internet & Mobile', amount: 300, categoryId: 'exp_bills', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
+  { id: 'rec_exp_4', type: 'expense', name: 'ค่าเดินทางประจำ (BTS/น้ำมัน)', nameEn: 'Transport (BTS/Fuel)', amount: 400, categoryId: 'exp_transport', paymentMethod: 'พร้อมเพย์ / สแกน QR' },
+  { id: 'rec_exp_5', type: 'expense', name: 'ค่าซักผ้า & ของใช้ในห้อง', nameEn: 'Laundry & Household', amount: 300, categoryId: 'exp_shopping', paymentMethod: 'เงินสด (Cash)' },
 
   // รายรับประจำ (Incomes)
-  { id: 'rec_inc_1', type: 'income', name: 'เงินเดือนประจำ', amount: 18000, categoryId: 'inc_salary', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
-  { id: 'rec_inc_2', type: 'income', name: 'ค่าจ้างงานเสริมประจำ', amount: 3000, categoryId: 'inc_business', paymentMethod: 'พร้อมเพย์ / สแกน QR' }
+  { id: 'rec_inc_1', type: 'income', name: 'เงินเดือนประจำ', nameEn: 'Monthly Salary', amount: 18000, categoryId: 'inc_salary', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
+  { id: 'rec_inc_2', type: 'income', name: 'ค่าจ้างงานเสริมประจำ', nameEn: 'Freelance & Side Gig', amount: 3000, categoryId: 'inc_business', paymentMethod: 'พร้อมเพย์ / สแกน QR' }
 ];
 
 // ข้อมูลจำลองงบประมาณ (อิสระ 100% ไม่ผูกกับรายการจริง)
@@ -50,10 +50,10 @@ const DEFAULT_BUDGET_SIMULATOR = {
   savingsGoal: 5000,
   daysInMonth: 30,
   fixedExpenses: [
-    { id: 'sim_fe_1', name: 'ค่าเช่าห้องจำลอง', amount: 2800 },
-    { id: 'sim_fe_2', name: 'ค่าน้ำไฟจำลอง', amount: 2200 },
-    { id: 'sim_fe_3', name: 'ค่าเน็ตจำลอง', amount: 300 },
-    { id: 'sim_fe_4', name: 'ค่าเดินทางจำลอง', amount: 400 }
+    { id: 'sim_fe_1', name: 'ค่าเช่าห้องจำลอง', nameEn: 'Simulated Rent', amount: 2800 },
+    { id: 'sim_fe_2', name: 'ค่าน้ำไฟจำลอง', nameEn: 'Simulated Utilities', amount: 2200 },
+    { id: 'sim_fe_3', name: 'ค่าเน็ตจำลอง', nameEn: 'Simulated Internet', amount: 300 },
+    { id: 'sim_fe_4', name: 'ค่าเดินทางจำลอง', nameEn: 'Simulated Transport', amount: 400 }
   ]
 };
 
@@ -77,6 +77,24 @@ const StorageManager = {
     }
   },
 
+  getCategoryDisplayName(category) {
+    if (!category) return '';
+    const lang = (typeof I18n !== 'undefined') ? I18n.getLanguage() : 'th';
+    if (lang === 'en' && category.nameEn) {
+      return category.nameEn;
+    }
+    return category.name;
+  },
+
+  getItemDisplayName(item) {
+    if (!item) return '';
+    const lang = (typeof I18n !== 'undefined') ? I18n.getLanguage() : 'th';
+    if (lang === 'en' && item.nameEn) {
+      return item.nameEn;
+    }
+    return item.name;
+  },
+
   saveCategories(categories) {
     try {
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
@@ -93,6 +111,7 @@ const StorageManager = {
     const newCat = {
       id: 'cat_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       name: name,
+      nameEn: category.nameEn || name,
       emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
       color: category.color || (type === 'income' ? '#10b981' : '#64748b'),
       type: type,
@@ -116,6 +135,7 @@ const StorageManager = {
     return categories.find(c => c.id === id) || {
       id: 'unknown',
       name: 'ค่าใช้จ่ายทั่วไป',
+      nameEn: 'General Expense',
       emoji: '📦',
       color: '#94a3b8',
       type: 'expense'
@@ -125,22 +145,22 @@ const StorageManager = {
   guessCategoryByName(name = '', type = 'expense') {
     const lower = name.toLowerCase();
     if (type === 'income') {
-      if (/เงินเดือน|ค่าจ้าง|salary|wage/.test(lower)) return 'inc_salary';
-      if (/โบนัส|คอมมิชชั่น|bonus|รางวัล/.test(lower)) return 'inc_bonus';
-      if (/ขายของ|ธุรกิจ|ร้าน|ช้อป|freelance|ฟรีแลนซ์/.test(lower)) return 'inc_business';
-      if (/ปันผล|ดอกเบี้ย|หุ้น|กองทุน|คริปโต/.test(lower)) return 'inc_invest';
+      if (/เงินเดือน|ค่าจ้าง|salary|wage|pay/.test(lower)) return 'inc_salary';
+      if (/โบนัส|คอมมิชชั่น|bonus|comm/.test(lower)) return 'inc_bonus';
+      if (/ขายของ|ธุรกิจ|ร้าน|ช้อป|freelance|ฟรีแลนซ์|side/.test(lower)) return 'inc_business';
+      if (/ปันผล|ดอกเบี้ย|หุ้น|กองทุน|คริปโต|dividend|interest|crypto/.test(lower)) return 'inc_invest';
       return 'inc_other';
     }
 
-    if (/หมา|แมว|สัตว์|เพ็ท|pet|หญ้า|ทรายแมว/.test(lower)) return 'exp_pets';
-    if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท|บ้าน/.test(lower)) return 'exp_housing';
-    if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi|ais|true|dtac/.test(lower)) return 'exp_bills';
-    if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว|ผ่อนรถ/.test(lower)) return 'exp_transport';
-    if (/กิน|อาหาร|ข้าว|กาแฟ|ชา|บุฟเฟต์|สุกี้|หมูกระทะ/.test(lower)) return 'exp_food';
-    if (/ซักผ้า|ของใช้|ช้อป|ซื้อ|เสื้อผ้า|เครื่องสำอาง/.test(lower)) return 'exp_shopping';
-    if (/netflix|spotify|youtube|disney|ดูหนัง|เกม|สตรีม/.test(lower)) return 'exp_ent';
-    if (/ยา|หมอ|สุขภาพ|ประกัน|aia|fwd|วิตามิน|คลินิก|ฟิตเนส/.test(lower)) return 'exp_health';
-    if (/เรียน|หนังสือ|คอร์ส|ติว|การศึกษา/.test(lower)) return 'exp_edu';
+    if (/หมา|แมว|สัตว์|เพ็ท|pet|dog|cat/.test(lower)) return 'exp_pets';
+    if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท|บ้าน|rent|housing/.test(lower)) return 'exp_housing';
+    if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi|ais|true|dtac|electric|water|bill/.test(lower)) return 'exp_bills';
+    if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว|ผ่อนรถ|gas|fuel|transport|taxi/.test(lower)) return 'exp_transport';
+    if (/กิน|อาหาร|ข้าว|กาแฟ|ชา|บุฟเฟต์|สุกี้|หมูกระทะ|food|coffee|drink|lunch|dinner/.test(lower)) return 'exp_food';
+    if (/ซักผ้า|ของใช้|ช้อป|ซื้อ|เสื้อผ้า|เครื่องสำอาง|shop|cloth|laundry/.test(lower)) return 'exp_shopping';
+    if (/netflix|spotify|youtube|disney|ดูหนัง|เกม|สตรีม|stream|movie|game/.test(lower)) return 'exp_ent';
+    if (/ยา|หมอ|สุขภาพ|ประกัน|aia|fwd|วิตามิน|คลินิก|ฟิตเนส|health|insurance|doctor|gym/.test(lower)) return 'exp_health';
+    if (/เรียน|หนังสือ|คอร์ส|ติว|การศึกษา|book|course|edu/.test(lower)) return 'exp_edu';
     return 'exp_other';
   },
 
@@ -181,6 +201,7 @@ const StorageManager = {
       id: 'rec_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       type: type,
       name: name,
+      nameEn: item.nameEn || name,
       amount: Math.max(0, parseFloat(item.amount) || 0),
       categoryId: item.categoryId || this.guessCategoryByName(name, type),
       paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
@@ -201,6 +222,7 @@ const StorageManager = {
       ...list[index],
       type: type,
       name: updatedData.name ? updatedData.name.trim() : list[index].name,
+      nameEn: updatedData.nameEn || list[index].nameEn,
       amount: updatedData.amount !== undefined ? Math.max(0, parseFloat(updatedData.amount) || 0) : list[index].amount,
       categoryId: updatedData.categoryId || list[index].categoryId,
       paymentMethod: updatedData.paymentMethod || list[index].paymentMethod
@@ -333,21 +355,22 @@ const StorageManager = {
   exportToCSV() {
     const transactions = this.getTransactions();
     if (transactions.length === 0) {
-      alert('ไม่มีข้อมูลรายการสำหรับส่งออก');
+      alert('ไม่มีข้อมูลรายการสำหรับส่งออก / No data to export');
       return;
     }
 
-    const headers = ['วันที่-เวลา', 'ประเภท', 'หมวดหมู่', 'จำนวนเงิน (บาท)', 'ช่องทางชำระเงิน', 'โน้ต/บันทึกช่วยจำ'];
+    const headers = ['Date-Time', 'Type', 'Category', 'Amount (THB)', 'Payment Method', 'Note'];
     
     const rows = transactions.map(t => {
       const cat = this.getCategoryById(t.categoryId);
-      const typeStr = t.type === 'income' ? 'รายรับ' : 'รายจ่าย';
+      const catName = this.getCategoryDisplayName(cat);
+      const typeStr = t.type === 'income' ? 'Income' : 'Expense';
       const formattedDate = t.date.replace('T', ' ');
       const cleanNote = (t.note || '').replace(/"/g, '""');
       return [
         `"${formattedDate}"`,
         `"${typeStr}"`,
-        `"${cat.emoji} ${cat.name}"`,
+        `"${cat.emoji} ${catName}"`,
         t.amount.toFixed(2),
         `"${t.paymentMethod}"`,
         `"${cleanNote}"`
@@ -369,7 +392,7 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '2.1',
+      version: '2.2',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
@@ -393,7 +416,7 @@ const StorageManager = {
   importFromJSON(jsonString) {
     try {
       const data = JSON.parse(jsonString);
-      if (!data) throw new Error('ไฟล์ไม่ถูกต้อง');
+      if (!data) throw new Error('Invalid file');
 
       if (Array.isArray(data)) {
         this.saveTransactions(data);
@@ -401,22 +424,11 @@ const StorageManager = {
         if (Array.isArray(data.transactions)) this.saveTransactions(data.transactions);
         if (Array.isArray(data.categories)) this.saveCategories(data.categories);
         if (Array.isArray(data.recurringItems)) this.saveRecurringItems(data.recurringItems);
-        if (Array.isArray(data.fixedExpenses)) {
-          const migrated = data.fixedExpenses.map(e => ({
-            id: e.id,
-            type: 'expense',
-            name: e.name,
-            amount: e.amount,
-            categoryId: e.categoryId || this.guessCategoryByName(e.name, 'expense'),
-            paymentMethod: e.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
-          }));
-          this.saveRecurringItems(migrated);
-        }
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
       }
       return { success: true };
     } catch (e) {
-      return { success: false, message: e.message || 'ไฟล์ JSON เสียหาย' };
+      return { success: false, message: e.message || 'Corrupted JSON file' };
     }
   },
 
@@ -433,7 +445,7 @@ const StorageManager = {
         categoryId: 'inc_salary',
         date: `${year}-${month}-01T09:00`,
         paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
-        note: 'เงินเดือนประจำเดือน',
+        note: 'เงินเดือนประจำเดือน / Monthly Salary',
         createdAt: Date.now() - 86400000 * 20
       },
       {
@@ -443,7 +455,7 @@ const StorageManager = {
         categoryId: 'exp_housing',
         date: `${year}-${month}-02T10:00`,
         paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
-        note: 'ค่าเช่าห้อง / คอนโด',
+        note: 'ค่าเช่าห้อง / Apartment Rent',
         createdAt: Date.now() - 86400000 * 19
       },
       {
@@ -453,7 +465,7 @@ const StorageManager = {
         categoryId: 'exp_bills',
         date: `${year}-${month}-03T11:20`,
         paymentMethod: 'โอนเงิน / บัญชีธนาคาร',
-        note: 'ค่าน้ำ + ค่าไฟ',
+        note: 'ค่าน้ำ + ค่าไฟ / Utilities',
         createdAt: Date.now() - 86400000 * 18
       },
       {
@@ -463,7 +475,7 @@ const StorageManager = {
         categoryId: 'exp_bills',
         date: `${year}-${month}-05T12:00`,
         paymentMethod: 'พร้อมเพย์ / สแกน QR',
-        note: 'ค่าเน็ตบ้าน + มือถือ',
+        note: 'ค่าเน็ตบ้าน + มือถือ / Internet',
         createdAt: Date.now() - 86400000 * 16
       },
       {
@@ -473,7 +485,7 @@ const StorageManager = {
         categoryId: 'exp_transport',
         date: `${year}-${month}-07T08:30`,
         paymentMethod: 'พร้อมเพย์ / สแกน QR',
-        note: 'ค่าเดินทางประจำ (BTS/น้ำมัน)',
+        note: 'ค่าเดินทางประจำ / Transport',
         createdAt: Date.now() - 86400000 * 14
       },
       {
@@ -483,7 +495,7 @@ const StorageManager = {
         categoryId: 'exp_food',
         date: `${year}-${month}-10T12:30`,
         paymentMethod: 'พร้อมเพย์ / สแกน QR',
-        note: 'ข้าวกะเพราหมูกรอบ + ไข่ดาว',
+        note: 'ข้าวกะเพราหมูกรอบ / Crispy Pork Basil Rice',
         createdAt: Date.now() - 86400000 * 11
       }
     ];

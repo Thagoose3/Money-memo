@@ -29,6 +29,9 @@ const App = {
 
   init() {
     I18n.init();
+    if (typeof SupabaseManager !== 'undefined') {
+      SupabaseManager.init();
+    }
     this.initDateTimeInput();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.bindEvents();

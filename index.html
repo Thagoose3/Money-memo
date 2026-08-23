@@ -11,6 +11,9 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- Supabase JS CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <!-- Google Fonts - Prompt & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,9 +137,12 @@
       </div>
     </div>
 
-    <!-- Actions & Language Switcher -->
+    <!-- Actions, Auth & Language Switcher -->
     <div class="flex items-center gap-1.5 sm:gap-2">
       
+      <!-- Google Auth Profile / Login Button Container -->
+      <div id="auth-header-container"></div>
+
       <!-- Bilingual Language Toggle (TH / EN) -->
       <div class="flex items-center bg-slate-200/70 p-0.5 rounded-xl text-xs font-semibold">
         <button type="button" id="lang-btn-th" onclick="I18n.setLanguage('th')" class="px-2 py-0.5 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
@@ -1457,15 +1463,74 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- MODAL: ⚙️ ตั้งค่า Supabase Cloud Sync & Google Login -->
+  <!-- ========================================== -->
+  <div id="supabase-config-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+            <span>⚙️</span> ตั้งค่า Supabase Cloud & Google Auth
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">เชื่อมต่อฐานข้อมูล Supabase เพื่อซิงค์ข้อมูลข้ามอุปกรณ์อัตโนมัติ</p>
+        </div>
+        <button type="button" onclick="SupabaseManager.closeConfigModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1.5 cursor-pointer">✕</button>
+      </div>
+
+      <form id="supabase-config-form" onsubmit="event.preventDefault(); SupabaseManager.handleSaveConfig();" class="space-y-3.5 text-xs">
+        
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Supabase Project URL *</label>
+          <input 
+            type="url" 
+            id="supabase-url-input" 
+            placeholder="https://xxxxxxxxxxxx.supabase.co" 
+            class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl font-mono text-slate-800"
+            required 
+          />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">Supabase Anon Public API Key *</label>
+          <textarea 
+            id="supabase-key-input" 
+            rows="3" 
+            placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+            class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl font-mono text-[11px] text-slate-800"
+            required
+          ></textarea>
+        </div>
+
+        <div class="p-3 bg-blue-50/70 rounded-2xl border border-blue-100/70 text-[11px] text-slate-600 space-y-1">
+          <p class="font-bold text-blue-900 flex items-center gap-1"><span>💡</span> วิธีรับค่า Key จาก Supabase:</p>
+          <p>1. เข้าไปที่ <a href="https://supabase.com/dashboard" target="_blank" class="text-blue-600 underline font-semibold">Supabase Dashboard</a></p>
+          <p>2. ไปที่ <strong>Project Settings ⚙️ -> API</strong></p>
+          <p>3. ก๊อปปี้ค่า <strong>Project URL</strong> และ <strong>anon public key</strong> มาวางที่นี่</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="SupabaseManager.closeConfigModal()" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-2xl shadow-xs transition-all cursor-pointer">
+            บันทึกการเชื่อมต่อ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast-notification" class="fixed bottom-20 sm:bottom-5 right-5 z-50 bg-slate-900/90 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-medium transition-all duration-300 opacity-0 translate-y-3 pointer-events-none flex items-center gap-2 border border-white/10">
     บันทึกเรียบร้อย
   </div>
 
   <!-- Scripts -->
-  <script src="js/i18n.js?v=2.5"></script>
-  <script src="js/storage.js?v=2.5"></script>
-  <script src="js/budget-simulator.js?v=2.5"></script>
-  <script src="js/app.js?v=2.5"></script>
+  <script src="js/i18n.js?v=2.6"></script>
+  <script src="js/storage.js?v=2.6"></script>
+  <script src="js/supabase-client.js?v=2.6"></script>
+  <script src="js/budget-simulator.js?v=2.6"></script>
+  <script src="js/app.js?v=2.6"></script>
 </body>
 </html>

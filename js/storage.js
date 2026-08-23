@@ -1,5 +1,5 @@
 /**
- * Storage & Data Management for Money Memo v2.4 (Bilingual, Category Manager, Filtered Export)
+ * Storage & Data Management for Money Memo v2.6 (Hybrid LocalStorage & Supabase Cloud Sync)
  */
 
 const STORAGE_KEYS = {
@@ -135,13 +135,19 @@ const StorageManager = {
       name: name,
       nameEn: nameEn,
       emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
-      color: category.color || (type === 'income' ? '#10b981' : '#64748b'),
+      color: category.color || (type === 'income' ? '#34d399' : '#f87171'),
       type: type,
       isDefault: false
     };
 
     categories.push(newCat);
     this.saveCategories(categories);
+
+    // Sync to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.saveCloudCategory(newCat);
+    }
+
     return newCat;
   },
 
@@ -162,6 +168,12 @@ const StorageManager = {
     };
 
     this.saveCategories(categories);
+
+    // Sync to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.saveCloudCategory(categories[index]);
+    }
+
     return { success: true, category: categories[index] };
   },
 
@@ -169,6 +181,12 @@ const StorageManager = {
     let categories = this.getCategories();
     categories = categories.filter(c => c.id !== id);
     this.saveCategories(categories);
+
+    // Delete on Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.deleteCloudCategory(id);
+    }
+
     return { success: true };
   },
 
@@ -268,6 +286,12 @@ const StorageManager = {
     };
     list.push(newItem);
     this.saveRecurringItems(list);
+
+    // Sync to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.saveCloudRecurringItem(newItem);
+    }
+
     return newItem;
   },
 
@@ -289,6 +313,12 @@ const StorageManager = {
     };
 
     this.saveRecurringItems(list);
+
+    // Sync to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.saveCloudRecurringItem(list[index]);
+    }
+
     return { success: true, item: list[index] };
   },
 
@@ -296,6 +326,12 @@ const StorageManager = {
     let list = this.getRecurringItems();
     list = list.filter(e => e.id !== id);
     this.saveRecurringItems(list);
+
+    // Delete on Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.deleteCloudRecurringItem(id);
+    }
+
     return { success: true };
   },
 
@@ -333,6 +369,12 @@ const StorageManager = {
     };
     transactions.unshift(newTx);
     this.saveTransactions(transactions);
+
+    // Sync to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.saveCloudTransaction(newTx);
+    }
+
     return newTx;
   },
 
@@ -351,6 +393,12 @@ const StorageManager = {
     }));
     const merged = [...newItems, ...transactions];
     this.saveTransactions(merged);
+
+    // Sync each to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      newItems.forEach(item => SupabaseManager.saveCloudTransaction(item));
+    }
+
     return newItems.length;
   },
 
@@ -371,6 +419,12 @@ const StorageManager = {
     };
 
     this.saveTransactions(transactions);
+
+    // Sync to Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.saveCloudTransaction(transactions[index]);
+    }
+
     return { success: true, transaction: transactions[index] };
   },
 
@@ -381,6 +435,12 @@ const StorageManager = {
 
     transactions = transactions.filter(t => t.id !== id);
     this.saveTransactions(transactions);
+
+    // Delete on Supabase Cloud if logged in
+    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      SupabaseManager.deleteCloudTransaction(id);
+    }
+
     return { success: true };
   },
 
@@ -541,7 +601,7 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '2.4',
+      version: '2.6',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),

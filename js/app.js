@@ -1,5 +1,5 @@
 /**
- * Main Application Controller for Smart Expense & Budget App
+ * Main Application Controller for Money Memo (Minimalist & Aesthetic Edition)
  */
 
 const App = {
@@ -138,7 +138,7 @@ const App = {
     const loadSampleBtn = document.getElementById('btn-load-sample');
     if (loadSampleBtn) {
       loadSampleBtn.addEventListener('click', () => {
-        if (confirm('ต้องการโหลดข้อมูลตัวอย่างสำหรับทดลองใช้งานใช่หรือไม่? (จะเพิ่มรายการจำลองในเดือนปัจจุบัน)')) {
+        if (confirm('ต้องการโหลดข้อมูลตัวอย่างสำหรับทดลองใช้งานใช่หรือไม่?')) {
           StorageManager.loadSampleData();
           this.renderAll();
           this.showToast('โหลดข้อมูลตัวอย่างเรียบร้อยแล้ว ✨');
@@ -210,17 +210,21 @@ const App = {
     const submitBtn = document.getElementById('tx-submit-btn');
 
     if (type === 'expense') {
-      typeToggleExp.className = 'flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-rose-500 text-white shadow-md shadow-rose-200 transition-all flex items-center justify-center gap-2';
-      typeToggleInc.className = 'flex-1 py-2.5 px-4 rounded-xl font-medium text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center justify-center gap-2';
+      typeToggleExp.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5';
+      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายจ่าย (Expense)';
+      typeToggleInc.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5';
+      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> รายรับ (Income)';
       if (submitBtn) {
-        submitBtn.className = 'w-full py-3.5 px-4 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold rounded-2xl shadow-lg shadow-rose-200 transition-all flex items-center justify-center gap-2 text-base';
+        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm';
         submitBtn.innerHTML = '<span>➕ บันทึกรายจ่าย</span>';
       }
     } else {
-      typeToggleExp.className = 'flex-1 py-2.5 px-4 rounded-xl font-medium text-sm bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all flex items-center justify-center gap-2';
-      typeToggleInc.className = 'flex-1 py-2.5 px-4 rounded-xl font-bold text-sm bg-emerald-500 text-white shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2';
+      typeToggleExp.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5';
+      typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> รายจ่าย (Expense)';
+      typeToggleInc.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5';
+      typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายรับ (Income)';
       if (submitBtn) {
-        submitBtn.className = 'w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 text-base';
+        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm';
         submitBtn.innerHTML = '<span>➕ บันทึกรายรับ</span>';
       }
     }
@@ -234,7 +238,7 @@ const App = {
 
     const categories = StorageManager.getCategories().filter(c => c.type === type);
     if (categories.length === 0) {
-      container.innerHTML = `<div class="col-span-full text-center py-4 text-sm text-slate-400">ไม่มีหมวดหมู่ประเภทนี้ กรุณาสร้างหมวดหมู่ใหม่</div>`;
+      container.innerHTML = `<div class="col-span-full text-center py-4 text-xs text-slate-400">ไม่มีหมวดหมู่ประเภทนี้</div>`;
       return;
     }
 
@@ -248,11 +252,11 @@ const App = {
       <button 
         type="button" 
         data-cat-id="${c.id}"
-        class="category-select-item p-2.5 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${c.id === this.selectedCategoryId ? 'selected border-blue-500 bg-blue-50/80 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}"
+        class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
         onclick="App.selectCategory('${containerId}', '${c.id}')"
       >
-        <span class="text-2xl">${c.emoji}</span>
-        <span class="text-xs font-medium text-slate-700 text-center truncate max-w-full">${c.name}</span>
+        <span class="text-xl">${c.emoji}</span>
+        <span class="text-[11px] font-medium text-slate-700 text-center truncate max-w-full leading-tight">${c.name}</span>
       </button>
     `).join('');
   },
@@ -262,13 +266,11 @@ const App = {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    container.querySelectorAll('.category-select-item').forEach(el => {
+    container.querySelectorAll('.cat-item-btn').forEach(el => {
       if (el.getAttribute('data-cat-id') === catId) {
-        el.classList.add('selected', 'border-blue-500', 'bg-blue-50/80', 'shadow-sm');
-        el.classList.remove('border-slate-200', 'bg-white');
+        el.classList.add('selected');
       } else {
-        el.classList.remove('selected', 'border-blue-500', 'bg-blue-50/80', 'shadow-sm');
-        el.classList.add('border-slate-200', 'bg-white');
+        el.classList.remove('selected');
       }
     });
   },
@@ -281,7 +283,7 @@ const App = {
 
     const amount = parseFloat(amountInput.value);
     if (isNaN(amount) || amount <= 0) {
-      alert('กรุณาระบุจำนวนเงินที่ถูกต้อง (มากกว่า 0 บาท)');
+      alert('กรุณาระบุจำนวนเงินที่ถูกต้อง');
       amountInput.focus();
       return;
     }
@@ -329,13 +331,13 @@ const App = {
     const paneDaily = document.getElementById('dashboard-daily-pane');
 
     if (mode === 'overview') {
-      if (viewOverview) viewOverview.className = 'px-4 py-1.5 rounded-lg text-sm font-bold bg-white text-blue-600 shadow-sm transition-all';
-      if (viewDaily) viewDaily.className = 'px-4 py-1.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 transition-all';
+      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all';
+      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all';
       if (paneOverview) paneOverview.classList.remove('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
     } else {
-      if (viewOverview) viewOverview.className = 'px-4 py-1.5 rounded-lg text-sm font-medium text-slate-500 hover:text-slate-800 transition-all';
-      if (viewDaily) viewDaily.className = 'px-4 py-1.5 rounded-lg text-sm font-bold bg-white text-blue-600 shadow-sm transition-all';
+      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all';
+      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all';
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.remove('hidden');
     }
@@ -379,18 +381,18 @@ const App = {
     if (expEl) expEl.textContent = '฿' + totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (netEl) {
       netEl.textContent = (netBalance >= 0 ? '+' : '') + '฿' + netBalance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      netEl.className = `text-2xl lg:text-3xl font-extrabold num-font ${netBalance >= 0 ? 'text-blue-600' : 'text-rose-600'}`;
+      netEl.className = `text-2xl font-extrabold num-font ${netBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
     }
     if (netStatusEl) {
       if (netBalance > 0) {
-        netStatusEl.textContent = 'คงเหลือสภาพคล่องเป็นบวก (Surplus ✨)';
-        netStatusEl.className = 'text-xs text-emerald-600 font-medium mt-1';
+        netStatusEl.textContent = 'คงเหลือสุทธิเป็นบวก (Surplus ✨)';
+        netStatusEl.className = 'text-[11px] text-emerald-600 font-medium mt-0.5';
       } else if (netBalance === 0) {
         netStatusEl.textContent = 'รายรับเท่ากับรายจ่ายพอดี (Balanced)';
-        netStatusEl.className = 'text-xs text-slate-500 font-medium mt-1';
+        netStatusEl.className = 'text-[11px] text-slate-400 font-medium mt-0.5';
       } else {
         netStatusEl.textContent = 'รายจ่ายมากกว่ารายรับ (Deficit ⚠️)';
-        netStatusEl.className = 'text-xs text-rose-600 font-medium mt-1';
+        netStatusEl.className = 'text-[11px] text-rose-600 font-medium mt-0.5';
       }
     }
 
@@ -418,7 +420,7 @@ const App = {
       const cat = StorageManager.getCategoryById(catId);
       catLabels.push(`${cat.emoji} ${cat.name}`);
       catData.push(catMap[catId]);
-      catColors.push(cat.color || '#3b82f6');
+      catColors.push(cat.color || '#334155');
     });
 
     const ctxDoughnut = document.getElementById('chart-category-doughnut');
@@ -443,7 +445,7 @@ const App = {
               backgroundColor: catColors,
               borderWidth: 2,
               borderColor: '#ffffff',
-              hoverOffset: 6
+              hoverOffset: 4
             }]
           },
           options: {
@@ -453,8 +455,8 @@ const App = {
               legend: {
                 position: 'bottom',
                 labels: {
-                  boxWidth: 12,
-                  font: { family: "'Prompt', sans-serif", size: 12 }
+                  boxWidth: 10,
+                  font: { family: "'Prompt', sans-serif", size: 11 }
                 }
               },
               tooltip: {
@@ -468,7 +470,7 @@ const App = {
                 }
               }
             },
-            cutout: '68%'
+            cutout: '72%'
           }
         });
       }
@@ -505,13 +507,13 @@ const App = {
               label: 'รายจ่าย (Expense)',
               data: dailySpending,
               backgroundColor: '#f43f5e',
-              borderRadius: 4
+              borderRadius: 3
             },
             {
               label: 'รายรับ (Income)',
               data: dailyIncome,
               backgroundColor: '#10b981',
-              borderRadius: 4
+              borderRadius: 3
             }
           ]
         },
@@ -521,12 +523,13 @@ const App = {
           scales: {
             x: {
               grid: { display: false },
-              ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } }
+              ticks: { font: { family: "'Inter', sans-serif", size: 10 } }
             },
             y: {
               beginAtZero: true,
+              grid: { color: '#f1f5f9' },
               ticks: {
-                font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
+                font: { family: "'Inter', sans-serif", size: 10 },
                 callback: (val) => '฿' + (val >= 1000 ? (val / 1000) + 'k' : val)
               }
             }
@@ -534,7 +537,7 @@ const App = {
           plugins: {
             legend: {
               position: 'top',
-              labels: { font: { family: "'Prompt', sans-serif", size: 12 } }
+              labels: { font: { family: "'Prompt', sans-serif", size: 11 } }
             },
             tooltip: {
               callbacks: {
@@ -562,7 +565,7 @@ const App = {
       .slice(0, 5);
 
     if (sortedCats.length === 0) {
-      container.innerHTML = `<div class="text-center py-6 text-slate-400 text-sm">ยังไม่มีข้อมูลการใช้จ่ายในเดือนนี้</div>`;
+      container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">ยังไม่มีข้อมูลการใช้จ่ายในเดือนนี้</div>`;
       return;
     }
 
@@ -570,19 +573,19 @@ const App = {
       const cat = StorageManager.getCategoryById(catId);
       const pct = totalExpense > 0 ? ((amount / totalExpense) * 100).toFixed(1) : 0;
       return `
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between text-sm">
-            <div class="flex items-center gap-2 font-medium text-slate-700">
-              <span class="text-lg">${cat.emoji}</span>
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-1.5 font-medium text-slate-700">
+              <span>${cat.emoji}</span>
               <span>${cat.name}</span>
             </div>
             <div class="text-right">
               <span class="font-bold text-slate-900 num-font">฿${amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-              <span class="text-xs text-slate-400 ml-1.5">(${pct}%)</span>
+              <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>
             </div>
           </div>
-          <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div class="h-2 rounded-full transition-all duration-500" style="width: ${pct}%; background-color: ${cat.color || '#3b82f6'};"></div>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div class="h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${cat.color || '#0f172a'};"></div>
           </div>
         </div>
       `;
@@ -595,10 +598,8 @@ const App = {
 
     if (monthlyTxs.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
-          <span class="text-4xl block mb-2">📅</span>
-          <p class="font-medium text-slate-600">ไม่มีรายการใช้จ่ายในเดือนนี้</p>
-          <p class="text-xs text-slate-400 mt-1">เริ่มต้นบันทึกรายรับหรือรายจ่ายได้ที่แท็บ "บันทึก & ประวัติ"</p>
+        <div class="text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-100">
+          <p class="text-xs font-medium text-slate-600">ไม่มีรายการใช้จ่ายในเดือนนี้</p>
         </div>
       `;
       return;
@@ -631,30 +632,30 @@ const App = {
         const isExp = t.type === 'expense';
 
         return `
-          <div class="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group border-b border-slate-100 last:border-b-0">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-slate-100 border border-slate-200">
+          <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-xl transition-colors group">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-base bg-slate-50 border border-slate-100">
                 ${cat.emoji}
               </div>
               <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-sm text-slate-800">${cat.name}</span>
-                  <span class="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">${t.paymentMethod}</span>
-                  ${timeStr ? `<span class="text-xs text-slate-400">${timeStr} น.</span>` : ''}
+                <div class="flex items-center gap-1.5">
+                  <span class="font-semibold text-xs text-slate-800">${cat.name}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">${t.paymentMethod}</span>
+                  ${timeStr ? `<span class="text-[10px] text-slate-400">${timeStr} น.</span>` : ''}
                 </div>
-                ${t.note ? `<p class="text-xs text-slate-500 mt-0.5">${t.note}</p>` : ''}
+                ${t.note ? `<p class="text-[11px] text-slate-500 mt-0.5">${t.note}</p>` : ''}
               </div>
             </div>
-            <div class="flex items-center gap-3">
-              <span class="font-bold text-base num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
                 ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </span>
-              <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="แก้ไข">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              <div class="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
+                <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded transition-colors" title="แก้ไข">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 </button>
-                <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="ลบ">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors" title="ลบ">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
             </div>
@@ -663,19 +664,19 @@ const App = {
       }).join('');
 
       return `
-        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-          <div class="bg-slate-50/90 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">วัน${dayName}</span>
+        <div class="minimal-card rounded-2xl overflow-hidden">
+          <div class="bg-slate-50/70 px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-700">${dayName}</span>
               <span class="text-xs font-semibold text-slate-700">${dayDate}</span>
-              <span class="text-xs text-slate-400">(${txs.length} รายการ)</span>
+              <span class="text-[10px] text-slate-400">(${txs.length})</span>
             </div>
-            <div class="flex items-center gap-3 text-xs font-bold num-font">
+            <div class="flex items-center gap-2 text-xs font-bold num-font">
               ${dayIncome > 0 ? `<span class="text-emerald-600">+฿${dayIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
               ${dayExpense > 0 ? `<span class="text-rose-600">-฿${dayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
             </div>
           </div>
-          <div class="p-2 divide-y divide-slate-100">
+          <div class="p-1.5 divide-y divide-slate-50">
             ${itemsHtml}
           </div>
         </div>
@@ -704,14 +705,13 @@ const App = {
     });
 
     const countEl = document.getElementById('tx-history-count');
-    if (countEl) countEl.textContent = `(${filtered.length} รายการ)`;
+    if (countEl) countEl.textContent = `(${filtered.length})`;
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div class="text-center py-12 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
-          <span class="text-4xl block mb-2">📋</span>
-          <p class="font-medium text-slate-600">ยังไม่พบรายการบันทึก</p>
-          <p class="text-xs text-slate-400 mt-1">กรอกข้อมูลด้านบนแล้วกด "บันทึก" หรือกดปุ่ม "โหลดข้อมูลตัวอย่าง" เพื่อทดสอบ</p>
+        <div class="text-center py-10 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+          <p class="text-xs font-medium text-slate-600">ยังไม่มีรายการบันทึก</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">กดบันทึกรายการ หรือคลิก "โหลดตัวอย่าง" ด้านบน</p>
         </div>
       `;
       return;
@@ -721,38 +721,38 @@ const App = {
       const cat = StorageManager.getCategoryById(t.categoryId);
       const isExp = t.type === 'expense';
       const d = new Date(t.date);
-      const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear() + 543} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')} น.`;
+      const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear() + 543} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
       return `
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
-          <div class="flex items-center gap-3.5">
-            <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl bg-slate-50 border border-slate-200">
+        <div class="bg-white p-3 rounded-xl border border-slate-100 hover:border-slate-300 transition-all flex items-center justify-between group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-slate-50 border border-slate-100">
               ${cat.emoji}
             </div>
             <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-800 text-sm">${cat.name}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full ${isExp ? 'bg-rose-50 text-rose-600 font-medium' : 'bg-emerald-50 text-emerald-600 font-medium'}">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-800 text-xs">${cat.name}</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isExp ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} font-semibold">
                   ${isExp ? 'รายจ่าย' : 'รายรับ'}
                 </span>
-                <span class="text-xs text-slate-400">${dateFormatted}</span>
+                <span class="text-[10px] text-slate-400">${dateFormatted}</span>
               </div>
-              <div class="flex items-center gap-2 mt-1">
-                <span class="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">${t.paymentMethod}</span>
-                ${t.note ? `<span class="text-xs text-slate-600 font-medium">${t.note}</span>` : ''}
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">${t.paymentMethod}</span>
+                ${t.note ? `<span class="text-[11px] text-slate-600">${t.note}</span>` : ''}
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-4">
-            <span class="text-lg font-extrabold num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+          <div class="flex items-center gap-3">
+            <span class="text-base font-extrabold num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
               ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
-            <div class="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-              <button onclick="App.openEditModal('${t.id}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors" title="แก้ไขข้อมูล">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
+              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="แก้ไข">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button onclick="App.openDeleteModal('${t.id}')" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="ลบรายการ">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="ลบ">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
           </div>
@@ -836,14 +836,14 @@ const App = {
       const cat = StorageManager.getCategoryById(tx.categoryId);
       const isExp = tx.type === 'expense';
       preview.innerHTML = `
-        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
-          <span class="text-3xl">${cat.emoji}</span>
-          <div class="text-left flex-1">
-            <p class="font-bold text-slate-800 text-sm">${cat.name} <span class="text-xs font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${isExp ? 'รายจ่าย' : 'รายรับ'})</span></p>
-            <p class="text-xs text-slate-500">${tx.date.replace('T', ' ')} · ${tx.paymentMethod}</p>
-            ${tx.note ? `<p class="text-xs text-slate-600 font-medium">"${tx.note}"</p>` : ''}
+        <div class="flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-left">
+          <span class="text-2xl">${cat.emoji}</span>
+          <div class="flex-1">
+            <p class="font-bold text-slate-800 text-xs">${cat.name} <span class="text-[10px] font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${isExp ? 'รายจ่าย' : 'รายรับ'})</span></p>
+            <p class="text-[10px] text-slate-400">${tx.date.replace('T', ' ')} · ${tx.paymentMethod}</p>
+            ${tx.note ? `<p class="text-[11px] text-slate-600">"${tx.note}"</p>` : ''}
           </div>
-          <div class="font-bold text-base num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+          <div class="font-bold text-sm num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
             ${isExp ? '-' : '+'}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
           </div>
         </div>
@@ -879,22 +879,22 @@ const App = {
       container.innerHTML = cats.map(c => {
         const usageCount = allTxs.filter(t => t.categoryId === c.id).length;
         return `
-          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between category-card">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background-color: ${c.color}15; border: 1px solid ${c.color}30;">
+          <div class="minimal-card p-3 rounded-xl flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-lg bg-slate-50 border border-slate-100">
                 ${c.emoji}
               </div>
               <div>
-                <p class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <p class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                   ${c.name}
-                  ${c.isDefault ? '<span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-normal">ระบบ</span>' : '<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">สร้างเอง</span>'}
+                  ${c.isDefault ? '<span class="text-[9px] bg-slate-100 text-slate-400 px-1 py-0.2 rounded font-normal">ระบบ</span>' : '<span class="text-[9px] bg-slate-900 text-white px-1 py-0.2 rounded font-bold">สร้างเอง</span>'}
                 </p>
-                <p class="text-xs text-slate-400 mt-0.5">ใช้ไป ${usageCount} รายการ</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">ใช้ไป ${usageCount} รายการ</p>
               </div>
             </div>
             ${!c.isDefault ? `
-              <button onclick="App.handleDeleteCategory('${c.id}', ${usageCount})" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" title="ลบหมวดหมู่นี้">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <button onclick="App.handleDeleteCategory('${c.id}', ${usageCount})" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors" title="ลบหมวดหมู่นี้">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             ` : ''}
           </div>
@@ -931,7 +931,7 @@ const App = {
 
     const type = typeInput ? typeInput.value : 'expense';
     const emoji = (emojiInput?.value || '').trim() || '🏷️';
-    const color = colorInput?.value || '#3b82f6';
+    const color = colorInput?.value || '#0f172a';
 
     StorageManager.addCategory({ name, type, emoji, color });
 
@@ -944,7 +944,7 @@ const App = {
 
   handleDeleteCategory(catId, usageCount) {
     if (usageCount > 0) {
-      if (!confirm(`หมวดหมู่นี้มีการใช้งานอยู่ ${usageCount} รายการ คุณแน่ใจหรือไม่ว่าต้องการลบ? (รายการที่ใช้หมวดนี้จะแสดงเป็น 'ไม่ระบุหมวดหมู่')`)) {
+      if (!confirm(`หมวดหมู่นี้มีการใช้งานอยู่ ${usageCount} รายการ คุณแน่ใจหรือไม่ว่าต้องการลบ?`)) {
         return;
       }
     } else {
@@ -973,13 +973,13 @@ const App = {
     if (!toast) return;
 
     toast.textContent = message;
-    toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+    toast.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
     toast.classList.add('opacity-100', 'translate-y-0');
 
     setTimeout(() => {
       toast.classList.remove('opacity-100', 'translate-y-0');
-      toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-    }, 2800);
+      toast.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+    }, 2500);
   }
 };
 

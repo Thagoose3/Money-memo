@@ -1,102 +1,118 @@
-﻿/* Google Fonts - Prompt & Kanit */
-@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Google Fonts - Prompt & Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 :root {
-  --font-prompt: 'Prompt', sans-serif;
-  --font-sans: 'Plus Jakarta Sans', 'Prompt', sans-serif;
+  --font-thai: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-num: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
-  font-family: var(--font-prompt);
+  font-family: var(--font-thai);
   background-color: #f8fafc;
-  color: #1e293b;
-  -webkit-tap-highlight-color: transparent;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .num-font {
-  font-family: var(--font-sans);
+  font-family: var(--font-num);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
 }
 
-/* Glassmorphism & Custom Shadow */
-.glass-card {
+/* Minimalist Clean Cards */
+.minimal-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.minimal-card:hover {
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.minimal-header {
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.glass-header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.glass-modal {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 9999px;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #e2e8f0;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #cbd5e1;
 }
 
-/* Smooth Transitions */
-.tab-btn {
+/* Minimal Tabs */
+.nav-tab-btn {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #64748b;
 }
 
-.tab-btn.active {
-  background-color: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+.nav-tab-btn.active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
 }
 
-/* Badge & Chip Styles */
-.chip-btn {
+/* Quick Chips */
+.minimal-chip {
   transition: all 0.15s ease;
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
-.chip-btn:hover {
+.minimal-chip:hover {
+  background-color: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
   transform: translateY(-1px);
 }
-.chip-btn:active {
+.minimal-chip:active {
   transform: translateY(0);
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Category Grid Selection */
+.cat-item-btn {
+  transition: all 0.15s ease;
+  border: 1px solid #f1f5f9;
+  background-color: #ffffff;
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+.cat-item-btn:hover {
+  border-color: #cbd5e1;
+  background-color: #f8fafc;
 }
 
-@keyframes popModal {
+.cat-item-btn.selected {
+  border-color: #0f172a !important;
+  background-color: #f8fafc !important;
+  box-shadow: 0 0 0 1.5px #0f172a !important;
+}
+
+/* Smooth Animations */
+@keyframes modalPop {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(10px);
+    transform: scale(0.97) translateY(8px);
   }
   to {
     opacity: 1;
@@ -104,28 +120,11 @@ body {
   }
 }
 
-.animate-pop-modal {
-  animation: popModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-modal {
+  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Gradients */
-.stat-gradient-blue {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-}
-.stat-gradient-green {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-}
-.stat-gradient-rose {
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-}
-.stat-gradient-purple {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-}
-.stat-gradient-amber {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-}
-
-/* Input Styles */
+/* Number inputs spin disable */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -135,9 +134,9 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Category grid */
-.category-select-item.selected {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+/* Smooth Focus */
+input:focus, select:focus {
+  outline: none;
+  border-color: #0f172a !important;
+  box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.15) !important;
 }

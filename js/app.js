@@ -1,9 +1,9 @@
 /**
- * Main Application Controller for Money Memo v2.2 (Bilingual Support)
+ * Main Application Controller for Money Memo v2.3 (Bilingual & Category Manager)
  */
 
 const App = {
-  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'recurring'
+  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'recurring', 'categories'
   dashboardViewMode: 'overview', // 'overview' (Monthly charts) or 'daily' (Daily breakdown)
   selectedDate: new Date(), // สำหรับ Dashboard
   currentEntryType: 'expense', // 'expense' or 'income' for transaction form
@@ -13,6 +13,11 @@ const App = {
   inlineRecurringType: 'expense', // 'expense' or 'income'
   recurringCardFilter: 'all', // 'all', 'expense', 'income'
   editingRecurringId: null,
+
+  // Tab 5 (Category Manager) state
+  categoryManagerType: 'expense', // 'expense' or 'income'
+  editingCategoryId: null,
+  deletingCategoryId: null,
 
   // Modals & Pending actions
   editingTransactionId: null,
@@ -81,7 +86,7 @@ const App = {
       });
     }
 
-    // Add Category Modal Form Submit
+    // Category Modal Form Submit (Add / Edit)
     const addCatForm = document.getElementById('add-category-form');
     if (addCatForm) {
       addCatForm.addEventListener('submit', (e) => {
@@ -229,6 +234,8 @@ const App = {
       this.renderRecurringTab();
     } else if (tabName === 'simulator') {
       BudgetSimulator.render();
+    } else if (tabName === 'categories') {
+      this.renderCategoriesTab();
     }
   },
 
@@ -323,22 +330,119 @@ const App = {
     });
   },
 
-  // --- Add Custom Category Feature ---
+  // ==========================================
+  // TAB 5: CATEGORY MANAGER (เพิ่ม/ลด/แก้ไข หมวดหมู่)
+  // ==========================================
+  setCategoryManagerType(type) {
+    this.categoryManagerType = type;
+    const expBtn = document.getElementById('cat-tab-expense');
+    const incBtn = document.getElementById('cat-tab-income');
+
+    if (type === 'expense') {
+      if (expBtn) expBtn.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-rose-500 text-white shadow-xs transition-all cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3.5 py-1.5 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+    } else {
+      if (expBtn) expBtn.className = 'px-3.5 py-1.5 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3.5 py-1.5 rounded-lg font-bold bg-emerald-500 text-white shadow-xs transition-all cursor-pointer';
+    }
+
+    this.renderCategoriesTab();
+  },
+
+  renderCategoriesTab() {
+    const container = document.getElementById('categories-manager-grid');
+    const countBadge = document.getElementById('cat-mgr-count-badge');
+    if (!container) return;
+
+    const allCategories = StorageManager.getCategories();
+    const categories = allCategories.filter(c => c.type === this.categoryManagerType);
+
+    const lang = I18n.getLanguage();
+
+    if (countBadge) {
+      countBadge.textContent = lang === 'en' ? `(${categories.length} categories)` : `(ทั้งหมด ${categories.length} หมวดหมู่)`;
+    }
+
+    if (categories.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200 text-slate-400">
+          <span class="text-3xl block mb-2">🏷️</span>
+          <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No categories found' : 'ไม่พบหมวดหมู่ในกลุ่มนี้'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = categories.map(cat => {
+      const displayName = StorageManager.getCategoryDisplayName(cat);
+      const isExpense = cat.type === 'expense';
+      const badgeText = cat.isDefault ? I18n.t('badge_default_cat') : I18n.t('badge_custom_cat');
+
+      return `
+        <div class="minimal-card p-4 rounded-2xl flex items-center justify-between gap-3 group">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-2xl shadow-2xs border border-slate-100 flex-shrink-0" style="background-color: ${cat.color}15; border-color: ${cat.color}30;">
+              ${cat.emoji}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-900 text-sm truncate">${displayName}</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded-full font-semibold ${cat.isDefault ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600'}">
+                  ${badgeText}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 truncate">
+                <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${cat.color || '#64748b'};"></span>
+                <span>${cat.name} ${cat.nameEn && cat.nameEn !== cat.name ? `· ${cat.nameEn}` : ''}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button 
+              type="button" 
+              onclick="App.openEditCategoryModal('${cat.id}')" 
+              class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" 
+              title="${I18n.t('btn_edit_cat')}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </button>
+            <button 
+              type="button" 
+              onclick="App.openDeleteCategoryModal('${cat.id}')" 
+              class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
+              title="${I18n.t('btn_delete_cat')}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
   openAddCategoryModal(defaultType = null) {
+    this.editingCategoryId = null;
     const modal = document.getElementById('add-category-modal');
+    const titleEl = document.getElementById('category-modal-title');
+    const idInput = document.getElementById('new-cat-id');
     const nameInput = document.getElementById('new-cat-name-input');
+    const nameEnInput = document.getElementById('new-cat-name-en-input');
     const emojiInput = document.getElementById('new-cat-emoji-input');
     const colorInput = document.getElementById('new-cat-color-input');
     const typeRadios = document.querySelectorAll('input[name="new-cat-type"]');
 
     const targetType = defaultType || this.currentEntryType || 'expense';
 
+    if (titleEl) titleEl.innerHTML = `<span>🏷️</span> ${I18n.t('modal_add_cat_title')}`;
+    if (idInput) idInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (nameEnInput) nameEnInput.value = '';
+
     typeRadios.forEach(r => {
       r.checked = (r.value === targetType);
     });
 
-    if (nameInput) nameInput.value = '';
-    
     const defaultEmoji = targetType === 'income' ? '💰' : '🐾';
     if (emojiInput) emojiInput.value = defaultEmoji;
     this.updateCategoryEmojiPreview(defaultEmoji);
@@ -354,7 +458,47 @@ const App = {
     if (nameInput) setTimeout(() => nameInput.focus(), 100);
   },
 
+  openEditCategoryModal(id) {
+    const cat = StorageManager.getCategoryById(id);
+    if (!cat) return;
+
+    this.editingCategoryId = id;
+    const modal = document.getElementById('add-category-modal');
+    const titleEl = document.getElementById('category-modal-title');
+    const idInput = document.getElementById('new-cat-id');
+    const nameInput = document.getElementById('new-cat-name-input');
+    const nameEnInput = document.getElementById('new-cat-name-en-input');
+    const emojiInput = document.getElementById('new-cat-emoji-input');
+    const colorInput = document.getElementById('new-cat-color-input');
+    const typeRadios = document.querySelectorAll('input[name="new-cat-type"]');
+
+    if (titleEl) titleEl.innerHTML = `<span>✏️</span> ${I18n.t('modal_edit_cat_title')}`;
+    if (idInput) idInput.value = cat.id;
+    if (nameInput) nameInput.value = cat.name || '';
+    if (nameEnInput) nameEnInput.value = cat.nameEn || '';
+    if (emojiInput) emojiInput.value = cat.emoji || '📦';
+    this.updateCategoryEmojiPreview(cat.emoji || '📦');
+
+    if (colorInput) colorInput.value = cat.color || '#64748b';
+
+    typeRadios.forEach(r => {
+      r.checked = (r.value === cat.type);
+    });
+
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      if (s.getAttribute('onclick')?.includes(cat.color)) {
+        s.classList.add('selected');
+      } else {
+        s.classList.remove('selected');
+      }
+    });
+
+    if (modal) modal.classList.add('show');
+    if (nameInput) setTimeout(() => nameInput.focus(), 100);
+  },
+
   closeAddCategoryModal() {
+    this.editingCategoryId = null;
     const modal = document.getElementById('add-category-modal');
     if (modal) modal.classList.remove('show');
   },
@@ -386,12 +530,16 @@ const App = {
   },
 
   handleSaveNewCategory() {
+    const idInput = document.getElementById('new-cat-id');
     const nameInput = document.getElementById('new-cat-name-input');
+    const nameEnInput = document.getElementById('new-cat-name-en-input');
     const emojiInput = document.getElementById('new-cat-emoji-input');
     const colorInput = document.getElementById('new-cat-color-input');
     const typeRadio = document.querySelector('input[name="new-cat-type"]:checked');
 
+    const id = (idInput?.value || '').trim();
     const name = (nameInput?.value || '').trim();
+    const nameEn = (nameEnInput?.value || '').trim() || name;
     const emoji = (emojiInput?.value || '').trim() || '📦';
     const color = colorInput?.value || '#64748b';
     const type = typeRadio ? typeRadio.value : this.currentEntryType;
@@ -402,22 +550,79 @@ const App = {
       return;
     }
 
-    const newCat = StorageManager.addCategory({
-      name,
-      nameEn: name,
-      emoji,
-      color,
-      type
-    });
-
-    this.closeAddCategoryModal();
-
-    if (type === this.currentEntryType) {
-      this.initCategoryGrid('form-category-grid', type, newCat.id);
+    if (id) {
+      // Editing existing category
+      StorageManager.updateCategory(id, { name, nameEn, emoji, color, type });
+      this.showToast(I18n.t('toast_cat_updated'));
+    } else {
+      // Creating new category
+      const newCat = StorageManager.addCategory({ name, nameEn, emoji, color, type });
+      if (type === this.currentEntryType) {
+        this.initCategoryGrid('form-category-grid', type, newCat.id);
+      }
+      this.showToast(I18n.t('toast_cat_added'));
     }
 
+    this.closeAddCategoryModal();
+    this.renderAll();
+    this.renderCategoriesTab();
     this.setInlineRecurringType(this.inlineRecurringType);
-    this.showToast(I18n.getLanguage() === 'en' ? `Category "${newCat.emoji} ${newCat.name}" added!` : `เพิ่มหมวดหมู่ "${newCat.emoji} ${newCat.name}" สำเร็จ 🎉`);
+  },
+
+  openDeleteCategoryModal(id) {
+    const cat = StorageManager.getCategoryById(id);
+    if (!cat) return;
+
+    this.deletingCategoryId = id;
+    const modal = document.getElementById('delete-category-modal');
+    const preview = document.getElementById('delete-category-modal-preview');
+
+    const displayName = StorageManager.getCategoryDisplayName(cat);
+
+    if (preview) {
+      preview.innerHTML = `
+        <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-left mt-2">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl" style="background-color: ${cat.color}20;">
+            ${cat.emoji}
+          </div>
+          <div>
+            <p class="font-bold text-slate-900 text-xs">${displayName}</p>
+            <p class="text-[11px] text-slate-400">${cat.type === 'expense' ? '🔴 Expense' : '🟢 Income'}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    if (modal) modal.classList.add('show');
+  },
+
+  closeDeleteCategoryModal() {
+    this.deletingCategoryId = null;
+    const modal = document.getElementById('delete-category-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  confirmDeleteCategory() {
+    if (!this.deletingCategoryId) return;
+
+    StorageManager.deleteCategory(this.deletingCategoryId);
+    this.closeDeleteCategoryModal();
+    this.renderAll();
+    this.renderCategoriesTab();
+    this.setInlineRecurringType(this.inlineRecurringType);
+    this.showToast(I18n.t('toast_cat_deleted'));
+  },
+
+  handleRestoreDefaultCategories() {
+    const lang = I18n.getLanguage();
+    const confirmMsg = lang === 'en' ? 'Restore default standard categories?' : 'คุณต้องการคืนค่าหมวดหมู่มาตรฐานเริ่มต้นใช่หรือไม่?';
+    if (confirm(confirmMsg)) {
+      StorageManager.restoreDefaultCategories();
+      this.renderAll();
+      this.renderCategoriesTab();
+      this.setInlineRecurringType(this.inlineRecurringType);
+      this.showToast(I18n.t('toast_cat_restored'));
+    }
   },
 
   // --- Quick Recurring Chips ---
@@ -1666,6 +1871,7 @@ const App = {
     this.renderDashboard();
     this.renderRecurringTab();
     this.renderQuickFixedChips();
+    this.renderCategoriesTab();
   },
 
   showToast(message) {

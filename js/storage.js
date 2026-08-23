@@ -1,5 +1,5 @@
 /**
- * Storage & Data Management for Money Memo v2.2 (Bilingual Support)
+ * Storage & Data Management for Money Memo v2.3 (Bilingual & Category Manager)
  */
 
 const STORAGE_KEYS = {
@@ -68,6 +68,24 @@ const StorageManager = {
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Hydrate English names and default flags if missing
+        let needsSave = false;
+        parsed.forEach(c => {
+          const def = DEFAULT_CATEGORIES.find(d => d.id === c.id);
+          if (def) {
+            if (!c.nameEn && def.nameEn) {
+              c.nameEn = def.nameEn;
+              needsSave = true;
+            }
+            if (c.isDefault === undefined) {
+              c.isDefault = true;
+              needsSave = true;
+            }
+          }
+        });
+        if (needsSave) {
+          this.saveCategories(parsed);
+        }
         return parsed;
       }
       this.saveCategories(DEFAULT_CATEGORIES);
@@ -80,19 +98,23 @@ const StorageManager = {
   getCategoryDisplayName(category) {
     if (!category) return '';
     const lang = (typeof I18n !== 'undefined') ? I18n.getLanguage() : 'th';
-    if (lang === 'en' && category.nameEn) {
-      return category.nameEn;
+    if (lang === 'en') {
+      if (category.nameEn) return category.nameEn;
+      const def = DEFAULT_CATEGORIES.find(d => d.id === category.id);
+      if (def && def.nameEn) return def.nameEn;
     }
-    return category.name;
+    return category.name || '';
   },
 
   getItemDisplayName(item) {
     if (!item) return '';
     const lang = (typeof I18n !== 'undefined') ? I18n.getLanguage() : 'th';
-    if (lang === 'en' && item.nameEn) {
-      return item.nameEn;
+    if (lang === 'en') {
+      if (item.nameEn) return item.nameEn;
+      const def = DEFAULT_RECURRING_ITEMS.find(d => d.id === item.id);
+      if (def && def.nameEn) return def.nameEn;
     }
-    return item.name;
+    return item.name || '';
   },
 
   saveCategories(categories) {
@@ -107,11 +129,12 @@ const StorageManager = {
     const categories = this.getCategories();
     const type = category.type === 'income' ? 'income' : 'expense';
     const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : 'รายจ่ายใหม่');
+    const nameEn = (category.nameEn || '').trim() || name;
     
     const newCat = {
       id: 'cat_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       name: name,
-      nameEn: category.nameEn || name,
+      nameEn: nameEn,
       emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
       color: category.color || (type === 'income' ? '#10b981' : '#64748b'),
       type: type,
@@ -123,11 +146,36 @@ const StorageManager = {
     return newCat;
   },
 
+  updateCategory(id, updatedData) {
+    const categories = this.getCategories();
+    const index = categories.findIndex(c => c.id === id);
+    if (index === -1) return { success: false, message: 'Category not found' };
+
+    const type = updatedData.type || categories[index].type || 'expense';
+
+    categories[index] = {
+      ...categories[index],
+      name: updatedData.name ? updatedData.name.trim() : categories[index].name,
+      nameEn: updatedData.nameEn ? updatedData.nameEn.trim() : (categories[index].nameEn || categories[index].name),
+      emoji: updatedData.emoji || categories[index].emoji,
+      color: updatedData.color || categories[index].color,
+      type: type
+    };
+
+    this.saveCategories(categories);
+    return { success: true, category: categories[index] };
+  },
+
   deleteCategory(id) {
     let categories = this.getCategories();
     categories = categories.filter(c => c.id !== id);
     this.saveCategories(categories);
     return { success: true };
+  },
+
+  restoreDefaultCategories() {
+    this.saveCategories(DEFAULT_CATEGORIES);
+    return DEFAULT_CATEGORIES;
   },
 
   getCategoryById(id) {
@@ -138,7 +186,8 @@ const StorageManager = {
       nameEn: 'General Expense',
       emoji: '📦',
       color: '#94a3b8',
-      type: 'expense'
+      type: 'expense',
+      isDefault: true
     };
   },
 
@@ -174,6 +223,18 @@ const StorageManager = {
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Hydrate English names if missing
+        let needsSave = false;
+        parsed.forEach(item => {
+          const def = DEFAULT_RECURRING_ITEMS.find(d => d.id === item.id);
+          if (def && !item.nameEn && def.nameEn) {
+            item.nameEn = def.nameEn;
+            needsSave = true;
+          }
+        });
+        if (needsSave) {
+          this.saveRecurringItems(parsed);
+        }
         return parsed;
       }
       this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
@@ -196,12 +257,13 @@ const StorageManager = {
     const list = this.getRecurringItems();
     const type = item.type === 'income' ? 'income' : 'expense';
     const name = (item.name || '').trim() || (type === 'income' ? 'รายรับประจำใหม่' : 'รายจ่ายประจำใหม่');
+    const nameEn = (item.nameEn || '').trim() || name;
     
     const newItem = {
       id: 'rec_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       type: type,
       name: name,
-      nameEn: item.nameEn || name,
+      nameEn: nameEn,
       amount: Math.max(0, parseFloat(item.amount) || 0),
       categoryId: item.categoryId || this.guessCategoryByName(name, type),
       paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
@@ -222,7 +284,7 @@ const StorageManager = {
       ...list[index],
       type: type,
       name: updatedData.name ? updatedData.name.trim() : list[index].name,
-      nameEn: updatedData.nameEn || list[index].nameEn,
+      nameEn: updatedData.nameEn ? updatedData.nameEn.trim() : (list[index].nameEn || list[index].name),
       amount: updatedData.amount !== undefined ? Math.max(0, parseFloat(updatedData.amount) || 0) : list[index].amount,
       categoryId: updatedData.categoryId || list[index].categoryId,
       paymentMethod: updatedData.paymentMethod || list[index].paymentMethod
@@ -355,7 +417,7 @@ const StorageManager = {
   exportToCSV() {
     const transactions = this.getTransactions();
     if (transactions.length === 0) {
-      alert('ไม่มีข้อมูลรายการสำหรับส่งออก / No data to export');
+      alert(I18n.getLanguage() === 'en' ? 'No transactions to export' : 'ไม่มีข้อมูลรายการสำหรับส่งออก');
       return;
     }
 
@@ -392,7 +454,7 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '2.2',
+      version: '2.3',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),

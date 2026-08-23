@@ -20,6 +20,7 @@ const TRANSLATIONS = {
     tab_dashboard: 'แดชบอร์ด',
     tab_simulator: 'จำลองเงินกินใช้',
     tab_recurring: 'รายการประจำเดือน',
+    tab_categories: 'จัดการหมวดหมู่',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'ดึงรายการประจำเดือนมาบันทึก',
@@ -41,6 +42,7 @@ const TRANSLATIONS = {
     label_amount: 'จำนวนเงิน (บาท) *',
     label_category: 'เลือกหมวดหมู่ *',
     btn_add_category: '➕ เพิ่มหมวดหมู่',
+    btn_manage_categories: '⚙️ จัดการหมวดหมู่',
     label_datetime: 'วันที่และเวลา',
     label_payment: 'ช่องทางชำระเงิน',
     label_note: 'บันทึกช่วยจำ (Note)',
@@ -140,12 +142,28 @@ const TRANSLATIONS = {
     btn_edit: 'แก้ไข',
     btn_delete: 'ลบ',
 
+    // Tab 5: Category Manager
+    cat_mgr_title: 'จัดการหมวดหมู่ (Category Manager)',
+    cat_mgr_desc: 'เพิ่ม แก้ไข หรือลบหมวดหมู่รายรับ-รายจ่ายตามความต้องการของคุณ',
+    btn_add_new_category: '➕ เพิ่มหมวดหมู่ใหม่',
+    btn_restore_default_categories: '🔄 คืนค่าเริ่มต้น',
+    cat_mgr_expenses_tab: '🔴 หมวดหมู่รายจ่าย',
+    cat_mgr_incomes_tab: '🟢 หมวดหมู่รายรับ',
+    badge_default_cat: 'ค่าเริ่มต้น',
+    badge_custom_cat: 'กำหนดเอง',
+    btn_edit_cat: 'แก้ไข',
+    btn_delete_cat: 'ลบ',
+    modal_del_cat_title: 'ยืนยันการลบหมวดหมู่?',
+    modal_del_cat_desc: 'คุณต้องการลบหมวดหมู่นี้จริงๆ หรือไม่? รายการที่เคยบันทึกไว้ในหมวดนี้จะไม่หาย แต่จะแสดงเป็นหมวดหมู่อื่นๆ',
+
     // Modals
     modal_add_cat_title: 'เพิ่มหมวดหมู่ใหม่',
+    modal_edit_cat_title: 'แก้ไขหมวดหมู่',
     modal_add_cat_type: 'ประเภทหมวดหมู่',
     modal_add_cat_emoji: 'ไอคอนอิโมจิ (Emoji) *',
     modal_add_cat_emoji_hint: 'เลือกจากด้านล่างหรือพิมพ์เองได้',
-    modal_add_cat_name: 'ชื่อหมวดหมู่ *',
+    modal_add_cat_name: 'ชื่อหมวดหมู่ (ภาษาไทย) *',
+    modal_add_cat_name_en: 'ชื่อหมวดหมู่ภาษาอังกฤษ (Name in English)',
     modal_add_cat_color: 'สีประจำหมวดหมู่',
     btn_cancel: 'ยกเลิก',
     btn_save_cat: '➕ บันทึกหมวดหมู่',
@@ -171,7 +189,11 @@ const TRANSLATIONS = {
     toast_updated: 'อัปเดตรายการเรียบร้อยแล้ว ✅',
     toast_deleted: 'ลบรายการเรียบร้อย 🗑️',
     toast_sample_loaded: 'โหลดข้อมูลตัวอย่างเรียบร้อยแล้ว ✨',
-    toast_restored: 'กู้คืนข้อมูลสำเร็จเรียบร้อยแล้ว 🎉'
+    toast_restored: 'กู้คืนข้อมูลสำเร็จเรียบร้อยแล้ว 🎉',
+    toast_cat_added: 'เพิ่มหมวดหมู่สำเร็จ 🎉',
+    toast_cat_updated: 'อัปเดตหมวดหมู่สำเร็จ ✅',
+    toast_cat_deleted: 'ลบหมวดหมู่เรียบร้อยแล้ว 🗑️',
+    toast_cat_restored: 'คืนค่าหมวดหมู่เริ่มต้นเรียบร้อยแล้ว 🔄'
   },
 
   en: {
@@ -188,6 +210,7 @@ const TRANSLATIONS = {
     tab_dashboard: 'Dashboard',
     tab_simulator: 'Budget Simulator',
     tab_recurring: 'Recurring Items',
+    tab_categories: 'Category Manager',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'Import Monthly Recurring Items',
@@ -209,6 +232,7 @@ const TRANSLATIONS = {
     label_amount: 'Amount (THB) *',
     label_category: 'Select Category *',
     btn_add_category: '➕ Add Category',
+    btn_manage_categories: '⚙️ Manage Categories',
     label_datetime: 'Date & Time',
     label_payment: 'Payment Method',
     label_note: 'Memo / Note',
@@ -308,12 +332,28 @@ const TRANSLATIONS = {
     btn_edit: 'Edit',
     btn_delete: 'Delete',
 
+    // Tab 5: Category Manager
+    cat_mgr_title: 'Category Manager',
+    cat_mgr_desc: 'Add, edit, or delete expense and income categories to fit your lifestyle',
+    btn_add_new_category: '➕ Add New Category',
+    btn_restore_default_categories: '🔄 Restore Defaults',
+    cat_mgr_expenses_tab: '🔴 Expense Categories',
+    cat_mgr_incomes_tab: '🟢 Income Categories',
+    badge_default_cat: 'Default',
+    badge_custom_cat: 'Custom',
+    btn_edit_cat: 'Edit',
+    btn_delete_cat: 'Delete',
+    modal_del_cat_title: 'Delete this category?',
+    modal_del_cat_desc: 'Are you sure you want to delete this category? Past transactions with this category will remain safe.',
+
     // Modals
     modal_add_cat_title: 'Add New Category',
+    modal_edit_cat_title: 'Edit Category',
     modal_add_cat_type: 'Category Type',
     modal_add_cat_emoji: 'Emoji Icon *',
     modal_add_cat_emoji_hint: 'Select below or type your own',
-    modal_add_cat_name: 'Category Name *',
+    modal_add_cat_name: 'Category Name (Thai) *',
+    modal_add_cat_name_en: 'Category Name in English',
     modal_add_cat_color: 'Category Color',
     btn_cancel: 'Cancel',
     btn_save_cat: '➕ Save Category',
@@ -339,7 +379,11 @@ const TRANSLATIONS = {
     toast_updated: 'Updated successfully ✅',
     toast_deleted: 'Deleted successfully 🗑️',
     toast_sample_loaded: 'Sample data loaded ✨',
-    toast_restored: 'Data restored successfully 🎉'
+    toast_restored: 'Data restored successfully 🎉',
+    toast_cat_added: 'Category added successfully 🎉',
+    toast_cat_updated: 'Category updated successfully ✅',
+    toast_cat_deleted: 'Category deleted successfully 🗑️',
+    toast_cat_restored: 'Default categories restored 🔄'
   }
 };
 
@@ -419,6 +463,12 @@ const I18n = {
     if (typeof App !== 'undefined' && App.renderAll) {
       App.renderMonthSelector();
       App.renderAll();
+      if (App.renderCategoriesTab) {
+        App.renderCategoriesTab();
+      }
+      if (App.setInlineRecurringType) {
+        App.setInlineRecurringType(App.inlineRecurringType);
+      }
     }
     if (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.render) {
       BudgetSimulator.render();

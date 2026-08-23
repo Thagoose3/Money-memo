@@ -162,21 +162,25 @@
   <!-- Minimal Pill Tabs Navigation -->
   <div class="max-w-5xl w-full mx-auto px-4 sm:px-6 pt-4">
     <div class="bg-slate-200/60 p-1 rounded-2xl flex items-center gap-1 overflow-x-auto text-xs sm:text-sm font-medium">
-      <button data-tab-target="transactions" class="nav-tab-btn active flex-1 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="transactions" class="nav-tab-btn active flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📝</span>
         <span data-i18n="tab_transactions">บันทึก & รายการ</span>
       </button>
-      <button data-tab-target="dashboard" class="nav-tab-btn flex-1 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="dashboard" class="nav-tab-btn flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📊</span>
         <span data-i18n="tab_dashboard">แดชบอร์ด</span>
       </button>
-      <button data-tab-target="simulator" class="nav-tab-btn flex-1 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="simulator" class="nav-tab-btn flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>🧮</span>
         <span data-i18n="tab_simulator">จำลองเงินกินใช้</span>
       </button>
-      <button data-tab-target="recurring" class="nav-tab-btn flex-1 py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="recurring" class="nav-tab-btn flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📌</span>
         <span data-i18n="tab_recurring">รายการประจำเดือน</span>
+      </button>
+      <button data-tab-target="categories" class="nav-tab-btn flex-1 py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <span>🏷️</span>
+        <span data-i18n="tab_categories">จัดการหมวดหมู่</span>
       </button>
     </div>
   </div>
@@ -278,18 +282,29 @@
               </div>
             </div>
 
-            <!-- เลือกหมวดหมู่ (Category Grid with Add Category Button) -->
+            <!-- เลือกหมวดหมู่ (Category Grid with Add & Manage Buttons) -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <label data-i18n="label_category" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">เลือกหมวดหมู่ *</label>
-                <button 
-                  type="button" 
-                  onclick="App.openAddCategoryModal()" 
-                  class="text-[11px] text-blue-600 hover:text-blue-700 hover:underline font-bold flex items-center gap-1 cursor-pointer"
-                  title="สร้างหมวดหมู่ใหม่"
-                >
-                  <span data-i18n="btn_add_category">➕ เพิ่มหมวดหมู่</span>
-                </button>
+                <div class="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    onclick="App.openAddCategoryModal()" 
+                    class="text-[11px] text-blue-600 hover:text-blue-700 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                    title="สร้างหมวดหมู่ใหม่"
+                  >
+                    <span data-i18n="btn_add_category">➕ เพิ่มหมวดหมู่</span>
+                  </button>
+                  <span class="text-slate-300">|</span>
+                  <button 
+                    type="button" 
+                    onclick="App.switchTab('categories')" 
+                    class="text-[11px] text-slate-500 hover:text-slate-800 hover:underline font-medium flex items-center gap-1 cursor-pointer"
+                    title="หน้าจัดการหมวดหมู่"
+                  >
+                    <span data-i18n="btn_manage_categories">⚙️ จัดการ</span>
+                  </button>
+                </div>
               </div>
               <div id="form-category-grid" class="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-1 bg-slate-50 rounded-xl border border-slate-100">
                 <!-- JS Populates Category items + Add Category Tile -->
@@ -826,21 +841,77 @@
 
     </section>
 
+    <!-- ========================================================================= -->
+    <!-- TAB 5: 🏷️ จัดการหมวดหมู่ (Category Manager: Add, Edit, Delete Categories) -->
+    <!-- ========================================================================= -->
+    <section id="tab-pane-categories" class="tab-content-pane hidden space-y-6">
+      
+      <!-- Category Manager Header Banner -->
+      <div class="minimal-card p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 data-i18n="cat_mgr_title" class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>🏷️</span> จัดการหมวดหมู่ (Category Manager)
+          </h2>
+          <p data-i18n="cat_mgr_desc" class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            เพิ่ม แก้ไข หรือลบหมวดหมู่รายรับ-รายจ่ายตามความต้องการของคุณ
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button 
+            type="button"
+            onclick="App.openAddCategoryModal()" 
+            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
+          >
+            <span data-i18n="btn_add_new_category">➕ เพิ่มหมวดหมู่ใหม่</span>
+          </button>
+          <button 
+            type="button"
+            onclick="App.handleRestoreDefaultCategories()" 
+            class="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold text-xs rounded-xl border border-slate-200 transition-all whitespace-nowrap cursor-pointer"
+            title="คืนค่าหมวดหมู่มาตรฐาน"
+          >
+            <span data-i18n="btn_restore_default_categories">🔄 คืนค่าเริ่มต้น</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Expense vs Income Switch -->
+      <div class="flex items-center justify-between">
+        <div class="bg-slate-100 p-1 rounded-xl flex items-center gap-1 text-xs">
+          <button type="button" id="cat-tab-expense" onclick="App.setCategoryManagerType('expense')" class="px-3.5 py-1.5 rounded-lg font-bold bg-rose-500 text-white shadow-xs transition-all cursor-pointer">
+            <span data-i18n="cat_mgr_expenses_tab">🔴 หมวดหมู่รายจ่าย</span>
+          </button>
+          <button type="button" id="cat-tab-income" onclick="App.setCategoryManagerType('income')" class="px-3.5 py-1.5 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
+            <span data-i18n="cat_mgr_incomes_tab">🟢 หมวดหมู่รายรับ</span>
+          </button>
+        </div>
+
+        <span id="cat-mgr-count-badge" class="text-xs font-semibold text-slate-400"></span>
+      </div>
+
+      <!-- Categories Cards Grid -->
+      <div id="categories-manager-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+        <!-- Rendered via JS -->
+      </div>
+
+    </section>
+
   </main>
 
   <!-- ========================================================== -->
-  <!-- MODAL: ➕ เพิ่มหมวดหมู่ใหม่ (Add Custom Category Modal) -->
+  <!-- MODAL: ➕ เพิ่ม/แก้ไข หมวดหมู่ (Category Modal) -->
   <!-- ========================================================== -->
   <div id="add-category-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
     <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <span>➕</span> <span data-i18n="modal_add_cat_title">เพิ่มหมวดหมู่ใหม่</span>
+        <h3 id="category-modal-title" class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <span>🏷️</span> <span data-i18n="modal_add_cat_title">เพิ่มหมวดหมู่ใหม่</span>
         </h3>
         <button type="button" onclick="App.closeAddCategoryModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">✕</button>
       </div>
 
       <form id="add-category-form" class="space-y-3.5">
+        <input type="hidden" id="new-cat-id" value="" />
         
         <!-- Category Type Toggle -->
         <div>
@@ -904,15 +975,26 @@
           </div>
         </div>
 
-        <!-- Category Name -->
+        <!-- Category Name (Thai) -->
         <div>
-          <label data-i18n="modal_add_cat_name" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อหมวดหมู่ *</label>
+          <label data-i18n="modal_add_cat_name" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อหมวดหมู่ (ภาษาไทย) *</label>
           <input 
             type="text" 
             id="new-cat-name-input" 
             placeholder="เช่น ค่าอาหารสัตว์เลี้ยง, ชาบู/บุฟเฟต์..." 
             class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800" 
             required
+          />
+        </div>
+
+        <!-- Category Name (English) -->
+        <div>
+          <label data-i18n="modal_add_cat_name_en" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อหมวดหมู่ภาษาอังกฤษ (Name in English)</label>
+          <input 
+            type="text" 
+            id="new-cat-name-en-input" 
+            placeholder="e.g., Pet Supplies, Buffet..." 
+            class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800" 
           />
         </div>
 
@@ -944,6 +1026,37 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================================== -->
+  <!-- MODAL: 🗑️ ยืนยันการลบหมวดหมู่ (Delete Category Modal) -->
+  <!-- ========================================================== -->
+  <div id="delete-category-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal text-center space-y-3.5">
+      <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl mx-auto border border-rose-100">
+        ⚠️
+      </div>
+
+      <div>
+        <h3 data-i18n="modal_del_cat_title" class="text-sm font-bold text-slate-900">ยืนยันการลบหมวดหมู่?</h3>
+        <p data-i18n="modal_del_cat_desc" class="text-xs text-slate-400 mt-1 leading-relaxed">
+          คุณต้องการลบหมวดหมู่นี้จริงๆ หรือไม่? รายการที่เคยบันทึกไว้ในหมวดนี้จะไม่หาย แต่จะแสดงเป็นหมวดหมู่อื่นๆ
+        </p>
+      </div>
+
+      <div id="delete-category-modal-preview">
+        <!-- Preview Category Card -->
+      </div>
+
+      <div class="flex items-center justify-center gap-2 pt-1">
+        <button type="button" onclick="App.closeDeleteCategoryModal()" class="flex-1 py-2 px-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer">
+          <span data-i18n="btn_cancel">ยกเลิก</span>
+        </button>
+        <button type="button" onclick="App.confirmDeleteCategory()" class="flex-1 py-2 px-3 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-all cursor-pointer">
+          <span data-i18n="modal_del_confirm">ยืนยันการลบ</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1173,7 +1286,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: 🗑️ ยืนยันการลบอย่างปลอดภัย (Safe Delete Modal) -->
+  <!-- MODAL: 🗑️ ยืนยันการลบรายการบัญชี (Delete Transaction Modal) -->
   <!-- ========================================== -->
   <div id="delete-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
     <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal text-center space-y-3.5">
@@ -1207,9 +1320,9 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/i18n.js?v=2.2"></script>
-  <script src="js/storage.js?v=2.2"></script>
-  <script src="js/budget-simulator.js?v=2.2"></script>
-  <script src="js/app.js?v=2.2"></script>
+  <script src="js/i18n.js?v=2.3"></script>
+  <script src="js/storage.js?v=2.3"></script>
+  <script src="js/budget-simulator.js?v=2.3"></script>
+  <script src="js/app.js?v=2.3"></script>
 </body>
 </html>

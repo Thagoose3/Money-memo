@@ -16,9 +16,9 @@ const DEFAULT_CATEGORIES = [
   { id: 'exp_food', name: 'อาหาร & เครื่องดื่ม', emoji: '🍔', color: '#f97316', type: 'expense', isDefault: true },
   { id: 'exp_transport', name: 'เดินทาง & คมนาคม', emoji: '🚗', color: '#06b6d4', type: 'expense', isDefault: true },
   { id: 'exp_shopping', name: 'ช้อปปิ้ง & เสื้อผ้า', emoji: '🛍️', color: '#ec4899', type: 'expense', isDefault: true },
-  { id: 'exp_ent', name: 'บันเทิง & สังสรรค์', emoji: '🎮', color: '#a855f7', type: 'expense', isDefault: true },
-  { id: 'exp_health', name: 'สุขภาพ & ยารักษา', emoji: '💊', color: '#ef4444', type: 'expense', isDefault: true },
-  { id: 'exp_edu', name: 'การศึกษา & ความรู้', emoji: '📚', color: '#3b82f6', type: 'expense', isDefault: true },
+  { id: 'exp_ent', name: 'บันเทิง & สตรีมมิ่ง', emoji: '🎬', color: '#a855f7', type: 'expense', isDefault: true },
+  { id: 'exp_health', name: 'สุขภาพ & ประกัน', emoji: '🛡️', color: '#ef4444', type: 'expense', isDefault: true },
+  { id: 'exp_edu', name: 'การศึกษา & พัฒนาตน', emoji: '📚', color: '#3b82f6', type: 'expense', isDefault: true },
   { id: 'exp_other', name: 'ค่าใช้จ่ายอื่นๆ', emoji: '📦', color: '#64748b', type: 'expense', isDefault: true },
 
   // รายรับ (Incomes)
@@ -79,13 +79,13 @@ const StorageManager = {
 
   guessCategoryByName(name = '') {
     const lower = name.toLowerCase();
-    if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท/.test(lower)) return 'exp_housing';
-    if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi/.test(lower)) return 'exp_bills';
-    if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว/.test(lower)) return 'exp_transport';
+    if (/เช่า|ห้อง|คอนโด|ที่พัก|หอพัก|อพาร์ท|บ้าน/.test(lower)) return 'exp_housing';
+    if (/น้ำ|ไฟ|เน็ต|โทรศัพท์|มือถือ|บิล|wifi|ais|true|dtac/.test(lower)) return 'exp_bills';
+    if (/เดินทาง|bts|mrt|รถ|น้ำมัน|แท็กซี่|วิน|ตั๋ว|ผ่อนรถ/.test(lower)) return 'exp_transport';
     if (/กิน|อาหาร|ข้าว|กาแฟ|ชา|บุฟเฟต์|สุกี้/.test(lower)) return 'exp_food';
     if (/ซักผ้า|ของใช้|ช้อป|ซื้อ|เสื้อผ้า/.test(lower)) return 'exp_shopping';
-    if (/netflix|spotify|ดูหนัง|เกม|เที่ยว|สตรีม/.test(lower)) return 'exp_ent';
-    if (/ยา|หมอ|สุขภาพ|วิตามิน|คลินิก|ฟิตเนส/.test(lower)) return 'exp_health';
+    if (/netflix|spotify|youtube|disney|ดูหนัง|เกม|สตรีม/.test(lower)) return 'exp_ent';
+    if (/ยา|หมอ|สุขภาพ|ประกัน|aia|fwd|วิตามิน|คลินิก|ฟิตเนส/.test(lower)) return 'exp_health';
     if (/เรียน|หนังสือ|คอร์ส|ติว|การศึกษา/.test(lower)) return 'exp_edu';
     return 'exp_other';
   },
@@ -99,7 +99,12 @@ const StorageManager = {
         return DEFAULT_FIXED_EXPENSES;
       }
       const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : DEFAULT_FIXED_EXPENSES;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+      // If empty array or corrupted, load defaults
+      this.saveFixedExpenses(DEFAULT_FIXED_EXPENSES);
+      return DEFAULT_FIXED_EXPENSES;
     } catch (e) {
       console.error('Error loading fixed expenses:', e);
       return DEFAULT_FIXED_EXPENSES;
@@ -116,11 +121,12 @@ const StorageManager = {
 
   addFixedExpense(item) {
     const list = this.getFixedExpenses();
+    const name = (item.name || '').trim() || 'รายจ่ายประจำใหม่';
     const newItem = {
       id: 'fe_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      name: item.name.trim() || 'รายจ่ายประจำใหม่',
+      name: name,
       amount: Math.max(0, parseFloat(item.amount) || 0),
-      categoryId: item.categoryId || this.guessCategoryByName(item.name),
+      categoryId: item.categoryId || this.guessCategoryByName(name),
       paymentMethod: item.paymentMethod || 'โอนเงิน / บัญชีธนาคาร'
     };
     list.push(newItem);
@@ -413,5 +419,6 @@ const StorageManager = {
     ];
 
     this.saveTransactions(sampleTxs);
+    this.saveFixedExpenses(DEFAULT_FIXED_EXPENSES);
   }
 };

@@ -564,22 +564,25 @@
     <!-- ========================================================== -->
     <section id="tab-pane-fixed-expenses" class="tab-content-pane hidden space-y-6">
       
-      <!-- Header Banner -->
-      <div class="minimal-card p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <!-- Guide Banner -->
+      <div class="minimal-card p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-            <span>📌</span> จัดการรายจ่ายประจำเดือน (Fixed Expenses)
+          <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+            <span>📌</span> ศูนย์จัดการรายจ่ายประจำเดือน (Fixed Expenses)
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">
-            บันทึกรายการและยอดเงินที่ต้องจ่ายเป็นประจำทุกเดือน เพื่อใช้เป็นปุ่มลัดในการบันทึก และใช้คำนวณเงินกินใช้รายวัน
+          <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            เพิ่มค่าใช้จ่ายที่ต้องจ่ายทุกเดือนที่นี่ รายการเหล่านี้จะกลายเป็น <strong>ปุ่มลัด (Quick Chips)</strong> ในหน้าแรก เพื่อให้คุณกดบันทึกหรือดึงมาลงบัญชีได้ในคลิกเดียว ไม่ต้องพิมพ์ใหม่ทุกเดือน!
           </p>
         </div>
-        <button 
-          onclick="App.openAddFixedExpenseModal()" 
-          class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
-        >
-          <span>➕ เพิ่มรายจ่ายประจำ</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <button 
+            type="button"
+            onclick="App.openAddFixedExpenseModal()" 
+            class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+          >
+            <span>➕ เปิดหน้าต่างเพิ่มรายการ</span>
+          </button>
+        </div>
       </div>
 
       <!-- KPI Summary Cards -->
@@ -597,9 +600,79 @@
         </div>
       </div>
 
+      <!-- Quick Inline Add Form Card (เพิ่มรายการได้ทันทีบนหน้านี้) -->
+      <div class="minimal-card p-5 rounded-2xl space-y-4 bg-white border-2 border-slate-100">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <span>➕</span> เพิ่มรายการรายจ่ายประจำใหม่
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">กรอกข้อมูลด้านล่าง แล้วกดบันทึกได้ทันที</p>
+          </div>
+        </div>
+
+        <!-- 1-Click Preset Suggestion Chips -->
+        <div class="space-y-1.5">
+          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">ตัวอย่างรายการยอดนิยม (กดเพื่อกรอกอัตโนมัติ):</span>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="App.presetFixedExpense('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🏠 ค่าเช่าห้อง</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 💡 ค่าน้ำไฟ</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 📱 ค่าเน็ต</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🚗 ค่าเดินทาง</button>
+            <button type="button" onclick="App.presetFixedExpense('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🎬 Netflix/สตรีมมิ่ง</button>
+            <button type="button" onclick="App.presetFixedExpense('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🛡️ ประกันสุขภาพ</button>
+          </div>
+        </div>
+
+        <form id="fixed-inline-add-form" class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
+          <div class="sm:col-span-4">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อรายการประจำ *</label>
+            <input 
+              type="text" 
+              id="inline-fixed-name" 
+              placeholder="เช่น ค่าเช่าห้อง, ค่าน้ำไฟ..." 
+              class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800" 
+              required
+            />
+          </div>
+
+          <div class="sm:col-span-3">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">จำนวนเงิน (บาท) *</label>
+            <input 
+              type="number" 
+              id="inline-fixed-amount" 
+              step="any" 
+              min="0.01" 
+              placeholder="0"
+              class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 num-font" 
+              required
+            />
+          </div>
+
+          <div class="sm:col-span-3">
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">หมวดหมู่</label>
+            <select id="inline-fixed-category" class="w-full px-2.5 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+
+          <div class="sm:col-span-2 flex items-end">
+            <button 
+              type="submit" 
+              class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1"
+            >
+              <span>➕ บันทึก</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
       <!-- List of Fixed Expense Cards -->
       <div class="space-y-3">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">รายการรายจ่ายประจำที่ตั้งค่าไว้</h3>
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">รายการรายจ่ายประจำทั้งหมดที่ตั้งค่าไว้</h3>
+          <span class="text-xs text-slate-400">กด "⚡ บันทึกลงบัญชีทันที" เพื่อลงบัญชีเดือนนี้</span>
+        </div>
         <div id="fixed-expenses-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           <!-- Rendered via JS -->
         </div>
@@ -612,7 +685,7 @@
   <!-- ========================================================== -->
   <!-- MODAL: ⚡ นำเข้ารายจ่ายประจำเดือน (Batch Import Fixed Expenses) -->
   <!-- ========================================================== -->
-  <div id="quick-fixed-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="quick-fixed-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-white max-w-xl w-full rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] flex flex-col">
       
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -677,11 +750,11 @@
   <!-- ========================================================== -->
   <!-- MODAL: 📌 เพิ่ม/แก้ไข รายจ่ายประจำเดือน (Fixed Expense Modal) -->
   <!-- ========================================================== -->
-  <div id="fixed-expense-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="fixed-expense-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-3.5">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <h3 id="fixed-modal-title" class="text-sm font-bold text-slate-900">เพิ่มรายจ่ายประจำเดือน</h3>
-        <button onclick="App.closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+        <button type="button" onclick="App.closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
       </div>
 
       <form id="fixed-expense-form" class="space-y-3">
@@ -744,11 +817,11 @@
   <!-- ========================================== -->
   <!-- MODAL: ✏️ แก้ไขรายการบัญชี (Edit Transaction Modal) -->
   <!-- ========================================== -->
-  <div id="edit-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="edit-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-white max-w-md w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <h3 class="text-sm font-bold text-slate-900">แก้ไขข้อมูลรายการ</h3>
-        <button onclick="App.closeEditModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+        <button type="button" onclick="App.closeEditModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
       </div>
 
       <form id="edit-transaction-form" class="space-y-3">
@@ -820,7 +893,7 @@
   <!-- ========================================== -->
   <!-- MODAL: 🗑️ ยืนยันการลบอย่างปลอดภัย (Safe Delete Modal) -->
   <!-- ========================================== -->
-  <div id="delete-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+  <div id="delete-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal text-center space-y-3.5">
       <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto border border-rose-100">
         🗑️

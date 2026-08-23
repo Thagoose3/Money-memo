@@ -11,29 +11,97 @@
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Custom CSS -->
-  <link rel="stylesheet" href="css/style.css">
+  <!-- Google Fonts - Prompt & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            slate: {
-              850: '#151f32',
-              900: '#0f172a',
-              950: '#020617'
-            }
-          }
-        }
-      }
+  <style>
+    :root {
+      --font-thai: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-num: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-  </script>
+    body {
+      font-family: var(--font-thai);
+      background-color: #f8fafc;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+    .num-font {
+      font-family: var(--font-num);
+      font-variant-numeric: tabular-nums;
+    }
+    .minimal-card {
+      background: #ffffff;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+      transition: all 0.2s ease;
+    }
+    .minimal-card:hover {
+      border-color: #e2e8f0;
+      box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.05);
+    }
+    .nav-tab-btn {
+      transition: all 0.2s ease;
+      color: #64748b;
+    }
+    .nav-tab-btn.active {
+      background-color: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      font-weight: 600;
+    }
+    .minimal-chip {
+      background-color: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      transition: all 0.15s ease;
+    }
+    .minimal-chip:hover {
+      background-color: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    .cat-item-btn {
+      transition: all 0.15s ease;
+      border: 1px solid #f1f5f9;
+      background-color: #ffffff;
+    }
+    .cat-item-btn.selected {
+      border-color: #0f172a !important;
+      background-color: #f8fafc !important;
+      box-shadow: 0 0 0 1.5px #0f172a !important;
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.96) translateY(6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .animate-modal {
+      animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0f172a !important;
+      box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.15) !important;
+    }
+    .modal-overlay {
+      display: none;
+    }
+    .modal-overlay.show {
+      display: flex !important;
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-[#f8fafc] flex flex-col text-slate-800 antialiased selection:bg-slate-900 selection:text-white">
 
   <!-- Minimal Header -->
-  <header class="sticky top-0 z-30 minimal-header px-4 sm:px-8 py-3 flex items-center justify-between">
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 sm:px-8 py-3 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center text-white text-lg shadow-sm">
         🪙
@@ -109,14 +177,16 @@
         </div>
         <div class="flex items-center gap-2">
           <button 
+            type="button"
             onclick="App.openQuickFixedModal()" 
-            class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+            class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
             <span>📋 นำเข้ารายการประจำ</span>
           </button>
           <button 
+            type="button"
             onclick="App.switchTab('fixed-expenses')" 
-            class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition-all whitespace-nowrap"
+            class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition-all whitespace-nowrap cursor-pointer"
           >
             <span>⚙️ ตั้งค่ารายการ</span>
           </button>
@@ -137,7 +207,7 @@
           <div id="quick-fixed-chips-container" class="space-y-1.5">
             <div class="flex items-center justify-between">
               <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">ปุ่มลัดรายจ่ายประจำ:</span>
-              <button type="button" onclick="App.switchTab('fixed-expenses')" class="text-[10px] text-blue-600 hover:underline font-semibold">+ เพิ่มปุ่มลัด</button>
+              <button type="button" onclick="App.switchTab('fixed-expenses')" class="text-[10px] text-blue-600 hover:underline font-semibold cursor-pointer">+ เพิ่มปุ่มลัด</button>
             </div>
             <div id="quick-fixed-chips-list" class="flex flex-wrap gap-1.5">
               <!-- JS Populates Quick Fixed Chips -->
@@ -147,10 +217,10 @@
           <form id="transaction-form" class="space-y-4">
             <!-- 1-Click Toggle รายจ่าย / รายรับ -->
             <div class="grid grid-cols-2 gap-1.5 bg-slate-100/80 p-1 rounded-xl">
-              <button type="button" id="type-toggle-expense" class="py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5">
+              <button type="button" id="type-toggle-expense" class="py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                 <span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายจ่าย (Expense)
               </button>
-              <button type="button" id="type-toggle-income" class="py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5">
+              <button type="button" id="type-toggle-income" class="py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> รายรับ (Income)
               </button>
             </div>
@@ -173,11 +243,11 @@
 
               <!-- Quick Chips -->
               <div class="flex flex-wrap items-center gap-1.5 mt-2">
-                <button type="button" data-val="50" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font">+50</button>
-                <button type="button" data-val="100" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font">+100</button>
-                <button type="button" data-val="500" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font">+500</button>
-                <button type="button" data-val="1000" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font">+1,000</button>
-                <button type="button" data-val="2000" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font">+2,000</button>
+                <button type="button" data-val="50" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font cursor-pointer">+50</button>
+                <button type="button" data-val="100" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font cursor-pointer">+100</button>
+                <button type="button" data-val="500" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font cursor-pointer">+500</button>
+                <button type="button" data-val="1000" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font cursor-pointer">+1,000</button>
+                <button type="button" data-val="2000" class="amount-chip minimal-chip px-2 py-0.5 text-xs font-semibold rounded-lg num-font cursor-pointer">+2,000</button>
               </div>
             </div>
 
@@ -229,7 +299,7 @@
             <button 
               type="submit" 
               id="tx-submit-btn" 
-              class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm"
+              class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer"
             >
               <span>➕ บันทึกรายจ่าย</span>
             </button>
@@ -284,7 +354,7 @@
       <!-- แถบเลือกเดือน (Month Navigator) & View mode -->
       <div class="minimal-card p-3.5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <button id="prev-month-btn" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" title="เดือนก่อนหน้า">
+          <button id="prev-month-btn" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนก่อนหน้า">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           </button>
           
@@ -292,21 +362,21 @@
             <span id="dashboard-current-month" class="text-sm font-bold text-slate-900 block num-font">สิงหาคม 2569</span>
           </div>
 
-          <button id="next-month-btn" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors" title="เดือนถัดไป">
+          <button id="next-month-btn" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนถัดไป">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
           </button>
 
-          <button id="current-month-btn" class="px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-slate-900 rounded-lg transition-colors">
+          <button id="current-month-btn" class="px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-slate-900 rounded-lg transition-colors cursor-pointer">
             เดือนนี้
           </button>
         </div>
 
         <!-- Mode Toggle -->
         <div class="bg-slate-100 p-1 rounded-xl flex items-center gap-1 border border-slate-200/70 text-xs">
-          <button id="view-mode-overview" class="px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all">
+          <button id="view-mode-overview" class="px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all cursor-pointer">
             📊 สรุปภาพรวม
           </button>
-          <button id="view-mode-daily" class="px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all">
+          <button id="view-mode-daily" class="px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
             📅 แจกแจงรายวัน
           </button>
         </div>
@@ -415,7 +485,7 @@
               <h3 class="text-sm font-bold text-slate-900">กำหนดงบประมาณจำลองล่วงหน้า</h3>
               <p class="text-[11px] text-slate-400">คำนวณเงินกินใช้ล่วงหน้าจากรายได้ - เงินออม - รายจ่ายประจำ</p>
             </div>
-            <button id="sim-reset-btn" class="text-xs text-slate-400 hover:text-slate-700">
+            <button id="sim-reset-btn" class="text-xs text-slate-400 hover:text-slate-700 cursor-pointer">
               รีเซ็ตค่าเริ่มต้น
             </button>
           </div>
@@ -465,7 +535,7 @@
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">รายจ่ายประจำเดือน (Fixed Expenses)</label>
-              <button type="button" onclick="App.switchTab('fixed-expenses')" class="text-[11px] text-blue-600 hover:underline font-semibold">จัดการแบบละเอียด ↗</button>
+              <button type="button" onclick="App.switchTab('fixed-expenses')" class="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer">จัดการแบบละเอียด ↗</button>
             </div>
             
             <div id="sim-fixed-expenses-list" class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
@@ -475,7 +545,7 @@
             <button 
               type="button" 
               id="sim-add-expense-btn" 
-              class="w-full mt-2.5 py-2 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-dashed border-slate-300 transition-colors flex items-center justify-center gap-1.5"
+              class="w-full mt-2.5 py-2 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-dashed border-slate-300 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>+ เพิ่มรายจ่ายประจำ</span>
             </button>
@@ -568,19 +638,19 @@
       <div class="minimal-card p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-            <span>📌</span> ศูนย์จัดการรายจ่ายประจำเดือน (Fixed Expenses)
+            <span>📌</span> จัดการรายจ่ายประจำเดือน (Fixed Expenses)
           </h2>
           <p class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-            เพิ่มค่าใช้จ่ายที่ต้องจ่ายทุกเดือนที่นี่ รายการเหล่านี้จะกลายเป็น <strong>ปุ่มลัด (Quick Chips)</strong> ในหน้าแรก เพื่อให้คุณกดบันทึกหรือดึงมาลงบัญชีได้ในคลิกเดียว ไม่ต้องพิมพ์ใหม่ทุกเดือน!
+            บันทึกรายการและยอดเงินที่ต้องจ่ายเป็นประจำทุกเดือน เพื่อใช้เป็น <strong>ปุ่มลัด (Quick Chips)</strong> ในหน้าบันทึก และใช้คำนวณเงินกินใช้รายวัน
           </p>
         </div>
         <div class="flex items-center gap-2">
           <button 
             type="button"
             onclick="App.openAddFixedExpenseModal()" 
-            class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap"
+            class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
-            <span>➕ เปิดหน้าต่างเพิ่มรายการ</span>
+            <span>➕ เพิ่มรายจ่ายประจำ</span>
           </button>
         </div>
       </div>
@@ -615,12 +685,12 @@
         <div class="space-y-1.5">
           <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">ตัวอย่างรายการยอดนิยม (กดเพื่อกรอกอัตโนมัติ):</span>
           <div class="flex flex-wrap gap-1.5">
-            <button type="button" onclick="App.presetFixedExpense('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🏠 ค่าเช่าห้อง</button>
-            <button type="button" onclick="App.presetFixedExpense('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 💡 ค่าน้ำไฟ</button>
-            <button type="button" onclick="App.presetFixedExpense('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 📱 ค่าเน็ต</button>
-            <button type="button" onclick="App.presetFixedExpense('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🚗 ค่าเดินทาง</button>
-            <button type="button" onclick="App.presetFixedExpense('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🎬 Netflix/สตรีมมิ่ง</button>
-            <button type="button" onclick="App.presetFixedExpense('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">+ 🛡️ ประกันสุขภาพ</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าเช่าห้อง / คอนโด', 2800, 'exp_housing')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🏠 ค่าเช่าห้อง</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าน้ำ + ค่าไฟ', 2200, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 💡 ค่าน้ำไฟ</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าเน็ตบ้าน + มือถือ', 300, 'exp_bills')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 📱 ค่าเน็ต</button>
+            <button type="button" onclick="App.presetFixedExpense('ค่าเดินทางประจำ (BTS/น้ำมัน)', 400, 'exp_transport')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🚗 ค่าเดินทาง</button>
+            <button type="button" onclick="App.presetFixedExpense('Netflix / Youtube Premium', 219, 'exp_ent')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🎬 Netflix</button>
+            <button type="button" onclick="App.presetFixedExpense('เบี้ยประกันชีวิต / สุขภาพ', 1500, 'exp_health')" class="px-2.5 py-1 bg-slate-50 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer">+ 🛡️ ประกันสุขภาพ</button>
           </div>
         </div>
 
@@ -659,7 +729,7 @@
           <div class="sm:col-span-2 flex items-end">
             <button 
               type="submit" 
-              class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1"
+              class="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1 cursor-pointer"
             >
               <span>➕ บันทึก</span>
             </button>
@@ -685,8 +755,8 @@
   <!-- ========================================================== -->
   <!-- MODAL: ⚡ นำเข้ารายจ่ายประจำเดือน (Batch Import Fixed Expenses) -->
   <!-- ========================================================== -->
-  <div id="quick-fixed-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="bg-white max-w-xl w-full rounded-2xl p-5 sm:p-6 shadow-xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] flex flex-col">
+  <div id="quick-fixed-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-xl w-full rounded-2xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] flex flex-col">
       
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
@@ -695,7 +765,7 @@
           </h3>
           <p class="text-xs text-slate-400 mt-0.5">เลือกรายการที่คุณจ่ายในเดือนนี้ แก้ไขยอดเงินตามจริง แล้วกดบันทึกพร้อมกันได้ทันที</p>
         </div>
-        <button onclick="App.closeQuickFixedModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1">✕</button>
+        <button type="button" onclick="App.closeQuickFixedModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">✕</button>
       </div>
 
       <!-- Batch Date & Payment Method Global -->
@@ -720,7 +790,7 @@
       <div class="flex-1 overflow-y-auto pr-1 space-y-2">
         <div class="flex items-center justify-between text-xs text-slate-500 font-semibold px-1">
           <label class="flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" id="batch-select-all" checked onchange="App.toggleSelectAllFixed(this.checked)" class="rounded text-blue-600 focus:ring-blue-500" />
+            <input type="checkbox" id="batch-select-all" checked onchange="App.toggleSelectAllFixed(this.checked)" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
             <span>เลือกทั้งหมด</span>
           </label>
           <span id="batch-selected-summary" class="text-blue-600 font-bold"></span>
@@ -735,10 +805,10 @@
       <div class="flex items-center justify-between pt-3 border-t border-slate-100">
         <span id="batch-total-amount" class="text-xs font-bold text-slate-700">ยอดรวม: ฿0.00</span>
         <div class="flex items-center gap-2">
-          <button type="button" onclick="App.closeQuickFixedModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <button type="button" onclick="App.closeQuickFixedModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
             ยกเลิก
           </button>
-          <button type="button" onclick="App.handleSaveBatchFixedExpenses()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+          <button type="button" onclick="App.handleSaveBatchFixedExpenses()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
             <span>➕ บันทึกรายการที่เลือกเข้าบัญชี</span>
           </button>
         </div>
@@ -750,11 +820,11 @@
   <!-- ========================================================== -->
   <!-- MODAL: 📌 เพิ่ม/แก้ไข รายจ่ายประจำเดือน (Fixed Expense Modal) -->
   <!-- ========================================================== -->
-  <div id="fixed-expense-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-3.5">
+  <div id="fixed-expense-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal space-y-3.5">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <h3 id="fixed-modal-title" class="text-sm font-bold text-slate-900">เพิ่มรายจ่ายประจำเดือน</h3>
-        <button type="button" onclick="App.closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+        <button type="button" onclick="App.closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">✕</button>
       </div>
 
       <form id="fixed-expense-form" class="space-y-3">
@@ -777,7 +847,7 @@
             type="number" 
             id="fixed-modal-amount" 
             step="any" 
-            min="0" 
+            min="0.01" 
             placeholder="0"
             class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900 num-font" 
             required
@@ -803,10 +873,10 @@
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" onclick="App.closeFixedExpenseModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <button type="button" onclick="App.closeFixedExpenseModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
             ยกเลิก
           </button>
-          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all">
+          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all cursor-pointer">
             บันทึกรายการ
           </button>
         </div>
@@ -817,11 +887,11 @@
   <!-- ========================================== -->
   <!-- MODAL: ✏️ แก้ไขรายการบัญชี (Edit Transaction Modal) -->
   <!-- ========================================== -->
-  <div id="edit-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="bg-white max-w-md w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal space-y-4">
+  <div id="edit-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-md w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
         <h3 class="text-sm font-bold text-slate-900">แก้ไขข้อมูลรายการ</h3>
-        <button type="button" onclick="App.closeEditModal()" class="text-slate-400 hover:text-slate-600 text-sm">✕</button>
+        <button type="button" onclick="App.closeEditModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1 cursor-pointer">✕</button>
       </div>
 
       <form id="edit-transaction-form" class="space-y-3">
@@ -879,10 +949,10 @@
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" onclick="App.closeEditModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <button type="button" onclick="App.closeEditModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
             ยกเลิก
           </button>
-          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all">
+          <button type="submit" class="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-sm transition-all cursor-pointer">
             บันทึกการแก้ไข
           </button>
         </div>
@@ -893,8 +963,8 @@
   <!-- ========================================== -->
   <!-- MODAL: 🗑️ ยืนยันการลบอย่างปลอดภัย (Safe Delete Modal) -->
   <!-- ========================================== -->
-  <div id="delete-modal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-xl border border-slate-200 animate-modal text-center space-y-3.5">
+  <div id="delete-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white max-w-sm w-full rounded-2xl p-5 shadow-2xl border border-slate-200 animate-modal text-center space-y-3.5">
       <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mx-auto border border-rose-100">
         🗑️
       </div>
@@ -909,10 +979,10 @@
       </div>
 
       <div class="flex items-center justify-center gap-2 pt-1">
-        <button type="button" onclick="App.closeDeleteModal()" class="flex-1 py-2 px-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+        <button type="button" onclick="App.closeDeleteModal()" class="flex-1 py-2 px-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer">
           ยกเลิก
         </button>
-        <button type="button" onclick="App.confirmDeleteTransaction()" class="flex-1 py-2 px-3 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-all">
+        <button type="button" onclick="App.confirmDeleteTransaction()" class="flex-1 py-2 px-3 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-all cursor-pointer">
           ยืนยันการลบ
         </button>
       </div>
@@ -925,8 +995,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/storage.js"></script>
-  <script src="js/budget-simulator.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/storage.js?v=1.2"></script>
+  <script src="js/budget-simulator.js?v=1.2"></script>
+  <script src="js/app.js?v=1.2"></script>
 </body>
 </html>

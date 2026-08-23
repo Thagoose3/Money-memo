@@ -235,21 +235,21 @@ const App = {
     const submitBtn = document.getElementById('tx-submit-btn');
 
     if (type === 'expense') {
-      typeToggleExp.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5';
+      typeToggleExp.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-rose-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
       typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายจ่าย (Expense)';
-      typeToggleInc.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5';
+      typeToggleInc.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
       typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> รายรับ (Income)';
       if (submitBtn) {
-        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm';
+        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = '<span>➕ บันทึกรายจ่าย</span>';
       }
     } else {
-      typeToggleExp.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5';
+      typeToggleExp.className = 'py-2 px-3 rounded-lg font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
       typeToggleExp.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> รายจ่าย (Expense)';
-      typeToggleInc.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5';
+      typeToggleInc.className = 'py-2 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer';
       typeToggleInc.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span> รายรับ (Income)';
       if (submitBtn) {
-        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm';
+        submitBtn.className = 'w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = '<span>➕ บันทึกรายรับ</span>';
       }
     }
@@ -277,7 +277,7 @@ const App = {
       <button 
         type="button" 
         data-cat-id="${c.id}"
-        class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
+        class="cat-item-btn p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100 bg-white hover:bg-slate-50'}"
         onclick="App.selectCategory('${containerId}', '${c.id}')"
       >
         <span class="text-xl">${c.emoji}</span>
@@ -320,7 +320,7 @@ const App = {
         <button 
           type="button" 
           onclick="App.quickFillFromFixed('${item.id}', '${item.name.replace(/'/g, "\\'")}', ${item.amount})"
-          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 shadow-xs transition-all group"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white hover:bg-slate-900 hover:text-white text-slate-700 border border-slate-200 shadow-xs transition-all group cursor-pointer"
           title="กดเพื่อกรอก ${item.name} ฿${item.amount.toLocaleString()} ลงฟอร์มทันที"
         >
           <span>${cat.emoji}</span>
@@ -369,7 +369,7 @@ const App = {
     }
     if (catSelect && catId) catSelect.value = catId;
 
-    this.showToast(`เลือกตัวอย่าง "${name}" แล้ว สามารถปรับแก้ตัวเลขแล้วกดบันทึกได้เลย`);
+    this.showToast(`เลือก "${name}" แล้ว สามารถปรับแก้ตัวเลขแล้วกดบันทึกได้เลย`);
   },
 
   handleSaveInlineFixedExpense() {
@@ -465,10 +465,10 @@ const App = {
             </button>
 
             <div class="flex items-center gap-1">
-              <button type="button" onclick="App.openEditFixedExpenseModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors" title="แก้ไข">
+              <button type="button" onclick="App.openEditFixedExpenseModal('${item.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="แก้ไข">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button type="button" onclick="App.deleteFixedExpense('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors" title="ลบ">
+              <button type="button" onclick="App.deleteFixedExpense('${item.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="ลบ">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -497,8 +497,7 @@ const App = {
 
     const modal = document.getElementById('fixed-expense-modal');
     if (modal) {
-      modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      modal.classList.add('show');
     }
   },
 
@@ -528,8 +527,7 @@ const App = {
 
     const modal = document.getElementById('fixed-expense-modal');
     if (modal) {
-      modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      modal.classList.add('show');
     }
   },
 
@@ -537,8 +535,7 @@ const App = {
     this.editingFixedExpenseId = null;
     const modal = document.getElementById('fixed-expense-modal');
     if (modal) {
-      modal.classList.add('hidden');
-      modal.style.display = 'none';
+      modal.classList.remove('show');
     }
   },
 
@@ -617,16 +614,14 @@ const App = {
 
     this.renderQuickFixedModalList();
     if (modal) {
-      modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      modal.classList.add('show');
     }
   },
 
   closeQuickFixedModal() {
     const modal = document.getElementById('quick-fixed-modal');
     if (modal) {
-      modal.classList.add('hidden');
-      modal.style.display = 'none';
+      modal.classList.remove('show');
     }
   },
 
@@ -820,13 +815,13 @@ const App = {
     const paneDaily = document.getElementById('dashboard-daily-pane');
 
     if (mode === 'overview') {
-      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all';
-      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all';
+      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all cursor-pointer';
+      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
       if (paneOverview) paneOverview.classList.remove('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
     } else {
-      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all';
-      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all';
+      if (viewOverview) viewOverview.className = 'px-3 py-1 rounded-lg font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (viewDaily) viewDaily.className = 'px-3 py-1 rounded-lg font-bold bg-white text-slate-900 shadow-sm transition-all cursor-pointer';
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.remove('hidden');
     }
@@ -1140,10 +1135,10 @@ const App = {
                 ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </span>
               <div class="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
-                <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded transition-colors" title="แก้ไข">
+                <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded transition-colors cursor-pointer" title="แก้ไข">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 </button>
-                <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors" title="ลบ">
+                <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors cursor-pointer" title="ลบ">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
               </div>
@@ -1237,10 +1232,10 @@ const App = {
               ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
             <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="แก้ไข">
+              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer" title="แก้ไข">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="ลบ">
+              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" title="ลบ">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -1277,8 +1272,7 @@ const App = {
     this.initCategoryGrid('edit-category-grid', tx.type, tx.categoryId);
 
     if (modal) {
-      modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      modal.classList.add('show');
     }
   },
 
@@ -1286,8 +1280,7 @@ const App = {
     this.editingTransactionId = null;
     const modal = document.getElementById('edit-modal');
     if (modal) {
-      modal.classList.add('hidden');
-      modal.style.display = 'none';
+      modal.classList.remove('show');
     }
   },
 
@@ -1346,8 +1339,7 @@ const App = {
     }
 
     if (modal) {
-      modal.classList.remove('hidden');
-      modal.style.display = 'flex';
+      modal.classList.add('show');
     }
   },
 
@@ -1355,8 +1347,7 @@ const App = {
     this.deletingTransactionId = null;
     const modal = document.getElementById('delete-modal');
     if (modal) {
-      modal.classList.add('hidden');
-      modal.style.display = 'none';
+      modal.classList.remove('show');
     }
   },
 

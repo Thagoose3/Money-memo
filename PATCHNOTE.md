@@ -4,7 +4,21 @@
 
 ---
 
-## 🚀 Version 2.7 (Current Version) — *Cloud Sync & Google Auth Integration*
+## 📱 Version 2.8 (Current Version) — *PWA & Native-like Mobile App Experience*
+**วันที่อัปเดต:** สิงหาคม 2026
+
+### 📲 ระบบติดตั้งเป็นแอปบนมือถือ (PWA & Web Manifest)
+- **Web App Manifest (`manifest.json`)**: รองรับมาตรฐาน Progressive Web App (PWA) ติดตั้งลงหน้าจอมือถือได้ทันที
+- **โหมดแอปเต็มหน้าจอ (Standalone Fullscreen)**: เมื่อเปิดจากหน้าจอโฮม แถบเบราว์เซอร์และแถบ URL จะซ่อนไปโดยอัตโนมัติ ให้ประสบการณ์ใช้งานเต็มจอไร้รอยต่อเหมือนโหลดจาก App Store / Play Store
+- **ชุดไอคอนความละเอียดสูง (High-Res Pastel App Icons)**:
+  - `icon-192.png` & `icon-512.png`: ไอคอนความละเอียดสูงสำหรับ Android Home Screen & Chrome
+  - `apple-touch-icon.png`: ไอคอนคมชัดสำหรับ iOS Safari (iPhone / iPad)
+  - `favicon.png`: ไอคอนแท็บเบราว์เซอร์สำหรับคอมพิวเตอร์
+- **ธีมแถบสถานะกลมกลืน (Theme Color Matching)**: ตั้งค่า Theme Color แถบด้านบนของมือถือเป็นสี Warm Cream (`#FBF9F5`) เข้ากับตัวแอปแบบ 100%
+
+---
+
+## ☁️ Version 2.7 — *Cloud Sync & Google Auth Integration*
 **วันที่อัปเดต:** สิงหาคม 2026
 
 ### ☁️ ระบบซิงค์ข้อมูลบนคลาวด์ & Google Login

@@ -453,7 +453,7 @@
           </button>
         </div>
 
-        <!-- Mode Toggle -->
+        <!-- Mode Toggle (Monthly / Daily / Yearly) -->
         <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 text-xs">
           <button id="view-mode-overview" class="px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
             <span data-i18n="view_overview">📊 สรุปภาพรวม</span>
@@ -461,11 +461,14 @@
           <button id="view-mode-daily" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
             <span data-i18n="view_daily">📅 แจกแจงรายวัน</span>
           </button>
+          <button id="view-mode-yearly" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
+            <span data-i18n="view_yearly">📆 สรุปภาพรวมรายปี</span>
+          </button>
         </div>
       </div>
 
-      <!-- 3 Pastel KPI Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+      <!-- 3 Pastel KPI Cards (Monthly & Daily View) -->
+      <div id="dashboard-monthly-kpi-container" class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-emerald-50/80 to-teal-50/40 border-emerald-100/60">
           <div class="flex items-center justify-between text-xs font-semibold text-emerald-800">
             <span data-i18n="kpi_total_income">รายรับรวม (Total Income)</span>
@@ -548,6 +551,114 @@
         <div id="dashboard-daily-list" class="space-y-3">
           <!-- Daily items rendered via JS -->
         </div>
+      </div>
+
+      <!-- Mode 3: 📆 Yearly Overview (สรุปภาพรวมรายปี) -->
+      <div id="dashboard-yearly-pane" class="hidden space-y-5 sm:space-y-6">
+        
+        <!-- 4 Annual KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-emerald-50/90 to-teal-50/50 border-emerald-100/70">
+            <div class="flex items-center justify-between text-xs font-semibold text-emerald-800">
+              <span data-i18n="yearly_income">รายรับรวมทั้งปี (Annual Income)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-xs"></span>
+            </div>
+            <p id="dash-yearly-income" class="text-2xl sm:text-3xl font-extrabold text-emerald-700 num-font mt-1.5">฿0.00</p>
+            <p data-i18n="yearly_income_sub" class="text-[11px] text-emerald-600/80 mt-0.5">ยอดรับทั้งหมดตลอดทั้งปี</p>
+          </div>
+
+          <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-rose-50/90 to-pink-50/50 border-rose-100/70">
+            <div class="flex items-center justify-between text-xs font-semibold text-rose-800">
+              <span data-i18n="yearly_expense">รายจ่ายรวมทั้งปี (Annual Expense)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-xs"></span>
+            </div>
+            <p id="dash-yearly-expense" class="text-2xl sm:text-3xl font-extrabold text-rose-700 num-font mt-1.5">฿0.00</p>
+            <p data-i18n="yearly_expense_sub" class="text-[11px] text-rose-600/80 mt-0.5">ยอดใช้จ่ายทั้งหมดตลอดทั้งปี</p>
+          </div>
+
+          <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-indigo-50/90 to-purple-50/50 border-indigo-100/70">
+            <div class="flex items-center justify-between text-xs font-semibold text-indigo-800">
+              <span data-i18n="yearly_savings">เงินออมคงเหลือทั้งปี (Annual Savings)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-xs"></span>
+            </div>
+            <p id="dash-yearly-savings" class="text-2xl sm:text-3xl font-extrabold text-slate-900 num-font mt-1.5">฿0.00</p>
+            <p data-i18n="yearly_savings_sub" class="text-[11px] text-slate-500 font-medium mt-0.5">คำนวณจาก รายรับ - รายจ่าย ทั้งปี</p>
+          </div>
+
+          <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-amber-50/90 to-yellow-50/50 border-amber-100/70">
+            <div class="flex items-center justify-between text-xs font-semibold text-amber-800">
+              <span data-i18n="yearly_savings_rate">อัตราการออมเฉลี่ย (Savings Rate)</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-xs"></span>
+            </div>
+            <p id="dash-yearly-rate" class="text-2xl sm:text-3xl font-extrabold text-amber-700 num-font mt-1.5">0.0%</p>
+            <p id="dash-yearly-avg-spend" class="text-[11px] text-amber-600 font-medium mt-0.5">เฉลี่ยเดือนละ ฿0.00</p>
+          </div>
+        </div>
+
+        <!-- 12-Month Comparison Bar Chart -->
+        <div class="pastel-card p-4 sm:p-5 rounded-3xl">
+          <div class="flex items-center justify-between mb-3">
+            <h3 data-i18n="chart_monthly_bar_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">เปรียบเทียบรายรับ vs รายจ่าย 12 เดือน (Monthly Comparison)</h3>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="chart-yearly-monthly-bar"></canvas>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+          <!-- Yearly Category Doughnut Chart -->
+          <div class="lg:col-span-6 pastel-card p-4 sm:p-5 rounded-3xl flex flex-col">
+            <div class="flex items-center justify-between mb-3">
+              <h3 data-i18n="chart_yearly_category_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">สัดส่วนรายจ่ายตลอดทั้งปี</h3>
+            </div>
+            <div class="relative flex-1 min-h-[260px] flex items-center justify-center">
+              <canvas id="chart-yearly-category-doughnut"></canvas>
+              <div id="chart-yearly-doughnut-empty" class="text-center py-8 text-slate-400 hidden">
+                <p class="text-xs font-medium">ยังไม่มีรายการรายจ่ายในปีนี้</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Categories of Year -->
+          <div class="lg:col-span-6 pastel-card p-4 sm:p-5 rounded-3xl flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">หมวดหมู่รายจ่ายสูงสุดตลอดทั้งปี (Annual Top 5)</h3>
+              </div>
+              <div id="dash-yearly-top-categories-list" class="space-y-3 mt-2">
+                <!-- Yearly top categories -->
+              </div>
+            </div>
+            <div class="mt-4 p-2.5 bg-indigo-50/60 rounded-2xl border border-indigo-100/60 text-xs text-indigo-800 flex items-center gap-2">
+              <span>🌟</span>
+              <span>วิเคราะห์ภาพรวมการเงินประจำปี เพื่อวางแผนและตั้งเป้าหมายเงินออมสำหรับปีถัดไป</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 12-Month Performance Table -->
+        <div class="pastel-card p-4 sm:p-5 rounded-3xl space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 data-i18n="yearly_table_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">ตารางสรุปผลการเงิน 12 เดือน (12-Month Performance)</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead>
+                <tr class="border-b border-slate-200/80 text-slate-400 font-bold uppercase text-[10px]">
+                  <th data-i18n="th_month" class="py-2 px-3">เดือน</th>
+                  <th data-i18n="th_income" class="py-2 px-3 text-right">รายรับ</th>
+                  <th data-i18n="th_expense" class="py-2 px-3 text-right">รายจ่าย</th>
+                  <th data-i18n="th_net" class="py-2 px-3 text-right">คงเหลือสุทธิ</th>
+                  <th data-i18n="th_savings_rate" class="py-2 px-3 text-center">% ออมเงิน</th>
+                </tr>
+              </thead>
+              <tbody id="yearly-12-months-table-body" class="divide-y divide-slate-100">
+                <!-- 12 months rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
     </section>

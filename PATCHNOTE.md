@@ -4,15 +4,26 @@
 
 ---
 
-## 🔥 Version 2.9 (Current Version) — *Google Firebase & Cloud Firestore Integration*
+## 🔥 Version 2.9 (Current Version) — *Google Firebase & Annual Financial Overview*
 **วันที่อัปเดต:** สิงหาคม 2026
 
-### ☁️ ยกระดับระบบคลาวด์ด้วย Google Firebase (No Sleep / Never Pauses)
-- **Google Cloud Firestore Database**: เปลี่ยนระบบฐานข้อมูลมาใช้ **Cloud Firestore (Google)** เสถียร รวดเร็ว และไม่มีวันหลับ (Never Sleeps) ตลอดชีพ
-- **Native Google Sign-In**: เข้าสู่ระบบด้วยบัญชี Google ผ่าน Firebase Authentication โดยตรง สมูทและปลอดภัยสูงสุด
-- **User Subcollections Architecture**: จัดเก็บข้อมูลแยกตาม `users/{userId}` ซิงค์รายการบันทึก หมวดหมู่ และรายการประจำแบบเรียลไทม์
-- **Firestore Security Rules**: ล็อกความปลอดภัยระดับบุคคล ข้อมูลของแต่ละคนจะถูกแยกกระเป๋าเงินอย่างเด็ดขาด 100%
-- **Hybrid Support**: ใช้งานได้ทั้งแบบล็อกอิน Google ซิงค์หลายเครื่อง หรือใช้งานออฟไลน์ในเครื่อง (LocalStorage)
+### 📆 สรุปภาพรวมการเงินรายปี (Annual / Yearly Financial Overview)
+- **โหมดสรุปรายปี 12 เดือน**: เพิ่มโหมด `📆 สรุปภาพรวมรายปี` ในแท็บแดชบอร์ด สามารถเลือกปีย้อนหลัง/ถัดไปได้ทันที
+- **4 การ์ดสถิติประจำปี (Annual KPI Cards)**:
+  - 🟢 **รายรับรวมทั้งปี (Annual Income)**
+  - 🔴 **รายจ่ายรวมทั้งปี (Annual Expense)**
+  - 🟣 **เงินออมสุทธิทั้งปี (Annual Net Savings)**
+  - 🌟 **อัตราการออมเฉลี่ย (% Annual Savings Rate)** พร้อมคำนวณค่าเฉลี่ยรายจ่ายต่อเดือน
+- **ชาร์ตเปรียบเทียบรายรับ vs รายจ่าย 12 เดือน (12-Month Comparison Bar Chart)**: กราฟแท่งสีพาสเทลคู่ เปรียบเทียบรายรับและรายจ่ายของทุกเดือน (ม.ค. - ธ.ค.)
+- **ชาร์ตสัดส่วนรายจ่ายตลอดทั้งปี (Annual Category Doughnut Chart)**: วิเคราะห์ Top 5 หมวดหมู่ที่ใช้เงินมากที่สุดในรอบปี
+- **ตารางสรุปผลการเงิน 12 เดือน (12-Month Performance Table)**: ตารางแจกแจงรายรับ รายจ่าย คงเหลือ และ % ออมของแต่ละเดือนตลอดทั้งปี
+
+### ☁️ สถาปัตยกรรมลด Read บน Google Cloud Firestore (Pre-Aggregated Summaries)
+- **Monthly Summary Document (`summaries_monthly/{YYYY-MM}`)**: จัดเก็บยอดรวมและสถิติแยกตามหมวดหมู่ของแต่ละเดือน คำนวณอัตโนมัติเมื่อบันทึก ลดค่า Read จากเดิม 100+ รายการ เหลือเพียง **1 Read** ทันที
+- **Yearly Summary Document (`summaries_yearly/{YYYY}`)**: จัดเก็บยอดรวมและสถิติ 12 เดือนของทั้งปี คำนวณแบบ Pre-aggregated
+- **Google Cloud Firestore Database**: เสถียร รวดเร็ว ไม่มีวันหลับ (Never Sleeps) ตลอดชีพ
+- **Native Google Sign-In**: เข้าสู่ระบบด้วยบัญชี Google ผ่าน Firebase Authentication โดยตรง
+- **Firestore Security Rules**: ล็อกความปลอดภัยระดับบุคคล ข้อมูลแยกกระเป๋าเงินอย่างเด็ดขาด 100%
 
 ---
 

@@ -26,6 +26,8 @@ const App = {
   // Chart instances
   categoryChart: null,
   dailyTrendChart: null,
+  yearlyMonthlyBarChart: null,
+  yearlyCategoryChart: null,
 
   init() {
     I18n.init();
@@ -127,21 +129,29 @@ const App = {
       });
     }
 
-    // Month Navigation in Dashboard
+    // Month / Year Navigation in Dashboard
     const prevMonthBtn = document.getElementById('prev-month-btn');
     const nextMonthBtn = document.getElementById('next-month-btn');
     const currentMonthBtn = document.getElementById('current-month-btn');
 
     if (prevMonthBtn) {
       prevMonthBtn.addEventListener('click', () => {
-        this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
+        if (this.dashboardViewMode === 'yearly') {
+          this.selectedDate.setFullYear(this.selectedDate.getFullYear() - 1);
+        } else {
+          this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
+        }
         this.renderMonthSelector();
         this.renderDashboard();
       });
     }
     if (nextMonthBtn) {
       nextMonthBtn.addEventListener('click', () => {
-        this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
+        if (this.dashboardViewMode === 'yearly') {
+          this.selectedDate.setFullYear(this.selectedDate.getFullYear() + 1);
+        } else {
+          this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
+        }
         this.renderMonthSelector();
         this.renderDashboard();
       });
@@ -154,13 +164,13 @@ const App = {
       });
     }
 
-    // Dashboard View Mode Toggle
+    // Dashboard View Mode Toggle (Monthly / Daily / Yearly)
     const viewModeOverview = document.getElementById('view-mode-overview');
     const viewModeDaily = document.getElementById('view-mode-daily');
-    if (viewModeOverview && viewModeDaily) {
-      viewModeOverview.addEventListener('click', () => this.setDashboardViewMode('overview'));
-      viewModeDaily.addEventListener('click', () => this.setDashboardViewMode('daily'));
-    }
+    const viewModeYearly = document.getElementById('view-mode-yearly');
+    if (viewModeOverview) viewModeOverview.addEventListener('click', () => this.setDashboardViewMode('overview'));
+    if (viewModeDaily) viewModeDaily.addEventListener('click', () => this.setDashboardViewMode('daily'));
+    if (viewModeYearly) viewModeYearly.addEventListener('click', () => this.setDashboardViewMode('yearly'));
 
     // Filter & Search in History
     const searchInput = document.getElementById('tx-search-input');
@@ -1302,6 +1312,16 @@ const App = {
     const monthIndex = this.selectedDate.getMonth();
     const year = this.selectedDate.getFullYear();
 
+    if (this.dashboardViewMode === 'yearly') {
+      if (lang === 'en') {
+        monthEl.textContent = `Year ${year}`;
+      } else {
+        const thaiYear = year + 543;
+        monthEl.textContent = `ปี ${thaiYear} (${year})`;
+      }
+      return;
+    }
+
     if (lang === 'en') {
       const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       monthEl.textContent = `${enMonths[monthIndex]} ${year}`;
@@ -1316,21 +1336,38 @@ const App = {
     this.dashboardViewMode = mode;
     const viewOverview = document.getElementById('view-mode-overview');
     const viewDaily = document.getElementById('view-mode-daily');
+    const viewYearly = document.getElementById('view-mode-yearly');
+
+    const monthlyKpis = document.getElementById('dashboard-monthly-kpi-container');
     const paneOverview = document.getElementById('dashboard-overview-pane');
     const paneDaily = document.getElementById('dashboard-daily-pane');
+    const paneYearly = document.getElementById('dashboard-yearly-pane');
+
+    const activeClass = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
+    const inactiveClass = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+
+    if (viewOverview) viewOverview.className = (mode === 'overview') ? activeClass : inactiveClass;
+    if (viewDaily) viewDaily.className = (mode === 'daily') ? activeClass : inactiveClass;
+    if (viewYearly) viewYearly.className = (mode === 'yearly') ? activeClass : inactiveClass;
 
     if (mode === 'overview') {
-      if (viewOverview) viewOverview.className = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
-      if (viewDaily) viewDaily.className = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+      if (monthlyKpis) monthlyKpis.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.remove('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
-    } else {
-      if (viewOverview) viewOverview.className = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
-      if (viewDaily) viewDaily.className = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
+      if (paneYearly) paneYearly.classList.add('hidden');
+    } else if (mode === 'daily') {
+      if (monthlyKpis) monthlyKpis.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.remove('hidden');
+      if (paneYearly) paneYearly.classList.add('hidden');
+    } else if (mode === 'yearly') {
+      if (monthlyKpis) monthlyKpis.classList.add('hidden');
+      if (paneOverview) paneOverview.classList.add('hidden');
+      if (paneDaily) paneDaily.classList.add('hidden');
+      if (paneYearly) paneYearly.classList.remove('hidden');
     }
 
+    this.renderMonthSelector();
     this.renderDashboard();
   },
 
@@ -1345,7 +1382,21 @@ const App = {
     });
   },
 
+  getYearlyTransactions() {
+    const allTxs = StorageManager.getTransactions();
+    const year = this.selectedDate.getFullYear();
+    return allTxs.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year;
+    });
+  },
+
   renderDashboard() {
+    if (this.dashboardViewMode === 'yearly') {
+      this.renderYearlyDashboard();
+      return;
+    }
+
     const monthlyTxs = this.getMonthlyTransactions();
     
     let totalIncome = 0;
@@ -1391,6 +1442,295 @@ const App = {
     } else {
       this.renderDailyBreakdown(monthlyTxs);
     }
+  },
+
+  renderYearlyDashboard() {
+    const yearlyTxs = this.getYearlyTransactions();
+    const lang = I18n.getLanguage();
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    const monthlyStats = Array.from({ length: 12 }, (_, i) => ({
+      monthIndex: i,
+      income: 0,
+      expense: 0,
+      net: 0,
+      count: 0
+    }));
+
+    yearlyTxs.forEach(t => {
+      const d = new Date(t.date);
+      const mIdx = d.getMonth();
+      if (t.type === 'income') {
+        totalIncome += t.amount;
+        monthlyStats[mIdx].income += t.amount;
+      } else {
+        totalExpense += t.amount;
+        monthlyStats[mIdx].expense += t.amount;
+      }
+      monthlyStats[mIdx].count++;
+    });
+
+    monthlyStats.forEach(m => {
+      m.net = m.income - m.expense;
+    });
+
+    const netSavings = totalIncome - totalExpense;
+    const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100) : 0;
+    const avgMonthlySpend = totalExpense / 12;
+
+    const incEl = document.getElementById('dash-yearly-income');
+    const expEl = document.getElementById('dash-yearly-expense');
+    const savEl = document.getElementById('dash-yearly-savings');
+    const rateEl = document.getElementById('dash-yearly-rate');
+    const avgSpendEl = document.getElementById('dash-yearly-avg-spend');
+
+    if (incEl) incEl.textContent = '฿' + totalIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    if (expEl) expEl.textContent = '฿' + totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    if (savEl) {
+      savEl.textContent = (netSavings >= 0 ? '+' : '') + '฿' + netSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+      savEl.className = `text-2xl sm:text-3xl font-extrabold num-font ${netSavings >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
+    }
+    if (rateEl) {
+      rateEl.textContent = savingsRate.toFixed(1) + '%';
+      rateEl.className = `text-2xl sm:text-3xl font-extrabold num-font ${savingsRate >= 20 ? 'text-emerald-700' : (savingsRate >= 0 ? 'text-amber-700' : 'text-rose-600')}`;
+    }
+    if (avgSpendEl) {
+      avgSpendEl.textContent = (lang === 'en' ? 'Avg Spend: ฿' : 'เฉลี่ยรายจ่ายเดือนละ ฿') + avgMonthlySpend.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+    }
+
+    this.renderYearlyBarChart(monthlyStats);
+    this.renderYearlyCategoryChart(yearlyTxs, totalExpense);
+    this.renderYearlyTable(monthlyStats);
+  },
+
+  renderYearlyBarChart(monthlyStats) {
+    const ctx = document.getElementById('chart-yearly-monthly-bar');
+    if (!ctx) return;
+
+    if (this.yearlyMonthlyBarChart) this.yearlyMonthlyBarChart.destroy();
+
+    const lang = I18n.getLanguage();
+    const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const labels = (lang === 'en') ? enMonths : thMonths;
+
+    const incomeData = monthlyStats.map(m => m.income);
+    const expenseData = monthlyStats.map(m => m.expense);
+
+    this.yearlyMonthlyBarChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: lang === 'en' ? 'Income' : 'รายรับ (Income)',
+            data: incomeData,
+            backgroundColor: '#34d399',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.6
+          },
+          {
+            label: lang === 'en' ? 'Expense' : 'รายจ่าย (Expense)',
+            data: expenseData,
+            backgroundColor: '#f87171',
+            borderRadius: 6,
+            barPercentage: 0.7,
+            categoryPercentage: 0.6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              boxWidth: 12,
+              font: { family: "'Prompt', sans-serif", size: 11, weight: 'bold' }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.parsed.y || 0;
+                return ` ${context.dataset.label}: ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { family: "'Prompt', sans-serif", size: 11, weight: 'bold' } }
+          },
+          y: {
+            grid: { color: 'rgba(226, 232, 240, 0.6)' },
+            ticks: {
+              font: { family: "'Inter', sans-serif", size: 10 },
+              callback: function(value) {
+                return '฿' + value.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  renderYearlyCategoryChart(yearlyTxs, totalExpense) {
+    const expenseTxs = yearlyTxs.filter(t => t.type === 'expense');
+    const catMap = {};
+    expenseTxs.forEach(t => {
+      catMap[t.categoryId] = (catMap[t.categoryId] || 0) + t.amount;
+    });
+
+    const catLabels = [];
+    const catData = [];
+    const catColors = [];
+    const PASTEL_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#a78bfa', '#f472b6', '#94a3b8'];
+
+    Object.keys(catMap).forEach((catId, idx) => {
+      const cat = StorageManager.getCategoryById(catId);
+      const catName = StorageManager.getCategoryDisplayName(cat);
+      catLabels.push(`${cat.emoji} ${catName}`);
+      catData.push(catMap[catId]);
+      catColors.push(cat.color || PASTEL_PALETTE[idx % PASTEL_PALETTE.length]);
+    });
+
+    const ctx = document.getElementById('chart-yearly-category-doughnut');
+    const emptyState = document.getElementById('chart-yearly-doughnut-empty');
+
+    if (ctx) {
+      if (this.yearlyCategoryChart) this.yearlyCategoryChart.destroy();
+
+      if (catData.length === 0) {
+        ctx.parentElement.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+      } else {
+        ctx.parentElement.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+
+        this.yearlyCategoryChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: catLabels,
+            datasets: [{
+              data: catData,
+              backgroundColor: catColors,
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              hoverOffset: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  boxWidth: 10,
+                  font: { family: "'Prompt', sans-serif", size: 11 }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const value = context.parsed || 0;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return ` ฿${value.toLocaleString('th-TH', { minimumFractionDigits: 2 })} (${percentage}%)`;
+                  }
+                }
+              }
+            },
+            cutout: '72%'
+          }
+        });
+      }
+    }
+
+    // Top 5 categories list
+    const topListEl = document.getElementById('dash-yearly-top-categories-list');
+    if (topListEl) {
+      const sorted = Object.entries(catMap)
+        .map(([id, amount]) => ({ id, amount }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5);
+
+      if (sorted.length === 0) {
+        topListEl.innerHTML = `<p class="text-xs text-slate-400 py-3">${I18n.t('top_categories_empty')}</p>`;
+      } else {
+        topListEl.innerHTML = sorted.map((item, idx) => {
+          const cat = StorageManager.getCategoryById(item.id);
+          const catName = StorageManager.getCategoryDisplayName(cat);
+          const pct = totalExpense > 0 ? ((item.amount / totalExpense) * 100).toFixed(1) : 0;
+
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs font-semibold">
+                <div class="flex items-center gap-2">
+                  <span class="w-4 text-center text-slate-400 font-bold">${idx + 1}.</span>
+                  <span>${cat.emoji}</span>
+                  <span class="text-slate-800">${catName}</span>
+                </div>
+                <div class="text-right num-font">
+                  <span class="text-slate-900">฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                  <span class="text-[10px] text-slate-400 ml-1 font-normal">(${pct}%)</span>
+                </div>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div class="h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%; background-color: ${cat.color || '#f87171'};"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  },
+
+  renderYearlyTable(monthlyStats) {
+    const tbody = document.getElementById('yearly-12-months-table-body');
+    if (!tbody) return;
+
+    const lang = I18n.getLanguage();
+    const thMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthNames = (lang === 'en') ? enMonths : thMonths;
+
+    tbody.innerHTML = monthlyStats.map(m => {
+      const isPositive = m.net >= 0;
+      const rate = m.income > 0 ? ((m.net / m.income) * 100) : 0;
+      const hasActivity = m.count > 0;
+
+      return `
+        <tr class="hover:bg-slate-50/70 transition-colors">
+          <td class="py-2.5 px-3 font-bold text-slate-800">
+            ${monthNames[m.monthIndex]}
+            ${hasActivity ? `<span class="text-[9px] text-slate-400 font-normal ml-1">(${m.count})</span>` : ''}
+          </td>
+          <td class="py-2.5 px-3 text-right num-font font-semibold text-emerald-600">
+            ${m.income > 0 ? '฿' + m.income.toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
+          </td>
+          <td class="py-2.5 px-3 text-right num-font font-semibold text-rose-600">
+            ${m.expense > 0 ? '฿' + m.expense.toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
+          </td>
+          <td class="py-2.5 px-3 text-right num-font font-bold ${isPositive ? 'text-slate-900' : 'text-rose-600'}">
+            ${hasActivity ? (isPositive ? '+' : '') + '฿' + m.net.toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
+          </td>
+          <td class="py-2.5 px-3 text-center">
+            ${m.income > 0 
+              ? `<span class="text-[10px] px-2 py-0.5 rounded-full font-bold num-font ${rate >= 20 ? 'bg-emerald-100 text-emerald-700' : (rate >= 0 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700')}">${rate.toFixed(1)}%</span>`
+              : `<span class="text-slate-300">-</span>`
+            }
+          </td>
+        </tr>
+      `;
+    }).join('');
   },
 
   renderCharts(monthlyTxs) {

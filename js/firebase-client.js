@@ -1,6 +1,7 @@
 /**
  * Firebase Client & Cloud Sync Integration for Money Memo v2.9
  * Powered by Google Cloud Firestore & Firebase Google Authentication
+ * Features Pre-aggregated Monthly & Yearly Summaries to minimize Firestore Read Quota
  */
 
 const FIREBASE_CONFIG = {
@@ -19,6 +20,7 @@ const FirebaseManager = {
   db: null,
   currentUser: null,
   isInitialized: false,
+  _aggTimeout: null,
 
   init() {
     try {
@@ -74,8 +76,6 @@ const FirebaseManager = {
     try {
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      
-      // Use popup for desktop and redirect fallback for mobile if needed
       await this.auth.signInWithPopup(provider);
     } catch (e) {
       console.error('Google Sign-in error:', e);
@@ -110,7 +110,6 @@ const FirebaseManager = {
     const cloudTxs = await this.fetchCloudTransactions();
     const localTxs = StorageManager.getTransactions();
 
-    // If cloud is empty but local has data, ask user to upload
     if (cloudTxs.length === 0 && localTxs.length > 0) {
       const lang = I18n.getLanguage();
       const confirmUpload = confirm(
@@ -261,6 +260,10 @@ const FirebaseManager = {
       });
 
       await batch.commit();
+
+      // Update aggregation summary docs
+      await this.rebuildAllSummaries();
+
       App.showToast(I18n.getLanguage() === 'en' ? 'Firebase Cloud Sync Complete! 🔥' : 'ซิงค์ข้อมูลขึ้น Firebase Cloud เรียบร้อยแล้ว 🔥✨');
     } catch (e) {
       console.error('Migration error to Firestore:', e);
@@ -274,6 +277,7 @@ const FirebaseManager = {
     if (!userRef) return;
     try {
       await userRef.collection('transactions').doc(tx.id).set(tx, { merge: true });
+      this.debouncedUpdateAggregations(tx.date ? tx.date.slice(0, 7) : null);
     } catch (e) {
       console.error('Error saving transaction to Firestore:', e);
     }
@@ -284,6 +288,7 @@ const FirebaseManager = {
     if (!userRef) return;
     try {
       await userRef.collection('transactions').doc(id).delete();
+      this.debouncedUpdateAggregations();
     } catch (e) {
       console.error('Error deleting transaction from Firestore:', e);
     }
@@ -326,6 +331,122 @@ const FirebaseManager = {
       await userRef.collection('recurring_items').doc(id).delete();
     } catch (e) {
       console.error('Error deleting recurring item from Firestore:', e);
+    }
+  },
+
+  // --- Monthly & Yearly Pre-Aggregated Summary Documents ---
+  debouncedUpdateAggregations(yearMonthStr) {
+    if (this._aggTimeout) clearTimeout(this._aggTimeout);
+    this._aggTimeout = setTimeout(() => {
+      this.updateAggregations(yearMonthStr);
+    }, 1500);
+  },
+
+  async updateAggregations(yearMonthStr) {
+    const userRef = this.getUserRef();
+    if (!userRef) return;
+
+    try {
+      const allTxs = StorageManager.getTransactions();
+      const targetYearMonth = yearMonthStr || new Date().toISOString().slice(0, 7);
+      const targetYear = targetYearMonth.slice(0, 4);
+
+      // 1. Monthly calculation (users/{uid}/summaries_monthly/{YYYY-MM})
+      const monthlyTxs = allTxs.filter(t => (t.date || '').startsWith(targetYearMonth));
+      let mIncome = 0;
+      let mExpense = 0;
+      const mCatMap = {};
+
+      monthlyTxs.forEach(t => {
+        if (t.type === 'income') {
+          mIncome += t.amount;
+        } else {
+          mExpense += t.amount;
+          mCatMap[t.categoryId] = (mCatMap[t.categoryId] || 0) + t.amount;
+        }
+      });
+
+      // 2. Yearly calculation (users/{uid}/summaries_yearly/{YYYY})
+      const yearlyTxs = allTxs.filter(t => (t.date || '').startsWith(targetYear));
+      let yIncome = 0;
+      let yExpense = 0;
+      const yCatMap = {};
+      const yMonthlyBreakdown = {};
+
+      for (let m = 1; m <= 12; m++) {
+        const mKey = String(m).padStart(2, '0');
+        yMonthlyBreakdown[mKey] = { income: 0, expense: 0, net: 0, count: 0 };
+      }
+
+      yearlyTxs.forEach(t => {
+        const mKey = (t.date || '').slice(5, 7);
+        if (t.type === 'income') {
+          yIncome += t.amount;
+          if (yMonthlyBreakdown[mKey]) yMonthlyBreakdown[mKey].income += t.amount;
+        } else {
+          yExpense += t.amount;
+          yCatMap[t.categoryId] = (yCatMap[t.categoryId] || 0) + t.amount;
+          if (yMonthlyBreakdown[mKey]) yMonthlyBreakdown[mKey].expense += t.amount;
+        }
+        if (yMonthlyBreakdown[mKey]) yMonthlyBreakdown[mKey].count++;
+      });
+
+      Object.keys(yMonthlyBreakdown).forEach(k => {
+        yMonthlyBreakdown[k].net = yMonthlyBreakdown[k].income - yMonthlyBreakdown[k].expense;
+      });
+
+      const batch = this.db.batch();
+
+      // Monthly Doc
+      const mDocRef = userRef.collection('summaries_monthly').doc(targetYearMonth);
+      batch.set(mDocRef, {
+        yearMonth: targetYearMonth,
+        totalIncome: mIncome,
+        totalExpense: mExpense,
+        netBalance: mIncome - mExpense,
+        categoryTotals: mCatMap,
+        txCount: monthlyTxs.length,
+        updatedAt: Date.now()
+      }, { merge: true });
+
+      // Yearly Doc
+      const yDocRef = userRef.collection('summaries_yearly').doc(targetYear);
+      batch.set(yDocRef, {
+        year: targetYear,
+        totalIncome: yIncome,
+        totalExpense: yExpense,
+        netSavings: yIncome - yExpense,
+        savingsRate: yIncome > 0 ? ((yIncome - yExpense) / yIncome) * 100 : 0,
+        monthlyBreakdown: yMonthlyBreakdown,
+        categoryTotals: yCatMap,
+        txCount: yearlyTxs.length,
+        updatedAt: Date.now()
+      }, { merge: true });
+
+      await batch.commit();
+    } catch (e) {
+      console.error('Error updating aggregations in Firestore:', e);
+    }
+  },
+
+  async rebuildAllSummaries() {
+    const userRef = this.getUserRef();
+    if (!userRef) return;
+
+    try {
+      const allTxs = StorageManager.getTransactions();
+      const months = new Set();
+      allTxs.forEach(t => {
+        if (t.date && t.date.length >= 7) {
+          months.add(t.date.slice(0, 7));
+        }
+      });
+
+      for (const m of months) {
+        await this.updateAggregations(m);
+      }
+    } catch (e) {
+      console.error('Error rebuilding all summaries:', e);
     }
   },
 

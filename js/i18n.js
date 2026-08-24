@@ -64,6 +64,11 @@ const TRANSLATIONS = {
     btn_this_month: 'เดือนนี้',
     view_overview: '📊 สรุปภาพรวม',
     view_daily: '📅 แจกแจงรายวัน',
+    view_yearly: '📆 สรุปภาพรวมรายปี',
+
+    btn_prev_year: 'ปีก่อนหน้า',
+    btn_next_year: 'ปีถัดไป',
+    btn_this_year: 'ปีนี้',
 
     kpi_total_income: 'รายรับรวม (Total Income)',
     kpi_total_income_sub: 'ยอดรับทั้งหมดในเดือนนี้',
@@ -71,6 +76,15 @@ const TRANSLATIONS = {
     kpi_total_expense_sub: 'ยอดใช้จ่ายทั้งหมดในเดือนนี้',
     kpi_net_balance: 'คงเหลือสุทธิ (Net Balance)',
     kpi_net_sub: 'คำนวณจาก รายรับ - รายจ่าย',
+
+    yearly_income: 'รายรับรวมทั้งปี (Annual Income)',
+    yearly_income_sub: 'ยอดรับทั้งหมดตลอดทั้งปี',
+    yearly_expense: 'รายจ่ายรวมทั้งปี (Annual Expense)',
+    yearly_expense_sub: 'ยอดใช้จ่ายทั้งหมดตลอดทั้งปี',
+    yearly_savings: 'เงินออมคงเหลือทั้งปี (Annual Savings)',
+    yearly_savings_sub: 'คำนวณจาก รายรับ - รายจ่าย ทั้งปี',
+    yearly_savings_rate: 'อัตราการออมเฉลี่ย (Savings Rate)',
+    yearly_savings_rate_sub: 'สัดส่วนเงินเก็บต่อรายได้ทั้งปี',
 
     status_surplus: 'คงเหลือสุทธิเป็นบวก (Surplus ✨)',
     status_balanced: 'รายรับเท่ากับรายจ่ายพอดี (Balanced)',
@@ -82,6 +96,14 @@ const TRANSLATIONS = {
     top_categories_empty: 'ยังไม่มีข้อมูลการใช้จ่ายในเดือนนี้',
     top_categories_tip: '💡 ตรวจสอบหมวดหมู่หลักเพื่อช่วยลดรายจ่ายที่ไม่จำเป็นในเดือนถัดไป',
     chart_daily_trend_title: 'แนวโน้มการใช้จ่ายรายวัน (Daily Spending Trend)',
+    chart_monthly_bar_title: 'เปรียบเทียบรายรับ vs รายจ่าย 12 เดือน (Monthly Comparison)',
+    chart_yearly_category_title: 'สัดส่วนรายจ่ายตลอดทั้งปี',
+    yearly_table_title: 'ตารางสรุปผลการเงิน 12 เดือน (12-Month Performance)',
+    th_month: 'เดือน',
+    th_income: 'รายรับ (฿)',
+    th_expense: 'รายจ่าย (฿)',
+    th_net: 'คงเหลือสุทธิ (฿)',
+    th_savings_rate: '% ออมเงิน',
     daily_breakdown_title: 'รายการแจกแจงตามวัน (Daily Breakdown)',
     daily_breakdown_empty: 'ไม่มีรายการใช้จ่ายในเดือนนี้',
 

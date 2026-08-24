@@ -1,5 +1,5 @@
 /**
- * Storage & Data Management for Money Memo v2.6 (Hybrid LocalStorage & Supabase Cloud Sync)
+ * Storage & Data Management for Money Memo v2.9 (Hybrid LocalStorage & Firebase Cloud Sync)
  */
 
 const STORAGE_KEYS = {
@@ -30,7 +30,7 @@ const DEFAULT_CATEGORIES = [
   { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
 ];
 
-// รายการประจำเริ่มต้น (แยก รายจ่าย & รายรับ ชัดเจน)
+// รายการประจำเริ่มต้น
 const DEFAULT_RECURRING_ITEMS = [
   // รายจ่ายประจำ (Expenses)
   { id: 'rec_exp_1', type: 'expense', name: 'ค่าเช่าห้อง / คอนโด', nameEn: 'Apartment Rent', amount: 2800, categoryId: 'exp_housing', paymentMethod: 'โอนเงิน / บัญชีธนาคาร' },
@@ -44,7 +44,7 @@ const DEFAULT_RECURRING_ITEMS = [
   { id: 'rec_inc_2', type: 'income', name: 'ค่าจ้างงานเสริมประจำ', nameEn: 'Freelance & Side Gig', amount: 3000, categoryId: 'inc_business', paymentMethod: 'พร้อมเพย์ / สแกน QR' }
 ];
 
-// ข้อมูลจำลองงบประมาณ (อิสระ 100% ไม่ผูกกับรายการจริง)
+// ข้อมูลจำลองงบประมาณ
 const DEFAULT_BUDGET_SIMULATOR = {
   monthlyIncome: 18000,
   savingsGoal: 5000,
@@ -58,6 +58,25 @@ const DEFAULT_BUDGET_SIMULATOR = {
 };
 
 const StorageManager = {
+  // Helper to sync with Cloud (Firebase / Supabase)
+  _syncCloud(action, data) {
+    if (typeof FirebaseManager !== 'undefined' && FirebaseManager.isLoggedIn()) {
+      if (action === 'saveTransaction') FirebaseManager.saveCloudTransaction(data);
+      else if (action === 'deleteTransaction') FirebaseManager.deleteCloudTransaction(data);
+      else if (action === 'saveCategory') FirebaseManager.saveCloudCategory(data);
+      else if (action === 'deleteCategory') FirebaseManager.deleteCloudCategory(data);
+      else if (action === 'saveRecurring') FirebaseManager.saveCloudRecurringItem(data);
+      else if (action === 'deleteRecurring') FirebaseManager.deleteCloudRecurringItem(data);
+    } else if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
+      if (action === 'saveTransaction') SupabaseManager.saveCloudTransaction(data);
+      else if (action === 'deleteTransaction') SupabaseManager.deleteCloudTransaction(data);
+      else if (action === 'saveCategory') SupabaseManager.saveCloudCategory(data);
+      else if (action === 'deleteCategory') SupabaseManager.deleteCloudCategory(data);
+      else if (action === 'saveRecurring') SupabaseManager.saveCloudRecurringItem(data);
+      else if (action === 'deleteRecurring') SupabaseManager.deleteCloudRecurringItem(data);
+    }
+  },
+
   // --- หมวดหมู่ (Categories) ---
   getCategories() {
     try {
@@ -142,11 +161,7 @@ const StorageManager = {
 
     categories.push(newCat);
     this.saveCategories(categories);
-
-    // Sync to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.saveCloudCategory(newCat);
-    }
+    this._syncCloud('saveCategory', newCat);
 
     return newCat;
   },
@@ -168,11 +183,7 @@ const StorageManager = {
     };
 
     this.saveCategories(categories);
-
-    // Sync to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.saveCloudCategory(categories[index]);
-    }
+    this._syncCloud('saveCategory', categories[index]);
 
     return { success: true, category: categories[index] };
   },
@@ -181,11 +192,7 @@ const StorageManager = {
     let categories = this.getCategories();
     categories = categories.filter(c => c.id !== id);
     this.saveCategories(categories);
-
-    // Delete on Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.deleteCloudCategory(id);
-    }
+    this._syncCloud('deleteCategory', id);
 
     return { success: true };
   },
@@ -286,11 +293,7 @@ const StorageManager = {
     };
     list.push(newItem);
     this.saveRecurringItems(list);
-
-    // Sync to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.saveCloudRecurringItem(newItem);
-    }
+    this._syncCloud('saveRecurring', newItem);
 
     return newItem;
   },
@@ -313,11 +316,7 @@ const StorageManager = {
     };
 
     this.saveRecurringItems(list);
-
-    // Sync to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.saveCloudRecurringItem(list[index]);
-    }
+    this._syncCloud('saveRecurring', list[index]);
 
     return { success: true, item: list[index] };
   },
@@ -326,11 +325,7 @@ const StorageManager = {
     let list = this.getRecurringItems();
     list = list.filter(e => e.id !== id);
     this.saveRecurringItems(list);
-
-    // Delete on Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.deleteCloudRecurringItem(id);
-    }
+    this._syncCloud('deleteRecurring', id);
 
     return { success: true };
   },
@@ -369,11 +364,7 @@ const StorageManager = {
     };
     transactions.unshift(newTx);
     this.saveTransactions(transactions);
-
-    // Sync to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.saveCloudTransaction(newTx);
-    }
+    this._syncCloud('saveTransaction', newTx);
 
     return newTx;
   },
@@ -394,10 +385,7 @@ const StorageManager = {
     const merged = [...newItems, ...transactions];
     this.saveTransactions(merged);
 
-    // Sync each to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      newItems.forEach(item => SupabaseManager.saveCloudTransaction(item));
-    }
+    newItems.forEach(item => this._syncCloud('saveTransaction', item));
 
     return newItems.length;
   },
@@ -419,11 +407,7 @@ const StorageManager = {
     };
 
     this.saveTransactions(transactions);
-
-    // Sync to Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.saveCloudTransaction(transactions[index]);
-    }
+    this._syncCloud('saveTransaction', transactions[index]);
 
     return { success: true, transaction: transactions[index] };
   },
@@ -435,11 +419,7 @@ const StorageManager = {
 
     transactions = transactions.filter(t => t.id !== id);
     this.saveTransactions(transactions);
-
-    // Delete on Supabase Cloud if logged in
-    if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
-      SupabaseManager.deleteCloudTransaction(id);
-    }
+    this._syncCloud('deleteTransaction', id);
 
     return { success: true };
   },
@@ -449,7 +429,7 @@ const StorageManager = {
     return transactions.find(t => t.id === id) || null;
   },
 
-  // --- ระบบวิเคราะห์งบประมาณจำลอง (Budget Simulator Sandbox - แยกอิสระ 100%) ---
+  // --- ระบบวิเคราะห์งบประมาณจำลอง (Budget Simulator Sandbox) ---
   getBudgetSimulator() {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.BUDGET_SIMULATOR);
@@ -601,7 +581,7 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '2.6',
+      version: '2.9',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),

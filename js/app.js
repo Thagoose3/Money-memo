@@ -29,7 +29,9 @@ const App = {
 
   init() {
     I18n.init();
-    if (typeof SupabaseManager !== 'undefined') {
+    if (typeof FirebaseManager !== 'undefined') {
+      FirebaseManager.init();
+    } else if (typeof SupabaseManager !== 'undefined') {
       SupabaseManager.init();
     }
     this.initDateTimeInput();

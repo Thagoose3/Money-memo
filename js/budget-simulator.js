@@ -77,20 +77,21 @@ const BudgetSimulator = {
 
   addFixedExpenseRow(name = '', amount = 0) {
     const newId = 'sim_fe_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5);
-    const lang = (typeof I18n !== 'undefined') ? I18n.getLanguage() : 'th';
-    const defaultName = lang === 'en' ? 'New Simulated Expense' : 'ค่าใช้จ่ายจำลองใหม่';
     
     this.data.fixedExpenses.push({
       id: newId,
-      name: name || defaultName,
+      name: name,
       amount: amount
     });
     this.saveAndRecalculate();
     this.renderExpenseRows();
     
     setTimeout(() => {
-      const row = document.querySelector(`[data-expense-id="${newId}"] input[type="text"]`);
-      if (row) row.focus();
+      const input = document.querySelector(`[data-expense-id="${newId}"] input[type="text"]`);
+      if (input) {
+        input.focus();
+        input.select();
+      }
     }, 50);
   },
 
@@ -148,8 +149,8 @@ const BudgetSimulator = {
     }
 
     container.innerHTML = this.data.fixedExpenses.map((item, index) => {
-      const itemName = StorageManager.getItemDisplayName(item);
-      const placeholderText = lang === 'en' ? 'Expense name' : 'ชื่อรายจ่ายจำลอง';
+      const itemName = item.name !== undefined ? item.name : (StorageManager.getItemDisplayName(item) || '');
+      const placeholderText = lang === 'en' ? 'e.g. Gym, Streaming, Bills...' : 'เช่น ค่าฟิตเนส, ค่าเน็ต, ค่าห้อง...';
       return `
         <div class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/70 p-2 rounded-xl border border-slate-100 transition-all" data-expense-id="${item.id}">
           <span class="text-[10px] font-semibold text-slate-400 w-4 text-center">${index + 1}</span>
@@ -158,14 +159,14 @@ const BudgetSimulator = {
             class="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-medium focus:outline-none placeholder-slate-400"
             value="${itemName}" 
             placeholder="${placeholderText}"
-            onchange="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'name', this.value)"
+            oninput="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'name', this.value)"
           />
           <div class="relative w-28">
             <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">฿</span>
             <input 
               type="number" 
               class="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-xs text-right font-bold text-slate-800 focus:outline-none num-font"
-              value="${item.amount || ''}" 
+              value="${item.amount ? item.amount : ''}" 
               placeholder="0"
               min="0"
               step="50"

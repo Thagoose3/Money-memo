@@ -1407,14 +1407,6 @@ const App = {
     const monthIndex = this.selectedDate.getMonth();
     const year = this.selectedDate.getFullYear();
 
-  renderMonthSelector() {
-    const monthEl = document.getElementById('dashboard-current-month');
-    if (!monthEl) return;
-
-    const lang = I18n.getLanguage();
-    const monthIndex = this.selectedDate.getMonth();
-    const year = this.selectedDate.getFullYear();
-
     if (this.dashboardViewMode === 'custom') {
       if (this.customStartDate && this.customEndDate) {
         const s = new Date(this.customStartDate + 'T00:00:00');

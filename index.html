@@ -453,10 +453,13 @@
           </button>
         </div>
 
-        <!-- Mode Toggle (Monthly / Daily / Yearly) -->
-        <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 text-xs">
+        <!-- Mode Toggle (Monthly / Custom Pay Cycle / Daily / Yearly) -->
+        <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 text-xs flex-wrap">
           <button id="view-mode-overview" class="px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
-            <span data-i18n="view_overview">📊 สรุปภาพรวม</span>
+            <span data-i18n="view_overview">📊 สรุปรายเดือน</span>
+          </button>
+          <button id="view-mode-custom" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
+            <span data-i18n="view_custom">💰 รอบเงินเดือน / กำหนดเอง</span>
           </button>
           <button id="view-mode-daily" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
             <span data-i18n="view_daily">📅 แจกแจงรายวัน</span>
@@ -464,6 +467,46 @@
           <button id="view-mode-yearly" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
             <span data-i18n="view_yearly">📆 สรุปภาพรวมรายปี</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Custom Date Range Bar (รอบเงินเดือน / กำหนดช่วงวันที่เอง) -->
+      <div id="dashboard-custom-range-bar" class="hidden pastel-card p-3 sm:p-4 rounded-3xl space-y-3 bg-gradient-to-r from-amber-50/60 via-white to-orange-50/40 border border-amber-200/70 animate-modal">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          
+          <!-- Quick Presets -->
+          <div class="flex items-center gap-1.5 flex-wrap text-xs">
+            <span data-i18n="label_pay_cycle_presets" class="font-bold text-slate-700 text-[11px] mr-1">รอบเงินเดือนด่วน:</span>
+            <button type="button" onclick="App.applyPayCyclePreset(28)" class="px-2.5 py-1 bg-white hover:bg-amber-100/70 border border-amber-200 text-amber-900 font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer">
+              💰 รอบ 28–27
+            </button>
+            <button type="button" onclick="App.applyPayCyclePreset(25)" class="px-2.5 py-1 bg-white hover:bg-amber-100/70 border border-amber-200 text-amber-900 font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer">
+              💰 รอบ 25–24
+            </button>
+            <button type="button" onclick="App.applyPayCyclePreset(1)" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer">
+              🗓️ 1–สิ้นเดือน
+            </button>
+            <button type="button" onclick="App.applyPayCyclePreset('last30')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer">
+              ⚡ 30 วันล่าสุด
+            </button>
+            <button type="button" onclick="App.applyPayCyclePreset('last7')" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer">
+              ⚡ 7 วันล่าสุด
+            </button>
+          </div>
+
+          <!-- Date Inputs -->
+          <div class="flex items-center gap-2 text-xs">
+            <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1.5 rounded-2xl shadow-2xs">
+              <span class="text-slate-400 text-[11px] font-medium" data-i18n="label_start_date">ตั้งแต่:</span>
+              <input type="date" id="dash-custom-start-date" class="text-xs font-bold text-slate-800 focus:outline-none cursor-pointer" />
+            </div>
+            <span class="text-slate-400 text-xs font-bold">ถึง</span>
+            <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-2.5 py-1.5 rounded-2xl shadow-2xs">
+              <span class="text-slate-400 text-[11px] font-medium" data-i18n="label_end_date">ถึง:</span>
+              <input type="date" id="dash-custom-end-date" class="text-xs font-bold text-slate-800 focus:outline-none cursor-pointer" />
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1652,10 +1695,10 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/i18n.js?v=2.9"></script>
-  <script src="js/storage.js?v=2.9"></script>
-  <script src="js/firebase-client.js?v=2.9"></script>
-  <script src="js/budget-simulator.js?v=2.9"></script>
-  <script src="js/app.js?v=2.9"></script>
+  <script src="js/i18n.js?v=3.0"></script>
+  <script src="js/storage.js?v=3.0"></script>
+  <script src="js/firebase-client.js?v=3.0"></script>
+  <script src="js/budget-simulator.js?v=3.0"></script>
+  <script src="js/app.js?v=3.0"></script>
 </body>
 </html>

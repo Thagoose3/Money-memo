@@ -29,6 +29,10 @@ const App = {
   yearlyMonthlyBarChart: null,
   yearlyCategoryChart: null,
 
+  // Custom Date Range & Pay Cycle
+  customStartDate: '',
+  customEndDate: '',
+
   init() {
     I18n.init();
     if (typeof FirebaseManager !== 'undefined') {
@@ -37,6 +41,7 @@ const App = {
       SupabaseManager.init();
     }
     this.initDateTimeInput();
+    this.initCustomDateInputs();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.bindEvents();
     this.renderMonthSelector();
@@ -52,6 +57,94 @@ const App = {
     if (dateInput) {
       dateInput.value = localDateTime;
     }
+  },
+
+  initCustomDateInputs() {
+    const startInput = document.getElementById('dash-custom-start-date');
+    const endInput = document.getElementById('dash-custom-end-date');
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const curDate = now.getDate();
+
+    let sDate, eDate;
+    if (curDate >= 28) {
+      sDate = new Date(curYear, curMonth, 28);
+      eDate = new Date(curYear, curMonth + 1, 27);
+    } else {
+      sDate = new Date(curYear, curMonth - 1, 28);
+      eDate = new Date(curYear, curMonth, 27);
+    }
+
+    this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
+    this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
+
+    if (startInput) {
+      startInput.value = this.customStartDate;
+      startInput.addEventListener('change', (e) => {
+        this.customStartDate = e.target.value;
+        this.renderMonthSelector();
+        this.renderDashboard();
+      });
+    }
+
+    if (endInput) {
+      endInput.value = this.customEndDate;
+      endInput.addEventListener('change', (e) => {
+        this.customEndDate = e.target.value;
+        this.renderMonthSelector();
+        this.renderDashboard();
+      });
+    }
+  },
+
+  applyPayCyclePreset(preset) {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+    const curDate = now.getDate();
+
+    let sDate, eDate;
+
+    if (preset === 28) {
+      if (curDate >= 28) {
+        sDate = new Date(curYear, curMonth, 28);
+        eDate = new Date(curYear, curMonth + 1, 27);
+      } else {
+        sDate = new Date(curYear, curMonth - 1, 28);
+        eDate = new Date(curYear, curMonth, 27);
+      }
+    } else if (preset === 25) {
+      if (curDate >= 25) {
+        sDate = new Date(curYear, curMonth, 25);
+        eDate = new Date(curYear, curMonth + 1, 24);
+      } else {
+        sDate = new Date(curYear, curMonth - 1, 25);
+        eDate = new Date(curYear, curMonth, 24);
+      }
+    } else if (preset === 1) {
+      sDate = new Date(curYear, curMonth, 1);
+      eDate = new Date(curYear, curMonth + 1, 0);
+    } else if (preset === 'last30') {
+      sDate = new Date(now.getTime() - 30 * 86400000);
+      eDate = now;
+    } else if (preset === 'last7') {
+      sDate = new Date(now.getTime() - 7 * 86400000);
+      eDate = now;
+    }
+
+    this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
+    this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
+
+    const startInput = document.getElementById('dash-custom-start-date');
+    const endInput = document.getElementById('dash-custom-end-date');
+    if (startInput) startInput.value = this.customStartDate;
+    if (endInput) endInput.value = this.customEndDate;
+
+    this.setDashboardViewMode('custom');
   },
 
   bindEvents() {
@@ -164,11 +257,13 @@ const App = {
       });
     }
 
-    // Dashboard View Mode Toggle (Monthly / Daily / Yearly)
+    // Dashboard View Mode Toggle (Monthly / Custom Pay Cycle / Daily / Yearly)
     const viewModeOverview = document.getElementById('view-mode-overview');
+    const viewModeCustom = document.getElementById('view-mode-custom');
     const viewModeDaily = document.getElementById('view-mode-daily');
     const viewModeYearly = document.getElementById('view-mode-yearly');
     if (viewModeOverview) viewModeOverview.addEventListener('click', () => this.setDashboardViewMode('overview'));
+    if (viewModeCustom) viewModeCustom.addEventListener('click', () => this.setDashboardViewMode('custom'));
     if (viewModeDaily) viewModeDaily.addEventListener('click', () => this.setDashboardViewMode('daily'));
     if (viewModeYearly) viewModeYearly.addEventListener('click', () => this.setDashboardViewMode('yearly'));
 
@@ -1312,6 +1407,31 @@ const App = {
     const monthIndex = this.selectedDate.getMonth();
     const year = this.selectedDate.getFullYear();
 
+  renderMonthSelector() {
+    const monthEl = document.getElementById('dashboard-current-month');
+    if (!monthEl) return;
+
+    const lang = I18n.getLanguage();
+    const monthIndex = this.selectedDate.getMonth();
+    const year = this.selectedDate.getFullYear();
+
+    if (this.dashboardViewMode === 'custom') {
+      if (this.customStartDate && this.customEndDate) {
+        const s = new Date(this.customStartDate + 'T00:00:00');
+        const e = new Date(this.customEndDate + 'T00:00:00');
+        if (lang === 'en') {
+          const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          monthEl.textContent = `${s.getDate()} ${enMonths[s.getMonth()]} - ${e.getDate()} ${enMonths[e.getMonth()]} ${e.getFullYear()}`;
+        } else {
+          const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+          monthEl.textContent = `${s.getDate()} ${thMonths[s.getMonth()]} - ${e.getDate()} ${thMonths[e.getMonth()]} ${e.getFullYear() + 543}`;
+        }
+      } else {
+        monthEl.textContent = lang === 'en' ? 'Custom Pay Cycle' : 'รอบเงินเดือน / กำหนดเอง';
+      }
+      return;
+    }
+
     if (this.dashboardViewMode === 'yearly') {
       if (lang === 'en') {
         monthEl.textContent = `Year ${year}`;
@@ -1335,9 +1455,11 @@ const App = {
   setDashboardViewMode(mode) {
     this.dashboardViewMode = mode;
     const viewOverview = document.getElementById('view-mode-overview');
+    const viewCustom = document.getElementById('view-mode-custom');
     const viewDaily = document.getElementById('view-mode-daily');
     const viewYearly = document.getElementById('view-mode-yearly');
 
+    const customRangeBar = document.getElementById('dashboard-custom-range-bar');
     const monthlyKpis = document.getElementById('dashboard-monthly-kpi-container');
     const paneOverview = document.getElementById('dashboard-overview-pane');
     const paneDaily = document.getElementById('dashboard-daily-pane');
@@ -1347,20 +1469,30 @@ const App = {
     const inactiveClass = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
 
     if (viewOverview) viewOverview.className = (mode === 'overview') ? activeClass : inactiveClass;
+    if (viewCustom) viewCustom.className = (mode === 'custom') ? activeClass : inactiveClass;
     if (viewDaily) viewDaily.className = (mode === 'daily') ? activeClass : inactiveClass;
     if (viewYearly) viewYearly.className = (mode === 'yearly') ? activeClass : inactiveClass;
 
     if (mode === 'overview') {
+      if (customRangeBar) customRangeBar.classList.add('hidden');
+      if (monthlyKpis) monthlyKpis.classList.remove('hidden');
+      if (paneOverview) paneOverview.classList.remove('hidden');
+      if (paneDaily) paneDaily.classList.add('hidden');
+      if (paneYearly) paneYearly.classList.add('hidden');
+    } else if (mode === 'custom') {
+      if (customRangeBar) customRangeBar.classList.remove('hidden');
       if (monthlyKpis) monthlyKpis.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.remove('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
       if (paneYearly) paneYearly.classList.add('hidden');
     } else if (mode === 'daily') {
+      if (customRangeBar) customRangeBar.classList.add('hidden');
       if (monthlyKpis) monthlyKpis.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.remove('hidden');
       if (paneYearly) paneYearly.classList.add('hidden');
     } else if (mode === 'yearly') {
+      if (customRangeBar) customRangeBar.classList.add('hidden');
       if (monthlyKpis) monthlyKpis.classList.add('hidden');
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
@@ -1382,6 +1514,18 @@ const App = {
     });
   },
 
+  getCustomRangeTransactions() {
+    const allTxs = StorageManager.getTransactions();
+    const start = this.customStartDate;
+    const end = this.customEndDate;
+    if (!start || !end) return allTxs;
+
+    return allTxs.filter(t => {
+      const dStr = (t.date || '').slice(0, 10);
+      return dStr >= start && dStr <= end;
+    });
+  },
+
   getYearlyTransactions() {
     const allTxs = StorageManager.getTransactions();
     const year = this.selectedDate.getFullYear();
@@ -1397,12 +1541,13 @@ const App = {
       return;
     }
 
-    const monthlyTxs = this.getMonthlyTransactions();
+    const isCustom = (this.dashboardViewMode === 'custom');
+    const txs = isCustom ? this.getCustomRangeTransactions() : this.getMonthlyTransactions();
     
     let totalIncome = 0;
     let totalExpense = 0;
 
-    monthlyTxs.forEach(t => {
+    txs.forEach(t => {
       if (t.type === 'income') {
         totalIncome += t.amount;
       } else {
@@ -1417,12 +1562,24 @@ const App = {
     const netEl = document.getElementById('dash-net-balance');
     const netStatusEl = document.getElementById('dash-net-status');
 
+    const incSubEl = document.querySelector('[data-i18n="kpi_total_income_sub"]');
+    const expSubEl = document.querySelector('[data-i18n="kpi_total_expense_sub"]');
+
     if (incEl) incEl.textContent = '฿' + totalIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (expEl) expEl.textContent = '฿' + totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (netEl) {
       netEl.textContent = (netBalance >= 0 ? '+' : '') + '฿' + netBalance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       netEl.className = `text-2xl sm:text-3xl font-extrabold num-font ${netBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
     }
+    
+    if (isCustom) {
+      if (incSubEl) incSubEl.textContent = I18n.t('kpi_custom_income_sub');
+      if (expSubEl) expSubEl.textContent = I18n.t('kpi_custom_expense_sub');
+    } else {
+      if (incSubEl) incSubEl.textContent = I18n.t('kpi_total_income_sub');
+      if (expSubEl) expSubEl.textContent = I18n.t('kpi_total_expense_sub');
+    }
+
     if (netStatusEl) {
       if (netBalance > 0) {
         netStatusEl.textContent = I18n.t('status_surplus');
@@ -1436,11 +1593,11 @@ const App = {
       }
     }
 
-    if (this.dashboardViewMode === 'overview') {
-      this.renderCharts(monthlyTxs);
-      this.renderTopCategories(monthlyTxs, totalExpense);
+    if (this.dashboardViewMode === 'overview' || this.dashboardViewMode === 'custom') {
+      this.renderCharts(txs, isCustom);
+      this.renderTopCategories(txs, totalExpense);
     } else {
-      this.renderDailyBreakdown(monthlyTxs);
+      this.renderDailyBreakdown(txs);
     }
   },
 
@@ -1733,7 +1890,7 @@ const App = {
     }).join('');
   },
 
-  renderCharts(monthlyTxs) {
+  renderCharts(monthlyTxs, isCustom = false) {
     const expenseTxs = monthlyTxs.filter(t => t.type === 'expense');
     
     const catMap = {};
@@ -1808,23 +1965,62 @@ const App = {
       }
     }
 
-    const year = this.selectedDate.getFullYear();
-    const month = this.selectedDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let dayLabels = [];
+    let dailySpending = [];
+    let dailyIncome = [];
 
-    const dailySpending = new Array(daysInMonth).fill(0);
-    const dailyIncome = new Array(daysInMonth).fill(0);
+    if (isCustom && this.customStartDate && this.customEndDate) {
+      const s = new Date(this.customStartDate + 'T00:00:00');
+      const e = new Date(this.customEndDate + 'T00:00:00');
+      const dateList = [];
 
-    monthlyTxs.forEach(t => {
-      const d = new Date(t.date);
-      const dayIndex = d.getDate() - 1;
-      if (dayIndex >= 0 && dayIndex < daysInMonth) {
-        if (t.type === 'expense') dailySpending[dayIndex] += t.amount;
-        else dailyIncome[dayIndex] += t.amount;
+      let cur = new Date(s);
+      while (cur <= e && dateList.length <= 90) {
+        const pad = (n) => String(n).padStart(2, '0');
+        const dStr = `${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`;
+        dateList.push({
+          dStr: dStr,
+          label: `${cur.getDate()}/${cur.getMonth() + 1}`
+        });
+        cur.setDate(cur.getDate() + 1);
       }
-    });
 
-    const dayLabels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+      dayLabels = dateList.map(d => d.label);
+      dailySpending = new Array(dateList.length).fill(0);
+      dailyIncome = new Array(dateList.length).fill(0);
+
+      const dMap = {};
+      dateList.forEach((d, idx) => {
+        dMap[d.dStr] = idx;
+      });
+
+      monthlyTxs.forEach(t => {
+        const dStr = (t.date || '').slice(0, 10);
+        if (dMap[dStr] !== undefined) {
+          const idx = dMap[dStr];
+          if (t.type === 'expense') dailySpending[idx] += t.amount;
+          else dailyIncome[idx] += t.amount;
+        }
+      });
+    } else {
+      const year = this.selectedDate.getFullYear();
+      const month = this.selectedDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      dailySpending = new Array(daysInMonth).fill(0);
+      dailyIncome = new Array(daysInMonth).fill(0);
+
+      monthlyTxs.forEach(t => {
+        const d = new Date(t.date);
+        const dayIndex = d.getDate() - 1;
+        if (dayIndex >= 0 && dayIndex < daysInMonth) {
+          if (t.type === 'expense') dailySpending[dayIndex] += t.amount;
+          else dailyIncome[dayIndex] += t.amount;
+        }
+      });
+
+      dayLabels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+    }
 
     const ctxTrend = document.getElementById('chart-daily-trend');
     if (ctxTrend) {

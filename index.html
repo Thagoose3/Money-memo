@@ -453,13 +453,10 @@
           </button>
         </div>
 
-        <!-- Mode Toggle (Monthly / Custom Pay Cycle / Daily / Yearly) -->
+        <!-- Mode Toggle (Monthly Pay Cycle / Daily / Yearly) -->
         <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 text-xs flex-wrap">
-          <button id="view-mode-overview" class="px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
-            <span data-i18n="view_overview">📊 สรุปรายเดือน</span>
-          </button>
-          <button id="view-mode-custom" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
-            <span data-i18n="view_custom">💰 รอบเงินเดือน / กำหนดเอง</span>
+          <button id="view-mode-custom" class="px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
+            <span data-i18n="view_custom">📊 สรุปรายเดือน / รอบเงินเดือน</span>
           </button>
           <button id="view-mode-daily" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
             <span data-i18n="view_daily">📅 แจกแจงรายวัน</span>
@@ -471,7 +468,7 @@
       </div>
 
       <!-- Custom Date Range Bar (รอบเงินเดือน / กำหนดช่วงวันที่เอง) -->
-      <div id="dashboard-custom-range-bar" class="hidden pastel-card p-3 sm:p-4 rounded-3xl space-y-3 bg-gradient-to-r from-amber-50/60 via-white to-orange-50/40 border border-amber-200/70 animate-modal">
+      <div id="dashboard-custom-range-bar" class="pastel-card p-3 sm:p-4 rounded-3xl space-y-3 bg-gradient-to-r from-amber-50/60 via-white to-orange-50/40 border border-amber-200/70 animate-modal">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
           <!-- Quick Presets -->

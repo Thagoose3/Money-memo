@@ -4,10 +4,11 @@
 
 const App = {
   currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'recurring', 'categories'
-  dashboardViewMode: 'overview', // 'overview' (Monthly charts) or 'daily' (Daily breakdown)
+  dashboardViewMode: 'custom', // 'custom' (Monthly / Pay cycle), 'daily' (Daily breakdown), 'yearly' (Annual overview)
   selectedDate: new Date(), // สำหรับ Dashboard
   currentEntryType: 'expense', // 'expense' or 'income' for transaction form
   selectedCategoryId: null,
+  currentPayCyclePreset: 28,
   
   // Tab 4 (Recurring Items) state
   inlineRecurringType: 'expense', // 'expense' or 'income'
@@ -136,6 +137,7 @@ const App = {
       eDate = now;
     }
 
+    this.currentPayCyclePreset = preset;
     this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
     this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
 
@@ -145,6 +147,27 @@ const App = {
     if (endInput) endInput.value = this.customEndDate;
 
     this.setDashboardViewMode('custom');
+  },
+
+  shiftCustomDateRange(months) {
+    if (!this.customStartDate || !this.customEndDate) return;
+    const s = new Date(this.customStartDate + 'T00:00:00');
+    const e = new Date(this.customEndDate + 'T00:00:00');
+
+    s.setMonth(s.getMonth() + months);
+    e.setMonth(e.getMonth() + months);
+
+    const pad = (n) => String(n).padStart(2, '0');
+    this.customStartDate = `${s.getFullYear()}-${pad(s.getMonth() + 1)}-${pad(s.getDate())}`;
+    this.customEndDate = `${e.getFullYear()}-${pad(e.getMonth() + 1)}-${pad(e.getDate())}`;
+
+    const startInput = document.getElementById('dash-custom-start-date');
+    const endInput = document.getElementById('dash-custom-end-date');
+    if (startInput) startInput.value = this.customStartDate;
+    if (endInput) endInput.value = this.customEndDate;
+
+    this.renderMonthSelector();
+    this.renderDashboard();
   },
 
   bindEvents() {
@@ -231,6 +254,9 @@ const App = {
       prevMonthBtn.addEventListener('click', () => {
         if (this.dashboardViewMode === 'yearly') {
           this.selectedDate.setFullYear(this.selectedDate.getFullYear() - 1);
+        } else if (this.dashboardViewMode === 'custom') {
+          this.shiftCustomDateRange(-1);
+          return;
         } else {
           this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
         }
@@ -242,6 +268,9 @@ const App = {
       nextMonthBtn.addEventListener('click', () => {
         if (this.dashboardViewMode === 'yearly') {
           this.selectedDate.setFullYear(this.selectedDate.getFullYear() + 1);
+        } else if (this.dashboardViewMode === 'custom') {
+          this.shiftCustomDateRange(1);
+          return;
         } else {
           this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
         }
@@ -252,17 +281,19 @@ const App = {
     if (currentMonthBtn) {
       currentMonthBtn.addEventListener('click', () => {
         this.selectedDate = new Date();
+        if (this.dashboardViewMode === 'custom') {
+          this.applyPayCyclePreset(this.currentPayCyclePreset || 28);
+          return;
+        }
         this.renderMonthSelector();
         this.renderDashboard();
       });
     }
 
-    // Dashboard View Mode Toggle (Monthly / Custom Pay Cycle / Daily / Yearly)
-    const viewModeOverview = document.getElementById('view-mode-overview');
+    // Dashboard View Mode Toggle (Monthly Pay Cycle / Daily / Yearly)
     const viewModeCustom = document.getElementById('view-mode-custom');
     const viewModeDaily = document.getElementById('view-mode-daily');
     const viewModeYearly = document.getElementById('view-mode-yearly');
-    if (viewModeOverview) viewModeOverview.addEventListener('click', () => this.setDashboardViewMode('overview'));
     if (viewModeCustom) viewModeCustom.addEventListener('click', () => this.setDashboardViewMode('custom'));
     if (viewModeDaily) viewModeDaily.addEventListener('click', () => this.setDashboardViewMode('daily'));
     if (viewModeYearly) viewModeYearly.addEventListener('click', () => this.setDashboardViewMode('yearly'));
@@ -1446,7 +1477,6 @@ const App = {
 
   setDashboardViewMode(mode) {
     this.dashboardViewMode = mode;
-    const viewOverview = document.getElementById('view-mode-overview');
     const viewCustom = document.getElementById('view-mode-custom');
     const viewDaily = document.getElementById('view-mode-daily');
     const viewYearly = document.getElementById('view-mode-yearly');
@@ -1460,18 +1490,11 @@ const App = {
     const activeClass = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
     const inactiveClass = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
 
-    if (viewOverview) viewOverview.className = (mode === 'overview') ? activeClass : inactiveClass;
     if (viewCustom) viewCustom.className = (mode === 'custom') ? activeClass : inactiveClass;
     if (viewDaily) viewDaily.className = (mode === 'daily') ? activeClass : inactiveClass;
     if (viewYearly) viewYearly.className = (mode === 'yearly') ? activeClass : inactiveClass;
 
-    if (mode === 'overview') {
-      if (customRangeBar) customRangeBar.classList.add('hidden');
-      if (monthlyKpis) monthlyKpis.classList.remove('hidden');
-      if (paneOverview) paneOverview.classList.remove('hidden');
-      if (paneDaily) paneDaily.classList.add('hidden');
-      if (paneYearly) paneYearly.classList.add('hidden');
-    } else if (mode === 'custom') {
+    if (mode === 'custom') {
       if (customRangeBar) customRangeBar.classList.remove('hidden');
       if (monthlyKpis) monthlyKpis.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.remove('hidden');

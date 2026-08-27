@@ -62,8 +62,7 @@ const TRANSLATIONS = {
     btn_prev_month: 'เดือนก่อนหน้า',
     btn_next_month: 'เดือนถัดไป',
     btn_this_month: 'เดือนนี้',
-    view_overview: '📊 สรุปรายเดือน',
-    view_custom: '💰 รอบเงินเดือน / กำหนดเอง',
+    view_custom: '📊 สรุปรายเดือน / รอบเงินเดือน',
     view_daily: '📅 แจกแจงรายวัน',
     view_yearly: '📆 สรุปภาพรวมรายปี',
 
@@ -305,8 +304,7 @@ const TRANSLATIONS = {
     btn_prev_month: 'Previous Month',
     btn_next_month: 'Next Month',
     btn_this_month: 'This Month',
-    view_overview: '📊 Monthly Overview',
-    view_custom: '💰 Pay Cycle / Custom Range',
+    view_custom: '📊 Monthly / Pay Cycle',
     view_daily: '📅 Daily Breakdown',
     view_yearly: '📆 Annual Overview',
 

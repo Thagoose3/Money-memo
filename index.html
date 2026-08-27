@@ -436,7 +436,7 @@
       <!-- แถบเลือกเดือน & View mode -->
       <div class="pastel-card p-3 sm:p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3">
         <div class="flex items-center gap-2">
-          <button id="prev-month-btn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนก่อนหน้า">
+          <button id="prev-month-btn" onclick="App.navigateDashboardMonth(-1)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนก่อนหน้า">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
           </button>
           
@@ -444,11 +444,11 @@
             <span id="dashboard-current-month" class="text-xs sm:text-sm font-bold text-slate-900 block num-font">สิงหาคม 2569</span>
           </div>
 
-          <button id="next-month-btn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนถัดไป">
+          <button id="next-month-btn" onclick="App.navigateDashboardMonth(1)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนถัดไป">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
           </button>
 
-          <button id="current-month-btn" class="px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-slate-900 rounded-xl transition-colors cursor-pointer">
+          <button id="current-month-btn" onclick="App.goToCurrentMonth()" class="px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-slate-900 rounded-xl transition-colors cursor-pointer">
             <span data-i18n="btn_this_month">เดือนนี้</span>
           </button>
         </div>

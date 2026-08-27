@@ -64,80 +64,67 @@ const App = {
     const startInput = document.getElementById('dash-custom-start-date');
     const endInput = document.getElementById('dash-custom-end-date');
 
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const curYear = now.getFullYear();
-    const curMonth = now.getMonth();
-    const curDate = now.getDate();
-
-    let sDate, eDate;
-    if (curDate >= 28) {
-      sDate = new Date(curYear, curMonth, 28);
-      eDate = new Date(curYear, curMonth + 1, 27);
-    } else {
-      sDate = new Date(curYear, curMonth - 1, 28);
-      eDate = new Date(curYear, curMonth, 27);
-    }
-
-    this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
-    this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
+    this.currentPayCyclePreset = 28;
+    this.updateCustomDateRangeFromSelectedDate();
 
     if (startInput) {
-      startInput.value = this.customStartDate;
       startInput.addEventListener('change', (e) => {
         this.customStartDate = e.target.value;
+        this.currentPayCyclePreset = 'custom';
         this.renderMonthSelector();
         this.renderDashboard();
       });
     }
 
     if (endInput) {
-      endInput.value = this.customEndDate;
       endInput.addEventListener('change', (e) => {
         this.customEndDate = e.target.value;
+        this.currentPayCyclePreset = 'custom';
         this.renderMonthSelector();
         this.renderDashboard();
       });
     }
   },
 
-  applyPayCyclePreset(preset) {
-    const now = new Date();
+  updateCustomDateRangeFromSelectedDate() {
     const pad = (n) => String(n).padStart(2, '0');
-    const curYear = now.getFullYear();
-    const curMonth = now.getMonth();
-    const curDate = now.getDate();
+    const Y = this.selectedDate.getFullYear();
+    const M = this.selectedDate.getMonth(); // 0-11
 
     let sDate, eDate;
+    const preset = this.currentPayCyclePreset || 28;
 
     if (preset === 28) {
-      if (curDate >= 28) {
-        sDate = new Date(curYear, curMonth, 28);
-        eDate = new Date(curYear, curMonth + 1, 27);
-      } else {
-        sDate = new Date(curYear, curMonth - 1, 28);
-        eDate = new Date(curYear, curMonth, 27);
-      }
+      sDate = new Date(Y, M - 1, 28);
+      eDate = new Date(Y, M, 27);
     } else if (preset === 25) {
-      if (curDate >= 25) {
-        sDate = new Date(curYear, curMonth, 25);
-        eDate = new Date(curYear, curMonth + 1, 24);
-      } else {
-        sDate = new Date(curYear, curMonth - 1, 25);
-        eDate = new Date(curYear, curMonth, 24);
-      }
+      sDate = new Date(Y, M - 1, 25);
+      eDate = new Date(Y, M, 24);
     } else if (preset === 1) {
-      sDate = new Date(curYear, curMonth, 1);
-      eDate = new Date(curYear, curMonth + 1, 0);
+      sDate = new Date(Y, M, 1);
+      eDate = new Date(Y, M + 1, 0);
     } else if (preset === 'last30') {
+      const now = new Date(this.selectedDate);
       sDate = new Date(now.getTime() - 30 * 86400000);
       eDate = now;
     } else if (preset === 'last7') {
+      const now = new Date(this.selectedDate);
       sDate = new Date(now.getTime() - 7 * 86400000);
       eDate = now;
+    } else {
+      if (this.customStartDate && this.customEndDate) {
+        const partsS = this.customStartDate.split('-');
+        const partsE = this.customEndDate.split('-');
+        const sDay = parseInt(partsS[2], 10) || 1;
+        const eDay = parseInt(partsE[2], 10) || 28;
+        sDate = new Date(Y, M - 1, sDay);
+        eDate = new Date(Y, M, eDay);
+      } else {
+        sDate = new Date(Y, M - 1, 28);
+        eDate = new Date(Y, M, 27);
+      }
     }
 
-    this.currentPayCyclePreset = preset;
     this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
     this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
 
@@ -145,27 +132,33 @@ const App = {
     const endInput = document.getElementById('dash-custom-end-date');
     if (startInput) startInput.value = this.customStartDate;
     if (endInput) endInput.value = this.customEndDate;
-
-    this.setDashboardViewMode('custom');
   },
 
-  shiftCustomDateRange(months) {
-    if (!this.customStartDate || !this.customEndDate) return;
-    const s = new Date(this.customStartDate + 'T00:00:00');
-    const e = new Date(this.customEndDate + 'T00:00:00');
+  applyPayCyclePreset(preset) {
+    this.currentPayCyclePreset = preset;
+    this.updateCustomDateRangeFromSelectedDate();
+    this.renderMonthSelector();
+    this.renderDashboard();
+  },
 
-    s.setMonth(s.getMonth() + months);
-    e.setMonth(e.getMonth() + months);
+  navigateDashboardMonth(direction) {
+    if (this.dashboardViewMode === 'yearly') {
+      this.selectedDate.setFullYear(this.selectedDate.getFullYear() + direction);
+    } else {
+      this.selectedDate.setMonth(this.selectedDate.getMonth() + direction);
+      if (this.dashboardViewMode === 'custom') {
+        this.updateCustomDateRangeFromSelectedDate();
+      }
+    }
+    this.renderMonthSelector();
+    this.renderDashboard();
+  },
 
-    const pad = (n) => String(n).padStart(2, '0');
-    this.customStartDate = `${s.getFullYear()}-${pad(s.getMonth() + 1)}-${pad(s.getDate())}`;
-    this.customEndDate = `${e.getFullYear()}-${pad(e.getMonth() + 1)}-${pad(e.getDate())}`;
-
-    const startInput = document.getElementById('dash-custom-start-date');
-    const endInput = document.getElementById('dash-custom-end-date');
-    if (startInput) startInput.value = this.customStartDate;
-    if (endInput) endInput.value = this.customEndDate;
-
+  goToCurrentMonth() {
+    this.selectedDate = new Date();
+    if (this.dashboardViewMode === 'custom') {
+      this.updateCustomDateRangeFromSelectedDate();
+    }
     this.renderMonthSelector();
     this.renderDashboard();
   },

@@ -152,37 +152,56 @@ const BudgetSimulator = {
       const itemName = item.name !== undefined ? item.name : (StorageManager.getItemDisplayName(item) || '');
       const placeholderText = lang === 'en' ? 'e.g. Gym, Streaming, Bills...' : 'เช่น ค่าฟิตเนส, ค่าเน็ต, ค่าห้อง...';
       return `
-        <div class="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/70 p-2 rounded-xl border border-slate-100 transition-all" data-expense-id="${item.id}">
-          <span class="text-[10px] font-semibold text-slate-400 w-4 text-center">${index + 1}</span>
-          <input 
-            type="text" 
-            class="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-medium focus:outline-none placeholder-slate-400"
-            value="${itemName}" 
-            placeholder="${placeholderText}"
-            oninput="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'name', this.value)"
-          />
-          <div class="relative w-28">
-            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">฿</span>
+        <div class="p-2.5 sm:p-2 bg-slate-50/90 hover:bg-slate-100/90 rounded-2xl sm:rounded-xl border border-slate-200/70 transition-all flex flex-col sm:flex-row sm:items-center gap-2" data-expense-id="${item.id}">
+          
+          <!-- Top Row on Mobile: Index + Name + Delete (Mobile) -->
+          <div class="flex items-center gap-1.5 flex-1 min-w-0">
+            <span class="text-[11px] font-bold text-slate-400 w-5 text-center shrink-0 bg-white sm:bg-transparent py-0.5 rounded-lg sm:rounded-none border sm:border-0 border-slate-200">${index + 1}</span>
             <input 
-              type="number" 
-              class="w-full bg-white border border-slate-200 rounded-lg pl-6 pr-2 py-1 text-xs text-right font-bold text-slate-800 focus:outline-none num-font"
-              value="${item.amount ? item.amount : ''}" 
-              placeholder="0"
-              min="0"
-              step="50"
-              oninput="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'amount', this.value)"
+              type="text" 
+              class="flex-1 min-w-0 bg-white border border-slate-200 rounded-xl sm:rounded-lg px-2.5 py-1.5 sm:py-1 text-xs text-slate-800 font-semibold focus:outline-none placeholder-slate-400"
+              value="${itemName}" 
+              placeholder="${placeholderText}"
+              oninput="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'name', this.value)"
             />
+            <button 
+              type="button" 
+              onclick="BudgetSimulator.deleteFixedExpenseRow('${item.id}')"
+              class="sm:hidden p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+              title="${lang === 'en' ? 'Delete row' : 'ลบแถวนี้'}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
-          <button 
-            type="button" 
-            onclick="BudgetSimulator.deleteFixedExpenseRow('${item.id}')"
-            class="p-1 text-slate-400 hover:text-red-500 rounded transition-colors cursor-pointer"
-            title="${lang === 'en' ? 'Delete row' : 'ลบแถวนี้'}"
-          >
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+
+          <!-- Bottom Row on Mobile: Full-width Amount Input + Delete (Desktop) -->
+          <div class="flex items-center gap-1.5 pl-6 sm:pl-0 sm:w-40 lg:w-44 shrink-0">
+            <div class="relative flex-1">
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+              <input 
+                type="number" 
+                class="w-full bg-white border border-slate-200 rounded-xl sm:rounded-lg pl-6 pr-2.5 py-1.5 sm:py-1 text-xs sm:text-xs text-right font-extrabold text-slate-900 focus:outline-none num-font"
+                value="${item.amount ? item.amount : ''}" 
+                placeholder="0"
+                min="0"
+                step="50"
+                oninput="BudgetSimulator.updateFixedExpenseRow('${item.id}', 'amount', this.value)"
+              />
+            </div>
+            <button 
+              type="button" 
+              onclick="BudgetSimulator.deleteFixedExpenseRow('${item.id}')"
+              class="hidden sm:inline-flex p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0"
+              title="${lang === 'en' ? 'Delete row' : 'ลบแถวนี้'}"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+
         </div>
       `;
     }).join('');

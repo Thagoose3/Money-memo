@@ -238,6 +238,22 @@
     <!-- ========================================== -->
     <section id="tab-pane-transactions" class="tab-content-pane space-y-4 sm:space-y-6">
       
+      <!-- Cloud Sync Helper Banner (เตือนให้เข้าสู่ระบบเพื่อซิงค์ข้อมูลระหว่างมือถือกับคอม) -->
+      <div id="cloud-sync-status-banner" class="pastel-card p-3 sm:p-3.5 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50/60 to-rose-50/40 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 animate-modal">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-2xl bg-amber-400/20 text-amber-800 flex items-center justify-center text-sm shrink-0">
+            ☁️
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-800">ซิงค์ข้อมูลข้ามอุปกรณ์ (คอมพิวเตอร์ & มือถือ)</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">เข้าสู่ระบบด้วย Google บัญชีเดียวกัน เพื่อดึงประวัติและรายการทั้งหมดมายังอุปกรณ์นี้อัตโนมัติ</p>
+          </div>
+        </div>
+        <button type="button" onclick="FirebaseManager.signInWithGoogle()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
+          <span>🔑 เข้าสู่ระบบด้วย Google</span>
+        </button>
+      </div>
+
       <!-- Quick Recurring Bar (Pastel Blue/Indigo) -->
       <div class="pastel-card p-3.5 sm:p-4 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-purple-50/40 border-blue-100/70">
         <div class="flex items-center gap-2.5">
@@ -1725,10 +1741,10 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/i18n.js?v=3.0"></script>
-  <script src="js/storage.js?v=3.0"></script>
-  <script src="js/firebase-client.js?v=3.0"></script>
-  <script src="js/budget-simulator.js?v=3.0"></script>
-  <script src="js/app.js?v=3.0"></script>
+  <script src="js/i18n.js?v=3.1"></script>
+  <script src="js/storage.js?v=3.1"></script>
+  <script src="js/firebase-client.js?v=3.1"></script>
+  <script src="js/budget-simulator.js?v=3.1"></script>
+  <script src="js/app.js?v=3.1"></script>
 </body>
 </html>

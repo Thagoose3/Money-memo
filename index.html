@@ -106,6 +106,23 @@
       margin: 0;
     }
     input[type="number"] { -moz-appearance: textfield; }
+    input[type="date"], input[type="datetime-local"] {
+      font-family: inherit;
+      color-scheme: light;
+      min-height: 38px;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.75;
+      padding: 2px 4px;
+      margin-left: 4px;
+      transition: opacity 0.15s ease;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover,
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+    }
     input:focus, select:focus {
       outline: none;
       border-color: #0f172a !important;
@@ -346,14 +363,14 @@
                 <input 
                   type="datetime-local" 
                   id="tx-date" 
-                  class="w-full px-3 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium" 
+                  class="w-full px-3.5 py-2.5 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer" 
                   required
                 />
               </div>
 
               <div>
                 <label data-i18n="label_payment" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ช่องทางชำระเงิน</label>
-                <select id="tx-payment-method" class="w-full px-3 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-700 font-medium">
+                <select id="tx-payment-method" class="w-full px-3.5 py-2.5 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer">
                   <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน / ธนาคาร</option>
                   <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / QR</option>
                   <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
@@ -476,14 +493,14 @@
 
         <!-- Date Inputs -->
         <div class="flex items-center gap-2 text-xs flex-wrap justify-center">
-          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-2xl shadow-2xs">
-            <span class="text-slate-400 text-[11px] font-medium" data-i18n="label_start_date">ตั้งแต่:</span>
-            <input type="date" id="dash-custom-start-date" class="text-xs font-bold text-slate-800 focus:outline-none cursor-pointer" />
+          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2 rounded-2xl shadow-2xs">
+            <span class="text-slate-400 text-[11px] font-medium shrink-0" data-i18n="label_start_date">ตั้งแต่:</span>
+            <input type="date" id="dash-custom-start-date" class="w-auto min-w-[130px] text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1" />
           </div>
-          <span class="text-slate-400 text-xs font-bold">ถึง</span>
-          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1.5 rounded-2xl shadow-2xs">
-            <span class="text-slate-400 text-[11px] font-medium" data-i18n="label_end_date">ถึง:</span>
-            <input type="date" id="dash-custom-end-date" class="text-xs font-bold text-slate-800 focus:outline-none cursor-pointer" />
+          <span class="text-slate-400 text-xs font-bold shrink-0">ถึง</span>
+          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2 rounded-2xl shadow-2xs">
+            <span class="text-slate-400 text-[11px] font-medium shrink-0" data-i18n="label_end_date">ถึง:</span>
+            <input type="date" id="dash-custom-end-date" class="w-auto min-w-[130px] text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1" />
           </div>
         </div>
       </div>
@@ -1451,15 +1468,15 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label data-i18n="label_datetime" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">วันที่และเวลา</label>
-            <input type="datetime-local" id="edit-tx-date" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs" required />
+            <input type="datetime-local" id="edit-tx-date" class="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer" required />
           </div>
 
           <div>
             <label data-i18n="label_payment" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ช่องทางชำระเงิน</label>
-            <select id="edit-tx-payment-method" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+            <select id="edit-tx-payment-method" class="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer">
               <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน/ธนาคาร</option>
               <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์/QR</option>
               <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>

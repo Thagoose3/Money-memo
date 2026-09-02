@@ -356,21 +356,32 @@
               </div>
             </div>
 
-            <!-- วันที่-เวลา & ช่องทางชำระเงิน -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <div>
-                <label data-i18n="label_datetime" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">วันที่และเวลา</label>
+            <!-- วันที่, เวลา 24 ชม. & ช่องทางชำระเงิน -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+              <div class="sm:col-span-5">
+                <label data-i18n="label_date" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">วันที่</label>
                 <input 
-                  type="datetime-local" 
+                  type="date" 
                   id="tx-date" 
-                  class="w-full px-3.5 py-2.5 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer" 
+                  class="w-full px-3 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer" 
                   required
                 />
               </div>
 
-              <div>
+              <div class="sm:col-span-3">
+                <label data-i18n="label_time" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">เวลา (24 ชม.)</label>
+                <input 
+                  type="time" 
+                  id="tx-time" 
+                  step="60"
+                  class="w-full px-2.5 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-bold text-center cursor-pointer num-font" 
+                  required
+                />
+              </div>
+
+              <div class="sm:col-span-4">
                 <label data-i18n="label_payment" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ช่องทางชำระเงิน</label>
-                <select id="tx-payment-method" class="w-full px-3.5 py-2.5 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer">
+                <select id="tx-payment-method" class="w-full px-2.5 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer">
                   <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน / ธนาคาร</option>
                   <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์ / QR</option>
                   <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>
@@ -1468,15 +1479,21 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label data-i18n="label_datetime" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">วันที่และเวลา</label>
-            <input type="datetime-local" id="edit-tx-date" class="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer" required />
+        <!-- วันที่, เวลา 24 ชม. & ช่องทางชำระเงิน -->
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+          <div class="sm:col-span-5">
+            <label data-i18n="label_date" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">วันที่</label>
+            <input type="date" id="edit-tx-date" class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer" required />
           </div>
 
-          <div>
+          <div class="sm:col-span-3">
+            <label data-i18n="label_time" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">เวลา (24 ชม.)</label>
+            <input type="time" id="edit-tx-time" step="60" class="w-full px-2.5 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-center text-slate-800 cursor-pointer num-font" required />
+          </div>
+
+          <div class="sm:col-span-4">
             <label data-i18n="label_payment" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ช่องทางชำระเงิน</label>
-            <select id="edit-tx-payment-method" class="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer">
+            <select id="edit-tx-payment-method" class="w-full px-2.5 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer">
               <option value="โอนเงิน / บัญชีธนาคาร">🏦 โอนเงิน/ธนาคาร</option>
               <option value="พร้อมเพย์ / สแกน QR">📱 พร้อมเพย์/QR</option>
               <option value="เงินสด (Cash)">💵 เงินสด (Cash)</option>

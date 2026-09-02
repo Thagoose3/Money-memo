@@ -53,11 +53,13 @@ const App = {
   initDateTimeInput() {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const localDateTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const curDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const curTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
     const dateInput = document.getElementById('tx-date');
-    if (dateInput) {
-      dateInput.value = localDateTime;
-    }
+    const timeInput = document.getElementById('tx-time');
+    if (dateInput) dateInput.value = curDate;
+    if (timeInput) timeInput.value = curTime;
   },
 
   initCustomDateInputs() {
@@ -1394,6 +1396,7 @@ const App = {
   handleSaveTransaction() {
     const amountInput = document.getElementById('tx-amount');
     const dateInput = document.getElementById('tx-date');
+    const timeInput = document.getElementById('tx-time');
     const paymentInput = document.getElementById('tx-payment-method');
     const noteInput = document.getElementById('tx-note');
 
@@ -1404,11 +1407,17 @@ const App = {
       return;
     }
 
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dVal = dateInput?.value || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const tVal = timeInput?.value || `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const fullDateTime = `${dVal}T${tVal}`;
+
     const tx = {
       type: this.currentEntryType,
       amount: amount,
       categoryId: this.selectedCategoryId,
-      date: dateInput.value || new Date().toISOString().slice(0, 16),
+      date: fullDateTime,
       paymentMethod: paymentInput ? paymentInput.value : 'เงินสด (Cash)',
       note: noteInput ? noteInput.value : ''
     };
@@ -2323,12 +2332,17 @@ const App = {
     const modal = document.getElementById('edit-modal');
     const amountInput = document.getElementById('edit-tx-amount');
     const dateInput = document.getElementById('edit-tx-date');
+    const timeInput = document.getElementById('edit-tx-time');
     const paymentInput = document.getElementById('edit-tx-payment-method');
     const noteInput = document.getElementById('edit-tx-note');
     const typeSelect = document.getElementById('edit-tx-type');
 
     if (amountInput) amountInput.value = tx.amount;
-    if (dateInput) dateInput.value = tx.date;
+    if (tx.date) {
+      const parts = tx.date.split('T');
+      if (dateInput) dateInput.value = parts[0] || '';
+      if (timeInput) timeInput.value = parts[1] ? parts[1].substring(0, 5) : '12:00';
+    }
     if (paymentInput) paymentInput.value = tx.paymentMethod;
     if (noteInput) noteInput.value = tx.note || '';
     if (typeSelect) {
@@ -2353,7 +2367,9 @@ const App = {
     if (!this.editingTransactionId) return;
 
     const amount = parseFloat(document.getElementById('edit-tx-amount').value);
-    const date = document.getElementById('edit-tx-date').value;
+    const dateVal = document.getElementById('edit-tx-date')?.value || '';
+    const timeVal = document.getElementById('edit-tx-time')?.value || '12:00';
+    const date = `${dateVal}T${timeVal}`;
     const type = document.getElementById('edit-tx-type').value;
     const paymentMethod = document.getElementById('edit-tx-payment-method').value;
     const note = document.getElementById('edit-tx-note').value;

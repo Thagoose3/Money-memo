@@ -358,7 +358,8 @@
 
             <!-- วันที่, เวลา 24 ชม. & ช่องทางชำระเงิน -->
             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-              <div class="sm:col-span-5">
+              <!-- วันที่ -->
+              <div class="sm:col-span-4">
                 <label data-i18n="label_date" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">วันที่</label>
                 <input 
                   type="date" 
@@ -368,17 +369,26 @@
                 />
               </div>
 
-              <div class="sm:col-span-3">
-                <label data-i18n="label_time" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">เวลา (24 ชม.)</label>
-                <input 
-                  type="time" 
-                  id="tx-time" 
-                  step="60"
-                  class="w-full px-2.5 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-bold text-center cursor-pointer num-font" 
-                  required
-                />
+              <!-- เวลา 24 ชม. (00:00 - 23:59) -->
+              <div class="sm:col-span-4">
+                <div class="flex items-center justify-between mb-1">
+                  <label data-i18n="label_time" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">เวลา (24 ชม.)</label>
+                  <button type="button" onclick="App.setCurrentTime()" class="text-[10px] font-bold text-amber-600 hover:text-amber-700 cursor-pointer">
+                    🕒 ตอนนี้
+                  </button>
+                </div>
+                <div class="flex items-center justify-center bg-slate-50/80 focus-within:bg-white border border-slate-200 rounded-2xl px-2 py-1.5 shadow-2xs gap-1">
+                  <select id="tx-hour" class="flex-1 bg-transparent text-xs sm:text-sm font-extrabold text-slate-800 text-center focus:outline-none cursor-pointer py-0.5 num-font">
+                    <!-- 00 to 23 -->
+                  </select>
+                  <span class="text-slate-400 font-extrabold text-xs">:</span>
+                  <select id="tx-minute" class="flex-1 bg-transparent text-xs sm:text-sm font-extrabold text-slate-800 text-center focus:outline-none cursor-pointer py-0.5 num-font">
+                    <!-- 00 to 59 -->
+                  </select>
+                </div>
               </div>
 
+              <!-- ช่องทางชำระเงิน -->
               <div class="sm:col-span-4">
                 <label data-i18n="label_payment" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">ช่องทางชำระเงิน</label>
                 <select id="tx-payment-method" class="w-full px-2.5 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 font-semibold cursor-pointer">
@@ -1481,14 +1491,22 @@
 
         <!-- วันที่, เวลา 24 ชม. & ช่องทางชำระเงิน -->
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-          <div class="sm:col-span-5">
+          <div class="sm:col-span-4">
             <label data-i18n="label_date" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">วันที่</label>
             <input type="date" id="edit-tx-date" class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer" required />
           </div>
 
-          <div class="sm:col-span-3">
+          <div class="sm:col-span-4">
             <label data-i18n="label_time" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">เวลา (24 ชม.)</label>
-            <input type="time" id="edit-tx-time" step="60" class="w-full px-2.5 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm font-bold text-center text-slate-800 cursor-pointer num-font" required />
+            <div class="flex items-center justify-center bg-slate-50 focus-within:bg-white border border-slate-200 rounded-2xl px-2 py-1.5 shadow-2xs gap-1">
+              <select id="edit-tx-hour" class="flex-1 bg-transparent text-xs sm:text-sm font-extrabold text-slate-800 text-center focus:outline-none cursor-pointer py-0.5 num-font">
+                <!-- 00 to 23 -->
+              </select>
+              <span class="text-slate-400 font-extrabold text-xs">:</span>
+              <select id="edit-tx-minute" class="flex-1 bg-transparent text-xs sm:text-sm font-extrabold text-slate-800 text-center focus:outline-none cursor-pointer py-0.5 num-font">
+                <!-- 00 to 59 -->
+              </select>
+            </div>
           </div>
 
           <div class="sm:col-span-4">

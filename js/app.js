@@ -41,6 +41,7 @@ const App = {
     } else if (typeof SupabaseManager !== 'undefined') {
       SupabaseManager.init();
     }
+    this.initTimeDropdowns();
     this.initDateTimeInput();
     this.initCustomDateInputs();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
@@ -50,16 +51,46 @@ const App = {
     BudgetSimulator.init();
   },
 
+  initTimeDropdowns() {
+    const pad = (n) => String(n).padStart(2, '0');
+    const hours = Array.from({ length: 24 }, (_, i) => pad(i));
+    const minutes = Array.from({ length: 60 }, (_, i) => pad(i));
+
+    const hourHtml = hours.map(h => `<option value="${h}">${h}</option>`).join('');
+    const minHtml = minutes.map(m => `<option value="${m}">${m}</option>`).join('');
+
+    ['tx-hour', 'edit-tx-hour'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = hourHtml;
+    });
+
+    ['tx-minute', 'edit-tx-minute'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = minHtml;
+    });
+  },
+
   initDateTimeInput() {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const curDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const curTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
     const dateInput = document.getElementById('tx-date');
-    const timeInput = document.getElementById('tx-time');
+    const hourSelect = document.getElementById('tx-hour');
+    const minSelect = document.getElementById('tx-minute');
+
     if (dateInput) dateInput.value = curDate;
-    if (timeInput) timeInput.value = curTime;
+    if (hourSelect) hourSelect.value = pad(now.getHours());
+    if (minSelect) minSelect.value = pad(now.getMinutes());
+  },
+
+  setCurrentTime() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const hourSelect = document.getElementById('tx-hour');
+    const minSelect = document.getElementById('tx-minute');
+    if (hourSelect) hourSelect.value = pad(now.getHours());
+    if (minSelect) minSelect.value = pad(now.getMinutes());
   },
 
   initCustomDateInputs() {
@@ -1396,7 +1427,8 @@ const App = {
   handleSaveTransaction() {
     const amountInput = document.getElementById('tx-amount');
     const dateInput = document.getElementById('tx-date');
-    const timeInput = document.getElementById('tx-time');
+    const hourSelect = document.getElementById('tx-hour');
+    const minSelect = document.getElementById('tx-minute');
     const paymentInput = document.getElementById('tx-payment-method');
     const noteInput = document.getElementById('tx-note');
 
@@ -1410,8 +1442,9 @@ const App = {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const dVal = dateInput?.value || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    const tVal = timeInput?.value || `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const fullDateTime = `${dVal}T${tVal}`;
+    const hVal = hourSelect?.value || pad(now.getHours());
+    const mVal = minSelect?.value || pad(now.getMinutes());
+    const fullDateTime = `${dVal}T${hVal}:${mVal}`;
 
     const tx = {
       type: this.currentEntryType,
@@ -2332,7 +2365,8 @@ const App = {
     const modal = document.getElementById('edit-modal');
     const amountInput = document.getElementById('edit-tx-amount');
     const dateInput = document.getElementById('edit-tx-date');
-    const timeInput = document.getElementById('edit-tx-time');
+    const hourSelect = document.getElementById('edit-tx-hour');
+    const minSelect = document.getElementById('edit-tx-minute');
     const paymentInput = document.getElementById('edit-tx-payment-method');
     const noteInput = document.getElementById('edit-tx-note');
     const typeSelect = document.getElementById('edit-tx-type');
@@ -2341,7 +2375,11 @@ const App = {
     if (tx.date) {
       const parts = tx.date.split('T');
       if (dateInput) dateInput.value = parts[0] || '';
-      if (timeInput) timeInput.value = parts[1] ? parts[1].substring(0, 5) : '12:00';
+      if (parts[1]) {
+        const timeParts = parts[1].split(':');
+        if (hourSelect) hourSelect.value = timeParts[0] || '12';
+        if (minSelect) minSelect.value = timeParts[1] ? timeParts[1].substring(0, 2) : '00';
+      }
     }
     if (paymentInput) paymentInput.value = tx.paymentMethod;
     if (noteInput) noteInput.value = tx.note || '';
@@ -2368,8 +2406,9 @@ const App = {
 
     const amount = parseFloat(document.getElementById('edit-tx-amount').value);
     const dateVal = document.getElementById('edit-tx-date')?.value || '';
-    const timeVal = document.getElementById('edit-tx-time')?.value || '12:00';
-    const date = `${dateVal}T${timeVal}`;
+    const hourVal = document.getElementById('edit-tx-hour')?.value || '12';
+    const minVal = document.getElementById('edit-tx-minute')?.value || '00';
+    const date = `${dateVal}T${hourVal}:${minVal}`;
     const type = document.getElementById('edit-tx-type').value;
     const paymentMethod = document.getElementById('edit-tx-payment-method').value;
     const note = document.getElementById('edit-tx-note').value;

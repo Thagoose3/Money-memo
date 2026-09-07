@@ -34,6 +34,12 @@ const App = {
   customStartDate: '',
   customEndDate: '',
 
+  // Tab 1 Overview Hero Date Filter state
+  overviewPreset: 'month', // 'month', 'cycle28', 'cycle25', 'last30', 'custom'
+  overviewDate: new Date(),
+  overviewStartDate: '',
+  overviewEndDate: '',
+
   init() {
     I18n.init();
     if (typeof FirebaseManager !== 'undefined') {
@@ -41,6 +47,7 @@ const App = {
     } else if (typeof SupabaseManager !== 'undefined') {
       SupabaseManager.init();
     }
+    this.initOverviewFilter();
     this.initTimeDropdowns();
     this.initDateTimeInput();
     this.initCustomDateInputs();
@@ -2590,40 +2597,137 @@ const App = {
     }
   },
 
+  initOverviewFilter() {
+    try {
+      this.overviewPreset = localStorage.getItem('money_memo_overview_preset') || 'month';
+      this.overviewStartDate = localStorage.getItem('money_memo_overview_start') || '';
+      this.overviewEndDate = localStorage.getItem('money_memo_overview_end') || '';
+    } catch(e) {
+      this.overviewPreset = 'month';
+    }
+  },
+
+  setOverviewPreset(preset) {
+    this.overviewPreset = preset;
+    try {
+      localStorage.setItem('money_memo_overview_preset', preset);
+    } catch(e) {}
+    this.renderTab1OverviewHero();
+  },
+
+  setOverviewCustomDates(start, end) {
+    this.overviewStartDate = start;
+    this.overviewEndDate = end;
+    this.overviewPreset = 'custom';
+    try {
+      localStorage.setItem('money_memo_overview_preset', 'custom');
+      localStorage.setItem('money_memo_overview_start', start);
+      localStorage.setItem('money_memo_overview_end', end);
+    } catch(e) {}
+    this.renderTab1OverviewHero();
+  },
+
+  navigateOverviewPeriod(direction) {
+    if (!this.overviewDate) this.overviewDate = new Date();
+    this.overviewDate.setMonth(this.overviewDate.getMonth() + direction);
+    this.renderTab1OverviewHero();
+  },
+
+  resetOverviewToCurrent() {
+    this.overviewDate = new Date();
+    this.renderTab1OverviewHero();
+  },
+
+  getOverviewDateRange() {
+    const pad = (n) => String(n).padStart(2, '0');
+    const baseDate = this.overviewDate || new Date();
+    const Y = baseDate.getFullYear();
+    const M = baseDate.getMonth(); // 0-11
+    const D = baseDate.getDate();
+
+    let sDate, eDate, label;
+    const lang = I18n.getLanguage();
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const enMonthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = lang === 'en'
+      ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      : ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+    const formatShortDate = (d) => {
+      const day = d.getDate();
+      const mStr = lang === 'en' ? enMonthsShort[d.getMonth()] : thaiMonthsShort[d.getMonth()];
+      const yStr = lang === 'en' ? d.getFullYear() : (d.getFullYear() + 543);
+      return `${day} ${mStr} ${yStr}`;
+    };
+
+    if (this.overviewPreset === 'cycle28') {
+      sDate = new Date(Y, M - 1, 28);
+      eDate = new Date(Y, M, 27);
+      label = `${lang === 'en' ? 'End-of-Month Cycle (28-27)' : 'รอบสิ้นเดือน (28-27)'} • ${formatShortDate(sDate)} - ${formatShortDate(eDate)}`;
+    } else if (this.overviewPreset === 'cycle25') {
+      sDate = new Date(Y, M - 1, 25);
+      eDate = new Date(Y, M, 24);
+      label = `${lang === 'en' ? 'Salary Cycle (25-24)' : 'รอบเงินเดือน (25-24)'} • ${formatShortDate(sDate)} - ${formatShortDate(eDate)}`;
+    } else if (this.overviewPreset === 'last30') {
+      const today = new Date();
+      sDate = new Date(today.getTime() - 30 * 86400000);
+      eDate = today;
+      label = `${lang === 'en' ? 'Last 30 Days' : '30 วันล่าสุด'} • ${formatShortDate(sDate)} - ${formatShortDate(eDate)}`;
+    } else if (this.overviewPreset === 'custom') {
+      if (this.overviewStartDate && this.overviewEndDate) {
+        sDate = new Date(this.overviewStartDate + 'T00:00:00');
+        eDate = new Date(this.overviewEndDate + 'T23:59:59');
+      } else {
+        sDate = new Date(Y, M, 1);
+        eDate = new Date(Y, M + 1, 0);
+      }
+      label = `${lang === 'en' ? 'Custom Range' : 'ช่วงวันที่กำหนดเอง (วันถึงวัน)'} • ${formatShortDate(sDate)} - ${formatShortDate(eDate)}`;
+    } else {
+      // Default: Calendar month
+      sDate = new Date(Y, M, 1);
+      eDate = new Date(Y, M + 1, 0);
+      const currentMonthLabel = `${monthNames[M]} ${lang === 'en' ? Y : Y + 543}`;
+      label = `${lang === 'en' ? 'Overview' : 'ภาพรวมเดือน'} • ${currentMonthLabel}`;
+    }
+
+    const startStr = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
+    const endStr = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
+
+    return { sDate, eDate, startStr, endStr, label };
+  },
+
   renderTab1OverviewHero() {
     const heroEl = document.getElementById('tab1-overview-hero');
     if (!heroEl) return;
 
     const allTxs = StorageManager.getTransactions();
-    const now = new Date();
-    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const monthlyTxs = allTxs.filter(t => (t.date || '').startsWith(currentMonthStr));
+    const range = this.getOverviewDateRange();
+
+    const rangeTxs = allTxs.filter(t => {
+      const txDate = (t.date || '').slice(0, 10);
+      return txDate >= range.startStr && txDate <= range.endStr;
+    });
 
     let income = 0;
     let expense = 0;
-    monthlyTxs.forEach(t => {
+    rangeTxs.forEach(t => {
       if (t.type === 'income') income += t.amount;
       else expense += t.amount;
     });
     const net = income - expense;
     const lang = I18n.getLanguage();
 
-    const monthNames = lang === 'en'
-      ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-      : ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-
-    const currentMonthLabel = `${monthNames[now.getMonth()]} ${lang === 'en' ? now.getFullYear() : now.getFullYear() + 543}`;
-
     heroEl.innerHTML = `
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800">
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800 space-y-3.5">
         <!-- Ambient Glow Background -->
         <div class="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -left-8 -top-8 w-40 h-40 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
+        <!-- Top Section: Label + Net + Income / Expense Bento -->
         <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] font-bold text-indigo-200 tracking-wider uppercase">${lang === 'en' ? 'Overview' : 'ภาพรวมเดือนนี้'} • ${currentMonthLabel}</span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[11px] font-bold text-indigo-200 tracking-wider uppercase">${range.label}</span>
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold ${net >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
                 ${net >= 0 ? (lang === 'en' ? '🟢 Positive' : '🟢 ยอดบวก') : (lang === 'en' ? '🔴 Deficit' : '🔴 ติดลบ')}
               </span>
@@ -2654,6 +2758,60 @@ const App = {
               </p>
             </div>
           </div>
+        </div>
+
+        <!-- Date Range Filter & Pay Cycle Selector -->
+        <div class="relative z-10 pt-3 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <!-- Cycle Preset Pills -->
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <button type="button" onclick="App.setOverviewPreset('month')" class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer ${this.overviewPreset === 'month' ? 'bg-indigo-500 text-white font-bold shadow-xs' : 'bg-white/10 hover:bg-white/20 text-slate-200 font-medium'}">
+              ${lang === 'en' ? 'This Month' : 'เดือนนี้ (1-สิ้นเดือน)'}
+            </button>
+            <button type="button" onclick="App.setOverviewPreset('cycle28')" class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer ${this.overviewPreset === 'cycle28' ? 'bg-indigo-500 text-white font-bold shadow-xs' : 'bg-white/10 hover:bg-white/20 text-slate-200 font-medium'}">
+              ${lang === 'en' ? 'End-of-Month (28-27)' : 'รอบสิ้นเดือน (28-27)'}
+            </button>
+            <button type="button" onclick="App.setOverviewPreset('cycle25')" class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer ${this.overviewPreset === 'cycle25' ? 'bg-indigo-500 text-white font-bold shadow-xs' : 'bg-white/10 hover:bg-white/20 text-slate-200 font-medium'}">
+              ${lang === 'en' ? 'Salary (25-24)' : 'รอบเงินเดือน (25-24)'}
+            </button>
+            <button type="button" onclick="App.setOverviewPreset('custom')" class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer ${this.overviewPreset === 'custom' ? 'bg-indigo-500 text-white font-bold shadow-xs' : 'bg-white/10 hover:bg-white/20 text-slate-200 font-medium'}">
+              📅 ${lang === 'en' ? 'Custom Range' : 'กำหนดวันเอง (วันถึงวัน)'}
+            </button>
+          </div>
+
+          <!-- Custom Date Pickers (Shown when custom is selected) or Cycle Navigator -->
+          ${this.overviewPreset === 'custom' ? `
+            <div class="flex items-center gap-1.5 bg-white/15 backdrop-blur-md px-2.5 py-1.5 rounded-2xl border border-white/20">
+              <input 
+                type="date" 
+                id="overview-custom-start" 
+                value="${range.startStr}" 
+                onchange="App.setOverviewCustomDates(this.value, document.getElementById('overview-custom-end').value)"
+                class="bg-slate-900/90 text-white text-xs px-2 py-1 rounded-xl border border-white/20 focus:outline-none cursor-pointer"
+                title="${lang === 'en' ? 'Start Date' : 'วันที่เริ่มต้น'}"
+              />
+              <span class="text-xs text-indigo-200 font-bold">${lang === 'en' ? 'to' : 'ถึง'}</span>
+              <input 
+                type="date" 
+                id="overview-custom-end" 
+                value="${range.endStr}" 
+                onchange="App.setOverviewCustomDates(document.getElementById('overview-custom-start').value, this.value)"
+                class="bg-slate-900/90 text-white text-xs px-2 py-1 rounded-xl border border-white/20 focus:outline-none cursor-pointer"
+                title="${lang === 'en' ? 'End Date' : 'วันที่สิ้นสุด'}"
+              />
+            </div>
+          ` : `
+            <div class="flex items-center gap-1 self-end sm:self-auto">
+              <button type="button" onclick="App.navigateOverviewPeriod(-1)" class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-slate-200 transition-colors cursor-pointer" title="${lang === 'en' ? 'Previous cycle' : 'รอบก่อนหน้า'}">
+                ◀
+              </button>
+              <button type="button" onclick="App.resetOverviewToCurrent()" class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-slate-200 transition-colors cursor-pointer" title="${lang === 'en' ? 'Current cycle' : 'รอบปัจจุบัน'}">
+                ${lang === 'en' ? 'Current' : 'รอบปัจจุบัน'}
+              </button>
+              <button type="button" onclick="App.navigateOverviewPeriod(1)" class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-xl text-xs text-slate-200 transition-colors cursor-pointer" title="${lang === 'en' ? 'Next cycle' : 'รอบถัดไป'}">
+                ▶
+              </button>
+            </div>
+          `}
         </div>
       </div>
     `;

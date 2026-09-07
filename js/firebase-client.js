@@ -21,6 +21,9 @@ const FirebaseManager = {
   currentUser: null,
   isInitialized: false,
   _txUnsubscribe: null,
+  _catUnsubscribe: null,
+  _recUnsubscribe: null,
+  _simUnsubscribe: null,
   _aggTimeout: null,
 
   init() {
@@ -119,7 +122,7 @@ const FirebaseManager = {
     return this.db.collection('users').doc(this.currentUser.uid);
   },
 
-  // --- Automatic Two-Way Cloud Sync (Zero Prompts, 100% Reliable) ---
+  // --- Automatic Two-Way Cloud Sync (Zero Prompts, 100% Reliable across PC & Mobile) ---
   async performTwoWaySync(isSilent = false) {
     if (!this.currentUser) return;
     const userRef = this.getUserRef();
@@ -131,20 +134,22 @@ const FirebaseManager = {
       }
 
       // 1. Fetch Cloud Data
-      const [cloudTxs, cloudCats, cloudRecs] = await Promise.all([
+      const [cloudTxs, cloudCats, cloudRecs, cloudSim] = await Promise.all([
         this.fetchCloudTransactions(),
         this.fetchCloudCategories(),
-        this.fetchCloudRecurring()
+        this.fetchCloudRecurring(),
+        this.fetchCloudBudgetSimulator()
       ]);
 
       const localTxs = StorageManager.getTransactions();
       const localCats = StorageManager.getCategories();
       const localRecs = StorageManager.getRecurringItems();
+      const localSim = StorageManager.getBudgetSimulator();
 
       const batch = this.db.batch();
       let hasUploads = false;
 
-      // --- Merge Transactions (Union by ID) ---
+      // --- 1. Merge Transactions (Union by ID) ---
       const txMap = new Map();
       cloudTxs.forEach(t => txMap.set(t.id, t));
 
@@ -177,7 +182,7 @@ const FirebaseManager = {
       mergedTxs.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
       StorageManager.saveTransactions(mergedTxs);
 
-      // --- Merge Categories ---
+      // --- 2. Merge Categories ---
       const catMap = new Map();
       cloudCats.forEach(c => catMap.set(c.id, c));
 
@@ -194,7 +199,7 @@ const FirebaseManager = {
 
       StorageManager.saveCategories(Array.from(catMap.values()));
 
-      // --- Merge Recurring Items ---
+      // --- 3. Merge Recurring Items ---
       const recMap = new Map();
       cloudRecs.forEach(r => recMap.set(r.id, r));
 
@@ -208,6 +213,19 @@ const FirebaseManager = {
       });
 
       StorageManager.saveRecurringItems(Array.from(recMap.values()));
+
+      // --- 4. Merge Budget Simulator ---
+      if (cloudSim && typeof cloudSim === 'object') {
+        StorageManager.saveBudgetSimulator(cloudSim);
+        if (typeof BudgetSimulator !== 'undefined') {
+          BudgetSimulator.data = cloudSim;
+          BudgetSimulator.render();
+        }
+      } else if (localSim && typeof localSim === 'object') {
+        hasUploads = true;
+        const simDocRef = userRef.collection('settings').doc('budget_simulator');
+        batch.set(simDocRef, localSim, { merge: true });
+      }
 
       // Commit any new local items to Cloud
       if (hasUploads) {
@@ -229,13 +247,14 @@ const FirebaseManager = {
     }
   },
 
-  // --- Real-Time Live Sync Listener ---
+  // --- Real-Time Live Sync Listeners (Transactions, Categories, Recurring, Simulator) ---
   startRealtimeSync() {
     this.stopRealtimeSync();
     const userRef = this.getUserRef();
     if (!userRef) return;
 
     try {
+      // 1. Transactions Live Listener
       this._txUnsubscribe = userRef.collection('transactions').onSnapshot((snapshot) => {
         if (snapshot.empty && StorageManager.getTransactions().length === 0) return;
 
@@ -255,10 +274,65 @@ const FirebaseManager = {
           App.renderAll();
         }
       }, (error) => {
-        console.error('Realtime sync listener error:', error);
+        console.error('Realtime transactions sync error:', error);
       });
+
+      // 2. Categories Live Listener
+      this._catUnsubscribe = userRef.collection('categories').onSnapshot((snapshot) => {
+        if (snapshot.empty) return;
+        const list = [];
+        snapshot.forEach(doc => list.push(doc.data()));
+        const currentLocal = StorageManager.getCategories();
+        if (list.length > 0 && JSON.stringify(list) !== JSON.stringify(currentLocal)) {
+          const map = new Map();
+          if (typeof DEFAULT_CATEGORIES !== 'undefined') {
+            DEFAULT_CATEGORIES.forEach(c => map.set(c.id, c));
+          }
+          currentLocal.forEach(c => map.set(c.id, c));
+          list.forEach(c => map.set(c.id, c));
+          StorageManager.saveCategories(Array.from(map.values()));
+          App.renderAll();
+        }
+      }, (error) => {
+        console.error('Realtime categories sync error:', error);
+      });
+
+      // 3. Recurring Items Live Listener
+      this._recUnsubscribe = userRef.collection('recurring_items').onSnapshot((snapshot) => {
+        if (snapshot.empty) return;
+        const list = [];
+        snapshot.forEach(doc => list.push(doc.data()));
+        const currentLocal = StorageManager.getRecurringItems();
+        if (list.length > 0 && JSON.stringify(list) !== JSON.stringify(currentLocal)) {
+          const map = new Map();
+          currentLocal.forEach(r => map.set(r.id, r));
+          list.forEach(r => map.set(r.id, r));
+          StorageManager.saveRecurringItems(Array.from(map.values()));
+          App.renderAll();
+        }
+      }, (error) => {
+        console.error('Realtime recurring sync error:', error);
+      });
+
+      // 4. Budget Simulator Live Listener
+      this._simUnsubscribe = userRef.collection('settings').doc('budget_simulator').onSnapshot((doc) => {
+        if (doc.exists) {
+          const cloudSim = doc.data();
+          const currentSim = StorageManager.getBudgetSimulator();
+          if (cloudSim && JSON.stringify(cloudSim) !== JSON.stringify(currentSim)) {
+            StorageManager.saveBudgetSimulator(cloudSim);
+            if (typeof BudgetSimulator !== 'undefined') {
+              BudgetSimulator.data = cloudSim;
+              BudgetSimulator.render();
+            }
+          }
+        }
+      }, (error) => {
+        console.error('Realtime simulator sync error:', error);
+      });
+
     } catch (e) {
-      console.error('Failed to attach realtime sync listener:', e);
+      console.error('Failed to attach realtime sync listeners:', e);
     }
   },
 
@@ -266,6 +340,18 @@ const FirebaseManager = {
     if (this._txUnsubscribe) {
       this._txUnsubscribe();
       this._txUnsubscribe = null;
+    }
+    if (this._catUnsubscribe) {
+      this._catUnsubscribe();
+      this._catUnsubscribe = null;
+    }
+    if (this._recUnsubscribe) {
+      this._recUnsubscribe();
+      this._recUnsubscribe = null;
+    }
+    if (this._simUnsubscribe) {
+      this._simUnsubscribe();
+      this._simUnsubscribe = null;
     }
   },
 
@@ -395,6 +481,72 @@ const FirebaseManager = {
       await userRef.collection('recurring_items').doc(id).delete();
     } catch (e) {
       console.error('Error deleting recurring item from Firestore:', e);
+    }
+  },
+
+  // --- Fetch Cloud Subcollections & Settings ---
+  async fetchCloudTransactions() {
+    const userRef = this.getUserRef();
+    if (!userRef) return [];
+    try {
+      const snapshot = await userRef.collection('transactions').get();
+      const list = [];
+      snapshot.forEach(doc => list.push(doc.data()));
+      list.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      return list;
+    } catch (e) {
+      console.error('Error fetching transactions from Firestore:', e);
+      return [];
+    }
+  },
+
+  async fetchCloudCategories() {
+    const userRef = this.getUserRef();
+    if (!userRef) return [];
+    try {
+      const snapshot = await userRef.collection('categories').get();
+      const list = [];
+      snapshot.forEach(doc => list.push(doc.data()));
+      return list;
+    } catch (e) {
+      console.error('Error fetching categories from Firestore:', e);
+      return [];
+    }
+  },
+
+  async fetchCloudRecurring() {
+    const userRef = this.getUserRef();
+    if (!userRef) return [];
+    try {
+      const snapshot = await userRef.collection('recurring_items').get();
+      const list = [];
+      snapshot.forEach(doc => list.push(doc.data()));
+      return list;
+    } catch (e) {
+      console.error('Error fetching recurring items from Firestore:', e);
+      return [];
+    }
+  },
+
+  async fetchCloudBudgetSimulator() {
+    const userRef = this.getUserRef();
+    if (!userRef) return null;
+    try {
+      const doc = await userRef.collection('settings').doc('budget_simulator').get();
+      return doc.exists ? doc.data() : null;
+    } catch (e) {
+      console.error('Error fetching budget simulator from Firestore:', e);
+      return null;
+    }
+  },
+
+  async saveCloudBudgetSimulator(data) {
+    const userRef = this.getUserRef();
+    if (!userRef) return;
+    try {
+      await userRef.collection('settings').doc('budget_simulator').set(data, { merge: true });
+    } catch (e) {
+      console.error('Error saving budget simulator to Firestore:', e);
     }
   },
 

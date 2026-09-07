@@ -67,6 +67,7 @@ const StorageManager = {
       else if (action === 'deleteCategory') FirebaseManager.deleteCloudCategory(data);
       else if (action === 'saveRecurring') FirebaseManager.saveCloudRecurringItem(data);
       else if (action === 'deleteRecurring') FirebaseManager.deleteCloudRecurringItem(data);
+      else if (action === 'saveBudgetSimulator') FirebaseManager.saveCloudBudgetSimulator(data);
     } else if (typeof SupabaseManager !== 'undefined' && SupabaseManager.isLoggedIn()) {
       if (action === 'saveTransaction') SupabaseManager.saveCloudTransaction(data);
       else if (action === 'deleteTransaction') SupabaseManager.deleteCloudTransaction(data);
@@ -446,6 +447,7 @@ const StorageManager = {
   saveBudgetSimulator(data) {
     try {
       localStorage.setItem(STORAGE_KEYS.BUDGET_SIMULATOR, JSON.stringify(data));
+      this._syncCloud('saveBudgetSimulator', data);
     } catch (e) {
       console.error('Error saving budget simulator:', e);
     }

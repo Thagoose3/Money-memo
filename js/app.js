@@ -2583,6 +2583,9 @@ const App = {
     this.renderRecurringTab();
     this.renderQuickFixedChips();
     this.renderCategoriesTab();
+    if (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
+      BudgetSimulator.render();
+    }
   },
 
   showToast(message) {

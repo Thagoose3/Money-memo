@@ -2317,36 +2317,37 @@ const App = {
       const d = new Date(t.date);
       const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
       const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+      const catColor = cat.color || (isExp ? '#f87171' : '#34d399');
 
       return `
-        <div class="bg-white p-3 rounded-2xl border border-slate-100 hover:border-slate-300 transition-all flex items-center justify-between group shadow-2xs">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-lg bg-slate-50 border border-slate-100 flex-shrink-0">
+        <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between group">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-2xs flex-shrink-0" style="background-color: ${catColor}15; color: ${catColor}; border: 1px solid ${catColor}30;">
               ${cat.emoji}
             </div>
-            <div>
-              <div class="flex items-center gap-1.5">
-                <span class="font-bold text-slate-800 text-xs">${catName}</span>
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full ${isExp ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} font-semibold">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-slate-900 text-xs truncate max-w-[130px] sm:max-w-[180px]">${catName}</span>
+                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
                   ${typeBadge}
                 </span>
-                <span class="text-[10px] text-slate-400">${dateFormatted}</span>
+                <span class="text-[10px] text-slate-400 font-medium">${dateFormatted}</span>
               </div>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600">${t.paymentMethod}</span>
-                ${t.note ? `<span class="text-[11px] text-slate-600 font-medium">"${t.note}"</span>` : ''}
+              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">${t.paymentMethod}</span>
+                ${t.note ? `<span class="text-[11px] text-slate-600 font-medium truncate max-w-[140px] sm:max-w-xs">"${t.note}"</span>` : ''}
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="text-base font-extrabold num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+          <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0 ml-2">
+            <span class="text-sm sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
               ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
-            <div class="flex items-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity">
-              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
+            <div class="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
+              <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer" title="${I18n.t('btn_edit')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
-              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
+              <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer" title="${I18n.t('btn_delete')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
@@ -2577,6 +2578,7 @@ const App = {
   },
 
   renderAll() {
+    this.renderTab1OverviewHero();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.renderTransactionList();
     this.renderDashboard();
@@ -2586,6 +2588,75 @@ const App = {
     if (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
       BudgetSimulator.render();
     }
+  },
+
+  renderTab1OverviewHero() {
+    const heroEl = document.getElementById('tab1-overview-hero');
+    if (!heroEl) return;
+
+    const allTxs = StorageManager.getTransactions();
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const monthlyTxs = allTxs.filter(t => (t.date || '').startsWith(currentMonthStr));
+
+    let income = 0;
+    let expense = 0;
+    monthlyTxs.forEach(t => {
+      if (t.type === 'income') income += t.amount;
+      else expense += t.amount;
+    });
+    const net = income - expense;
+    const lang = I18n.getLanguage();
+
+    const monthNames = lang === 'en'
+      ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      : ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+    const currentMonthLabel = `${monthNames[now.getMonth()]} ${lang === 'en' ? now.getFullYear() : now.getFullYear() + 543}`;
+
+    heroEl.innerHTML = `
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800">
+        <!-- Ambient Glow Background -->
+        <div class="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-8 -top-8 w-40 h-40 bg-rose-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold text-indigo-200 tracking-wider uppercase">${lang === 'en' ? 'Overview' : 'ภาพรวมเดือนนี้'} • ${currentMonthLabel}</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold ${net >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+                ${net >= 0 ? (lang === 'en' ? '🟢 Positive' : '🟢 ยอดบวก') : (lang === 'en' ? '🔴 Deficit' : '🔴 ติดลบ')}
+              </span>
+            </div>
+            <div class="mt-1 flex items-baseline gap-2">
+              <span class="text-3xl sm:text-4xl font-black tracking-tight num-font text-white">
+                ${net < 0 ? '-' : ''}฿${Math.abs(net).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              </span>
+              <span class="text-xs font-semibold text-slate-300">${lang === 'en' ? 'Net Balance' : 'คงเหลือสุทธิ'}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 sm:gap-3 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/10 sm:w-72">
+            <div class="px-2.5 py-1">
+              <div class="flex items-center gap-1 text-[11px] text-emerald-300 font-bold">
+                <span>↑</span> <span>${lang === 'en' ? 'Income' : 'รายรับ'}</span>
+              </div>
+              <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
+                ฿${income.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div class="px-2.5 py-1 border-l border-white/10">
+              <div class="flex items-center gap-1 text-[11px] text-rose-300 font-bold">
+                <span>↓</span> <span>${lang === 'en' ? 'Expense' : 'รายจ่าย'}</span>
+              </div>
+              <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
+                ฿${expense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   },
 
   showToast(message) {

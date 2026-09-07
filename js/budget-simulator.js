@@ -28,7 +28,7 @@ const BudgetSimulator = {
   bindEvents() {
     const incomeInput = document.getElementById('sim-monthly-income');
     const savingsInput = document.getElementById('sim-savings-goal');
-    const daysSelect = document.getElementById('sim-days-in-month');
+    const daysInput = document.getElementById('sim-days-in-month');
     const addExpenseBtn = document.getElementById('sim-add-expense-btn');
     const resetBtn = document.getElementById('sim-reset-btn');
 
@@ -48,10 +48,17 @@ const BudgetSimulator = {
       });
     }
 
-    if (daysSelect) {
-      daysSelect.value = this.data.daysInMonth || 30;
-      daysSelect.addEventListener('change', (e) => {
-        this.data.daysInMonth = parseInt(e.target.value, 10) || 30;
+    if (daysInput) {
+      daysInput.value = this.data.daysInMonth || 30;
+      daysInput.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value, 10);
+        this.data.daysInMonth = isNaN(val) ? 30 : Math.max(1, Math.min(365, val));
+        this.saveAndRecalculate();
+      });
+      daysInput.addEventListener('change', (e) => {
+        const val = parseInt(e.target.value, 10);
+        this.data.daysInMonth = isNaN(val) ? 30 : Math.max(1, Math.min(365, val));
+        daysInput.value = this.data.daysInMonth;
         this.saveAndRecalculate();
       });
     }
@@ -119,14 +126,34 @@ const BudgetSimulator = {
     this.calculateAndRenderResults();
   },
 
+  setDays(days) {
+    this.data.daysInMonth = Math.max(1, Math.min(365, parseInt(days, 10) || 30));
+    const daysInput = document.getElementById('sim-days-in-month');
+    if (daysInput) daysInput.value = this.data.daysInMonth;
+    this.saveAndRecalculate();
+  },
+
+  updateDaysChips() {
+    const currentDays = parseInt(this.data.daysInMonth, 10);
+    const chips = document.querySelectorAll('#sim-days-chips .sim-days-chip');
+    chips.forEach(chip => {
+      const chipDays = parseInt(chip.getAttribute('data-days'), 10);
+      if (chipDays === currentDays) {
+        chip.className = 'sim-days-chip px-2.5 py-1 text-xs font-bold rounded-xl bg-slate-900 text-white shadow-xs num-font transition-all cursor-pointer';
+      } else {
+        chip.className = 'sim-days-chip px-2.5 py-1 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 num-font transition-all cursor-pointer';
+      }
+    });
+  },
+
   render() {
     const incomeInput = document.getElementById('sim-monthly-income');
     const savingsInput = document.getElementById('sim-savings-goal');
-    const daysSelect = document.getElementById('sim-days-in-month');
+    const daysInput = document.getElementById('sim-days-in-month');
 
     if (incomeInput) incomeInput.value = this.data.monthlyIncome;
     if (savingsInput) savingsInput.value = this.data.savingsGoal;
-    if (daysSelect) daysSelect.value = this.data.daysInMonth || 30;
+    if (daysInput) daysInput.value = this.data.daysInMonth || 30;
 
     this.renderExpenseRows();
     this.calculateAndRenderResults();
@@ -287,5 +314,6 @@ const BudgetSimulator = {
           : `🎉 ยอดเยี่ยม! จำลองว่ามีเงินกินใช้วันละ <strong>฿${dailyAllowance.toFixed(2)}</strong> สามารถเพิ่มเป้าเงินออมได้`;
       }
     }
+    this.updateDaysChips();
   }
 };

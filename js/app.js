@@ -53,6 +53,14 @@ const App = {
     this.initCustomDateInputs();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.bindEvents();
+
+    try {
+      const savedMode = localStorage.getItem('money_memo_dash_view_mode');
+      if (savedMode) {
+        this.dashboardViewMode = savedMode;
+      }
+    } catch(e) {}
+
     this.renderMonthSelector();
     this.renderAll();
     BudgetSimulator.init();
@@ -86,9 +94,33 @@ const App = {
     const hourSelect = document.getElementById('tx-hour');
     const minSelect = document.getElementById('tx-minute');
 
-    if (dateInput) dateInput.value = curDate;
-    if (hourSelect) hourSelect.value = pad(now.getHours());
-    if (minSelect) minSelect.value = pad(now.getMinutes());
+    if (dateInput) {
+      dateInput.value = curDate;
+      dateInput.addEventListener('change', (e) => {
+        try { localStorage.setItem('money_memo_last_tx_date', e.target.value); } catch(err){}
+      });
+    }
+
+    let savedHour = null;
+    let savedMin = null;
+    try {
+      savedHour = localStorage.getItem('money_memo_last_tx_hour');
+      savedMin = localStorage.getItem('money_memo_last_tx_min');
+    } catch (e) {}
+
+    if (hourSelect) {
+      hourSelect.value = (savedHour !== null && savedHour !== undefined && savedHour !== '') ? savedHour : pad(now.getHours());
+      hourSelect.addEventListener('change', (e) => {
+        try { localStorage.setItem('money_memo_last_tx_hour', e.target.value); } catch(err){}
+      });
+    }
+
+    if (minSelect) {
+      minSelect.value = (savedMin !== null && savedMin !== undefined && savedMin !== '') ? savedMin : pad(now.getMinutes());
+      minSelect.addEventListener('change', (e) => {
+        try { localStorage.setItem('money_memo_last_tx_min', e.target.value); } catch(err){}
+      });
+    }
   },
 
   setCurrentTime() {
@@ -96,30 +128,67 @@ const App = {
     const pad = (n) => String(n).padStart(2, '0');
     const hourSelect = document.getElementById('tx-hour');
     const minSelect = document.getElementById('tx-minute');
-    if (hourSelect) hourSelect.value = pad(now.getHours());
-    if (minSelect) minSelect.value = pad(now.getMinutes());
+    const h = pad(now.getHours());
+    const m = pad(now.getMinutes());
+    if (hourSelect) {
+      hourSelect.value = h;
+      try { localStorage.setItem('money_memo_last_tx_hour', h); } catch(err){}
+    }
+    if (minSelect) {
+      minSelect.value = m;
+      try { localStorage.setItem('money_memo_last_tx_min', m); } catch(err){}
+    }
   },
 
   initCustomDateInputs() {
     const startInput = document.getElementById('dash-custom-start-date');
     const endInput = document.getElementById('dash-custom-end-date');
 
-    this.currentPayCyclePreset = 28;
-    this.updateCustomDateRangeFromSelectedDate();
+    try {
+      const savedPreset = localStorage.getItem('money_memo_pay_cycle_preset');
+      if (savedPreset) {
+        this.currentPayCyclePreset = (savedPreset === 'custom' || isNaN(Number(savedPreset))) 
+          ? savedPreset 
+          : Number(savedPreset);
+      } else {
+        this.currentPayCyclePreset = 28;
+      }
+      this.customStartDate = localStorage.getItem('money_memo_dash_start_date') || '';
+      this.customEndDate = localStorage.getItem('money_memo_dash_end_date') || '';
+    } catch (e) {
+      this.currentPayCyclePreset = 28;
+    }
+
+    if (this.currentPayCyclePreset === 'custom' && this.customStartDate && this.customEndDate) {
+      if (startInput) startInput.value = this.customStartDate;
+      if (endInput) endInput.value = this.customEndDate;
+    } else {
+      this.updateCustomDateRangeFromSelectedDate();
+    }
 
     if (startInput) {
+      if (this.customStartDate) startInput.value = this.customStartDate;
       startInput.addEventListener('change', (e) => {
         this.customStartDate = e.target.value;
         this.currentPayCyclePreset = 'custom';
+        try {
+          localStorage.setItem('money_memo_pay_cycle_preset', 'custom');
+          localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
+        } catch(err) {}
         this.renderMonthSelector();
         this.renderDashboard();
       });
     }
 
     if (endInput) {
+      if (this.customEndDate) endInput.value = this.customEndDate;
       endInput.addEventListener('change', (e) => {
         this.customEndDate = e.target.value;
         this.currentPayCyclePreset = 'custom';
+        try {
+          localStorage.setItem('money_memo_pay_cycle_preset', 'custom');
+          localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
+        } catch(err) {}
         this.renderMonthSelector();
         this.renderDashboard();
       });
@@ -168,6 +237,12 @@ const App = {
     this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
     this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
 
+    try {
+      localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
+      localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
+      localStorage.setItem('money_memo_pay_cycle_preset', String(preset));
+    } catch(e) {}
+
     const startInput = document.getElementById('dash-custom-start-date');
     const endInput = document.getElementById('dash-custom-end-date');
     if (startInput) startInput.value = this.customStartDate;
@@ -176,7 +251,14 @@ const App = {
 
   applyPayCyclePreset(preset) {
     this.currentPayCyclePreset = preset;
+    try {
+      localStorage.setItem('money_memo_pay_cycle_preset', String(preset));
+    } catch(e) {}
     this.updateCustomDateRangeFromSelectedDate();
+    try {
+      localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
+      localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
+    } catch(e) {}
     this.renderMonthSelector();
     this.renderDashboard();
   },
@@ -1453,6 +1535,12 @@ const App = {
     const mVal = minSelect?.value || pad(now.getMinutes());
     const fullDateTime = `${dVal}T${hVal}:${mVal}`;
 
+    try {
+      localStorage.setItem('money_memo_last_tx_date', dVal);
+      localStorage.setItem('money_memo_last_tx_hour', hVal);
+      localStorage.setItem('money_memo_last_tx_min', mVal);
+    } catch(err) {}
+
     const tx = {
       type: this.currentEntryType,
       amount: amount,
@@ -1519,6 +1607,9 @@ const App = {
 
   setDashboardViewMode(mode) {
     this.dashboardViewMode = mode;
+    try {
+      localStorage.setItem('money_memo_dash_view_mode', mode);
+    } catch(e) {}
     const viewCustom = document.getElementById('view-mode-custom');
     const viewDaily = document.getElementById('view-mode-daily');
     const viewYearly = document.getElementById('view-mode-yearly');

@@ -191,7 +191,7 @@
       <div>
         <div class="flex items-center gap-1.5">
           <h1 data-i18n="app_title" class="text-sm sm:text-base font-extrabold text-slate-900 leading-none tracking-tight">Money Memo</h1>
-          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9</span>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9.2</span>
         </div>
         <p data-i18n="app_subtitle" class="text-[11px] text-slate-400 font-medium mt-0.5 hidden sm:block">ระบบบันทึกรายรับ-รายจ่าย & จัดการเงินออมอัจฉริยะ</p>
       </div>
@@ -1090,6 +1090,62 @@
         <!-- Live Cycle Preview Box -->
         <div id="settings-paycycle-preview" class="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-xs text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
           <!-- Dynamically updated via JS -->
+        </div>
+      </div>
+
+      <!-- 3.5 Section: 🎯 เป้าหมายเงินออมรายเดือน (Monthly Savings Target) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🎯</span>
+            <span data-i18n="settings_savings_goal_title">เป้าหมายเงินออมรายเดือน (Monthly Savings Target)</span>
+          </h3>
+          <span id="settings-savings-goal-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 num-font">
+            ฿5,000 / เดือน
+          </span>
+        </div>
+        <p data-i18n="settings_savings_goal_desc" class="text-[11px] text-slate-400">
+          กำหนดจำนวนเงินที่ตั้งใจจะเก็บในแต่ละเดือน เพื่อนำไปคำนวณโควต้าเงินกินใช้รายวันแบบ Dynamic Rolling บนหน้าหลัก
+        </p>
+
+        <div class="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <label for="settings-savings-goal-input" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span>💰</span>
+              <span data-i18n="savings_goal_label">เป้าหมายเงินออมเดือนนี้:</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <div class="relative w-36">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+                <input 
+                  type="number" 
+                  id="settings-savings-goal-input" 
+                  min="0" 
+                  step="500" 
+                  class="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-xs text-right font-extrabold text-slate-900 num-font focus:outline-none"
+                  placeholder="5000"
+                  onchange="App.handleSaveSettingsSavingsGoal(this.value)"
+                />
+              </div>
+              <button 
+                type="button" 
+                onclick="App.handleSaveSettingsSavingsGoal(document.getElementById('settings-savings-goal-input').value)" 
+                class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer"
+              >
+                บันทึก
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Goal Preset Chips -->
+          <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
+            <span class="text-[10px] text-slate-400 font-medium">ตัวเลือกด่วน:</span>
+            <button type="button" onclick="App.handleSetSavingsGoalPreset(1000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿1,000</button>
+            <button type="button" onclick="App.handleSetSavingsGoalPreset(3000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿3,000</button>
+            <button type="button" onclick="App.handleSetSavingsGoalPreset(5000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿5,000</button>
+            <button type="button" onclick="App.handleSetSavingsGoalPreset(10000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿10,000</button>
+            <button type="button" onclick="App.handleSetSavingsGoalPreset(0)" class="px-2.5 py-1 bg-white hover:bg-rose-50 hover:text-rose-700 text-slate-400 text-[11px] font-medium rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">ไม่ตั้งเป้า (฿0)</button>
+          </div>
         </div>
       </div>
 
@@ -2144,6 +2200,59 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- MODAL: 🎯 ปรับเป้าหมายเงินออมรายเดือน (Savings Goal Modal) -->
+  <!-- ========================================== -->
+  <div id="savings-goal-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+            <span>🎯</span> <span data-i18n="savings_goal_modal_title">ปรับเป้าหมายเงินออมรายเดือน</span>
+          </h3>
+          <p data-i18n="savings_goal_modal_desc" class="text-[10px] text-slate-400 mt-0.5">หักลบออกจากรายรับเพื่อคำนวณงบกินใช้รายวัน</p>
+        </div>
+        <button type="button" onclick="App.closeSavingsGoalModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1.5 cursor-pointer">✕</button>
+      </div>
+
+      <form id="savings-goal-form" onsubmit="event.preventDefault(); App.handleSaveSavingsGoalFromModal();" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">เป้าหมายเงินออมเดือนนี้ (บาท) *</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">฿</span>
+            <input 
+              type="number" 
+              id="modal-savings-goal-input" 
+              min="0" 
+              step="100" 
+              class="w-full pl-8 pr-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-base font-extrabold text-slate-900 num-font"
+              placeholder="5000"
+              required 
+            />
+          </div>
+        </div>
+
+        <!-- Quick Chips inside Modal -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button type="button" onclick="document.getElementById('modal-savings-goal-input').value = 1000" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer">฿1,000</button>
+          <button type="button" onclick="document.getElementById('modal-savings-goal-input').value = 3000" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer">฿3,000</button>
+          <button type="button" onclick="document.getElementById('modal-savings-goal-input').value = 5000" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer">฿5,000</button>
+          <button type="button" onclick="document.getElementById('modal-savings-goal-input').value = 10000" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer">฿10,000</button>
+          <button type="button" onclick="document.getElementById('modal-savings-goal-input').value = 0" class="px-2.5 py-1 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-400 text-xs font-medium rounded-xl transition-colors cursor-pointer">฿0</button>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="App.closeSavingsGoalModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-2xl shadow-xs transition-all cursor-pointer">
+            บันทึกเป้าหมาย
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
   <!-- MODAL: ⚙️ ตั้งค่า Supabase Cloud Sync & Google Login -->
   <!-- ========================================== -->
   <div id="supabase-config-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
@@ -2207,10 +2316,10 @@
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=3.9.1" defer></script>
-  <script src="js/storage.js?v=3.9.1" defer></script>
-  <script src="js/firebase-client.js?v=3.9.1" defer></script>
-  <script src="js/budget-simulator.js?v=3.9.1" defer></script>
-  <script src="js/app.js?v=3.9.1" defer></script>
+  <script src="js/i18n.js?v=3.9.2" defer></script>
+  <script src="js/storage.js?v=3.9.2" defer></script>
+  <script src="js/firebase-client.js?v=3.9.2" defer></script>
+  <script src="js/budget-simulator.js?v=3.9.2" defer></script>
+  <script src="js/app.js?v=3.9.2" defer></script>
 </body>
 </html>

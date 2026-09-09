@@ -3332,30 +3332,63 @@ const App = {
     if (!container) return;
 
     const lang = I18n.getLanguage();
-    const simData = (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) 
-      ? BudgetSimulator.data 
-      : StorageManager.getBudgetSimulator();
-
-    const income = simData.monthlyIncome || 0;
-    const savings = simData.savingsGoal || 0;
-    const days = simData.daysInMonth || 30;
-    const totalFixed = (simData.fixedExpenses || []).reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
-    const remainingForLiving = Math.max(0, income - (totalFixed + savings));
-    const dailyAllowance = days > 0 ? (remainingForLiving / days) : 0;
-
-    // Calculate today's actual expenses
+    const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
+
+    // Calculate days remaining in the current cycle
+    const endParts = cycleRange.endDate.split('-').map(Number);
+    const endDateObj = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+    const todayZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffMs = endDateObj.getTime() - todayZero.getTime();
+    const daysRemaining = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1);
+
+    // Filter transactions in the current pay cycle
     const allTxs = StorageManager.getTransactions();
-    const todayExpense = allTxs
-      .filter(t => (t.date || '').slice(0, 10) === todayStr && t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const cycleTxs = allTxs.filter(t => {
+      const d = StorageManager.normalizeDateString(t.date);
+      return d >= cycleRange.startDate && d <= cycleRange.endDate;
+    });
 
-    const remainingToday = Math.max(0, dailyAllowance - todayExpense);
-    const usedPct = dailyAllowance > 0 ? Math.min(100, (todayExpense / dailyAllowance) * 100) : 0;
-    const isExceeded = todayExpense > dailyAllowance && dailyAllowance > 0;
+    let totalIncomeInCycle = 0;
+    let pastExpenseInCycle = 0;
+    let todayExpense = 0;
+
+    cycleTxs.forEach(t => {
+      const dStr = StorageManager.normalizeDateString(t.date);
+      const amount = Number(t.amount) || 0;
+      if (t.type === 'income') {
+        totalIncomeInCycle += amount;
+      } else if (t.type === 'expense') {
+        if (dStr === todayStr) {
+          todayExpense += amount;
+        } else if (dStr < todayStr) {
+          pastExpenseInCycle += amount;
+        }
+      }
+    });
+
+    // Monthly savings goal
+    const savingsGoal = StorageManager.getMonthlySavingsGoal();
+
+    // Determine baseline income: if no actual income logged yet, check recurring income fallback
+    let effectiveIncome = totalIncomeInCycle;
+    if (effectiveIncome === 0) {
+      const recIncome = StorageManager.getRecurringItems()
+        .filter(i => i.type === 'income')
+        .reduce((s, i) => s + (Number(i.amount) || 0), 0);
+      if (recIncome > 0) effectiveIncome = recIncome;
+    }
+
+    // Dynamic available amount for the rest of the cycle (including today)
+    const availableForLiving = Math.max(0, effectiveIncome - pastExpenseInCycle - savingsGoal);
+    const dailyQuotaToday = daysRemaining > 0 ? (availableForLiving / daysRemaining) : 0;
+    const remainingToday = Math.max(0, dailyQuotaToday - todayExpense);
+    const isExceeded = (todayExpense > dailyQuotaToday && dailyQuotaToday > 0) || (dailyQuotaToday === 0 && todayExpense > 0);
+    const usedPct = dailyQuotaToday > 0 ? Math.min(100, (todayExpense / dailyQuotaToday) * 100) : (todayExpense > 0 ? 100 : 0);
 
     let barColor = 'from-emerald-500 to-teal-400';
     if (usedPct >= 100 || isExceeded) {
@@ -3364,8 +3397,12 @@ const App = {
       barColor = 'from-amber-500 to-yellow-400';
     }
 
+    const remainingDaysText = lang === 'en' 
+      ? `${daysRemaining} day${daysRemaining > 1 ? 's' : ''} left in cycle` 
+      : `เหลืออีก ${daysRemaining} วันในรอบ`;
+
     container.innerHTML = `
-      <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-2.5 bg-gradient-to-br from-white via-indigo-50/20 to-slate-50">
+      <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-indigo-50/20 to-slate-50">
         <!-- Header -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
@@ -3373,14 +3410,16 @@ const App = {
             <h3 class="text-xs sm:text-sm font-bold text-slate-800 tracking-tight">
               ${lang === 'en' ? 'Daily Spending Allowance' : 'โควตาเงินกินใช้วันนี้'}
             </h3>
+            <span class="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/50">Dynamic</span>
           </div>
           <button 
             type="button" 
-            onclick="App.switchTab('simulator')" 
-            class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-xl transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
+            onclick="App.openSavingsGoalModal()" 
+            class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200/80 shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+            title="ปรับเป้าหมายเงินออมรายเดือน"
           >
-            <span>⚙️</span>
-            <span>${lang === 'en' ? 'Adjust Plan' : 'ปรับแผน'}</span>
+            <span>🎯</span>
+            <span>${lang === 'en' ? 'Adjust Goal' : 'ปรับเป้าเงินออม'}</span>
           </button>
         </div>
 
@@ -3393,10 +3432,11 @@ const App = {
             </p>
           </div>
           <div class="text-right">
-            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Daily Target' : 'งบแนะนำ'}</span>
-            <span class="text-xs sm:text-sm font-bold text-slate-600 num-font">
-              ฿${dailyAllowance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${lang === 'en' ? 'day' : 'วัน'}
+            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Daily Target' : 'งบแนะนำวันนี้'}</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-700 num-font">
+              ฿${dailyQuotaToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${lang === 'en' ? 'day' : 'วัน'}
             </span>
+            <span class="text-[10px] text-indigo-600 font-medium block">(${remainingDaysText})</span>
           </div>
         </div>
 
@@ -3406,12 +3446,74 @@ const App = {
             <div class="bg-gradient-to-r ${barColor} h-full rounded-full transition-all duration-500" style="width: ${usedPct}%"></div>
           </div>
           <div class="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-            <span>${lang === 'en' ? 'Spent today: ฿' : 'ใช้ไปแล้ว: ฿'}${todayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })} (${usedPct.toFixed(0)}%)</span>
-            <span>${lang === 'en' ? 'Monthly Goal: +฿' : 'แผนเงินออม: +฿'}${savings.toLocaleString('th-TH')}</span>
+            <span>${lang === 'en' ? 'Spent today: ฿' : 'ใช้ไปแล้ววันนี้: ฿'}${todayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })} (${usedPct.toFixed(0)}%)</span>
+            <span>${lang === 'en' ? 'Savings Target: ฿' : 'เป้าหมายเงินออม: ฿'}${savingsGoal.toLocaleString('th-TH')}</span>
           </div>
+        </div>
+
+        <!-- Sub Context Stats (Income & Past Expenses) -->
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+          <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${effectiveIncome.toLocaleString('th-TH')}</strong></span>
+          <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH')}</strong></span>
         </div>
       </div>
     `;
+  },
+
+  // --- Monthly Savings Goal Manager ---
+  renderSettingsSavingsGoalSection() {
+    const goal = StorageManager.getMonthlySavingsGoal();
+    const badgeEl = document.getElementById('settings-savings-goal-badge');
+    const inputEl = document.getElementById('settings-savings-goal-input');
+    const lang = I18n.getLanguage();
+
+    if (badgeEl) {
+      badgeEl.textContent = `฿${goal.toLocaleString('th-TH')} ${lang === 'en' ? '/ month' : '/ เดือน'}`;
+    }
+    if (inputEl) {
+      inputEl.value = goal;
+    }
+  },
+
+  handleSaveSettingsSavingsGoal(amount) {
+    const val = Math.max(0, parseFloat(amount) || 0);
+    StorageManager.saveMonthlySavingsGoal(val);
+    this.renderSettingsSavingsGoalSection();
+    this.renderTab1DailyBudgetCard();
+    const lang = I18n.getLanguage();
+    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 บันทึกเป้าหมายเงินออม ฿${val.toLocaleString()} แล้ว`);
+  },
+
+  handleSetSavingsGoalPreset(amount) {
+    this.handleSaveSettingsSavingsGoal(amount);
+  },
+
+  openSavingsGoalModal() {
+    const modal = document.getElementById('savings-goal-modal');
+    const input = document.getElementById('modal-savings-goal-input');
+    if (!modal) return;
+    const goal = StorageManager.getMonthlySavingsGoal();
+    if (input) {
+      input.value = goal;
+      setTimeout(() => input.focus(), 100);
+    }
+    modal.classList.add('show');
+  },
+
+  closeSavingsGoalModal() {
+    const modal = document.getElementById('savings-goal-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  handleSaveSavingsGoalFromModal() {
+    const input = document.getElementById('modal-savings-goal-input');
+    const val = Math.max(0, parseFloat(input?.value) || 0);
+    StorageManager.saveMonthlySavingsGoal(val);
+    this.closeSavingsGoalModal();
+    this.renderTab1DailyBudgetCard();
+    this.renderSettingsSavingsGoalSection();
+    const lang = I18n.getLanguage();
+    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 ปรับเป้าหมายเงินออมเป็น ฿${val.toLocaleString()} แล้ว`);
   },
 
   // ==========================================
@@ -3420,6 +3522,7 @@ const App = {
   renderSettingsTab() {
     this.renderSettingsGoogleAccount();
     this.renderSettingsPayCycleSection();
+    this.renderSettingsSavingsGoalSection();
     this.renderSettingsRecurringSummary();
     this.renderSettingsCategorySummary();
     this.renderSettingsStorageStats();

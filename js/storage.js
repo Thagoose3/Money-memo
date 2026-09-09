@@ -8,8 +8,11 @@ const STORAGE_KEYS = {
   BUDGET_SIMULATOR: 'smart_expense_budget_sim_v1',
   RECURRING_ITEMS: 'smart_expense_recurring_list_v2',
   DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1',
-  PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1'
+  PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1',
+  SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1'
 };
+
+const DEFAULT_SAVINGS_GOAL = 5000;
 
 const DEFAULT_PAY_CYCLE = {
   type: 'calendar', // 'calendar' | 'end_of_month' | 'day_25' | 'day_28' | 'custom'
@@ -421,6 +424,7 @@ const StorageManager = {
     this._transactions = null;
     this._budgetSimulator = null;
     this._payCycleSetting = null;
+    this._savingsGoal = null;
   },
 
   // Helper to normalize any date input to YYYY-MM-DD
@@ -617,6 +621,36 @@ const StorageManager = {
       localStorage.setItem(STORAGE_KEYS.PAY_CYCLE, JSON.stringify(setting));
     } catch (e) {
       console.error('Error saving pay cycle setting:', e);
+    }
+  },
+
+  // --- เป้าหมายเงินออมรายเดือน (Monthly Savings Target) ---
+  getMonthlySavingsGoal() {
+    if (this._savingsGoal !== undefined && this._savingsGoal !== null) return this._savingsGoal;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOAL);
+      if (data !== null && data !== undefined) {
+        const val = parseFloat(data);
+        if (!isNaN(val) && val >= 0) {
+          this._savingsGoal = val;
+          return this._savingsGoal;
+        }
+      }
+      this._savingsGoal = DEFAULT_SAVINGS_GOAL;
+      return this._savingsGoal;
+    } catch (e) {
+      this._savingsGoal = DEFAULT_SAVINGS_GOAL;
+      return this._savingsGoal;
+    }
+  },
+
+  saveMonthlySavingsGoal(amount) {
+    const val = Math.max(0, parseFloat(amount) || 0);
+    this._savingsGoal = val;
+    try {
+      localStorage.setItem(STORAGE_KEYS.SAVINGS_GOAL, String(val));
+    } catch (e) {
+      console.error('Error saving savings goal:', e);
     }
   },
 
@@ -823,7 +857,8 @@ const StorageManager = {
       categories: this.getCategories(),
       recurringItems: this.getRecurringItems(),
       budgetSimulator: this.getBudgetSimulator(),
-      payCycleSetting: this.getPayCycleSetting()
+      payCycleSetting: this.getPayCycleSetting(),
+      savingsGoal: this.getMonthlySavingsGoal()
     };
 
     const jsonStr = JSON.stringify(backupData, null, 2);
@@ -852,6 +887,7 @@ const StorageManager = {
         if (Array.isArray(data.recurringItems)) this.saveRecurringItems(data.recurringItems);
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
         if (data.payCycleSetting) this.savePayCycleSetting(data.payCycleSetting);
+        if (typeof data.savingsGoal === 'number') this.saveMonthlySavingsGoal(data.savingsGoal);
       }
       return { success: true };
     } catch (e) {

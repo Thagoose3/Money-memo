@@ -4,7 +4,24 @@
 
 ---
 
-## 📱 Version 3.4 (Current Version) — *Mobile Compact Category Dropdown & Usage-Ranked Sorting*
+## 📱 Version 3.5 (Current Version) — *Dedicated K PLUS-Style Statement Feed & Recurring Items Deletion Fix*
+**วันที่อัปเดต:** กันยายน 2026
+
+### 📋 หน้าประวัติรายการ & สเตทเมนต์แยก (Dedicated Statement Feed — K PLUS Style)
+- **แท็บประวัติรายการเฉพาะ (Dedicated Tab 2: ประวัติ / History)**: แยกหน้าประวัติรายการออกมาเป็นหน้าสเตทเมนต์เต็มรูปแบบ ทั้งบน Mobile Bottom Bar และ Desktop Navigation
+- **Daily Grouped Statement**: จัดกลุ่มรายการตามวัน (`วันนี้`, `เมื่อวาน`, `วันจันทร์ ฯลฯ`) พร้อมคำนวณยอดรวมรายรับ-รายจ่ายของแต่ละวันอย่างชัดเจน
+- **Statement Flow Summary Banner**: แบนเนอร์แสดงสรุปยอดเงินเข้า-ออก (🟢 Inflow / 🔴 Outflow) และยอดเงินคงเหลือสุทธิ (Net Balance) ประจำเดือน
+- **Search & Type Filter Chips**: ค้นหาตามโน้ต หมวดหมู่ ช่องทางชำระเงิน หรือจำนวนเงิน พร้อมชิปกรองเฉพาะ `ทั้งหมด`, `รายจ่าย`, `รายรับ`
+- **Interactive Digital Memo Slip**: แตะรายการใดๆ เพื่อเปิดสลิปรายละเอียด (Digital Memo Slip) ขนาดกะทัดรัด พร้อมปุ่มแก้ไขและลบ
+
+### 🛡️ แก้ไขบั๊กการลบรายการประจำ (Permanent Recurring Deletion & Cross-Device Sync)
+- **Permanent Recurring Item Deletion**: แก้ไขปัญหาที่รายการประจำที่ถูกลบไปแล้วเด้งกลับมาใหม่หลังจากรีเฟรชหรือเปิดแอปใหม่
+- **Tombstone ID Tracking (`money_memo_deleted_rec_ids_v1`)**: บันทึก ID รายการประจำที่ถูกลบ เพื่อป้องกันไม่ให้ระบบนำ Default Items หรือข้อมูลจาก Cloud มาสร้างทับ
+- **Real-time Two-Way Cloud Sync**: ซิงค์การลบรายการประจำข้ามอุปกรณ์ (PC 💻 และ Mobile 📱) ผ่าน Firebase Firestore อย่างสมบูรณ์แบบ ลบจากอุปกรณ์หนึ่งจะหายจากทุกอุปกรณ์ทันที
+
+---
+
+## 📱 Version 3.4 — *Mobile Compact Category Dropdown & Usage-Ranked Sorting*
 **วันที่อัปเดต:** กันยายน 2026
 
 ### 📂 ช่องเลือกหมวดหมู่แบบ Dropdown ประหยัดพื้นที่บนมือถือ & จัดอันดับตามการใช้งานจริง

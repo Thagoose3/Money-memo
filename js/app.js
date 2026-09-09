@@ -3,12 +3,17 @@
  */
 
 const App = {
-  currentTab: 'transactions', // 'transactions', 'dashboard', 'simulator', 'recurring', 'categories'
+  currentTab: 'transactions', // 'transactions', 'history', 'dashboard', 'simulator', 'recurring', 'categories'
   dashboardViewMode: 'custom', // 'custom' (Monthly / Pay cycle), 'daily' (Daily breakdown), 'yearly' (Annual overview)
   selectedDate: new Date(), // สำหรับ Dashboard
   currentEntryType: 'expense', // 'expense' or 'income' for transaction form
   selectedCategoryId: null,
   currentPayCyclePreset: 28,
+
+  // Tab 2 (History / Statement Feed) state
+  historyDate: new Date(),
+  historyTypeFilter: 'all', // 'all', 'expense', 'income'
+  historySearchQuery: '',
   
   // Tab 4 (Recurring Items) state
   inlineRecurringType: 'expense', // 'expense' or 'income'
@@ -2471,6 +2476,242 @@ const App = {
     }).join('');
   },
 
+  // ==========================================
+  // TAB 2: HISTORY & STATEMENT FEED (K PLUS Style)
+  // ==========================================
+  navigateHistoryMonth(direction) {
+    if (!this.historyDate) this.historyDate = new Date();
+    this.historyDate.setMonth(this.historyDate.getMonth() + direction);
+    this.renderHistoryTab();
+  },
+
+  resetHistoryToCurrentMonth() {
+    this.historyDate = new Date();
+    this.renderHistoryTab();
+  },
+
+  setHistoryTypeFilter(type) {
+    this.historyTypeFilter = type;
+    const btnAll = document.getElementById('history-filter-btn-all');
+    const btnExp = document.getElementById('history-filter-btn-expense');
+    const btnInc = document.getElementById('history-filter-btn-income');
+
+    const activeClass = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-xs transition-all cursor-pointer shrink-0';
+    const inactiveClass = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1';
+
+    if (btnAll) btnAll.className = (type === 'all') ? activeClass : 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0';
+    if (btnExp) {
+      btnExp.className = (type === 'expense') ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500 text-white shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1' : inactiveClass;
+    }
+    if (btnInc) {
+      btnInc.className = (type === 'income') ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-white shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1' : inactiveClass;
+    }
+
+    this.renderHistoryTab();
+  },
+
+  onHistorySearch(query) {
+    this.historySearchQuery = (query || '').toLowerCase().trim();
+    this.renderHistoryTab();
+  },
+
+  renderHistoryTab() {
+    if (!this.historyDate) this.historyDate = new Date();
+
+    const year = this.historyDate.getFullYear();
+    const month = this.historyDate.getMonth(); // 0-11
+    const lang = I18n.getLanguage();
+
+    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthNames = (lang === 'en') ? enMonths : thaiMonths;
+    const yearDisplay = (lang === 'en') ? year : (year + 543);
+
+    // 1. Month Label
+    const monthLabelEl = document.getElementById('history-current-month-label');
+    if (monthLabelEl) {
+      monthLabelEl.textContent = `${monthNames[month]} ${yearDisplay}`;
+    }
+
+    // 2. Filter transactions for the selected month
+    const allTxs = StorageManager.getTransactions();
+    const pad = (n) => String(n).padStart(2, '0');
+    const monthPrefix = `${year}-${pad(month + 1)}`;
+    const monthTxs = allTxs.filter(t => (t.date || '').startsWith(monthPrefix));
+
+    // 3. Flow Summary Banner Stats (Calculate for whole month)
+    let totalIncome = 0;
+    let totalExpense = 0;
+    monthTxs.forEach(t => {
+      if (t.type === 'income') totalIncome += t.amount;
+      else totalExpense += t.amount;
+    });
+    const net = totalIncome - totalExpense;
+
+    const bannerCountEl = document.getElementById('history-banner-count');
+    const bannerNetEl = document.getElementById('history-banner-net');
+    const bannerIncEl = document.getElementById('history-banner-inc');
+    const bannerExpEl = document.getElementById('history-banner-exp');
+
+    if (bannerCountEl) bannerCountEl.textContent = lang === 'en' ? `${monthTxs.length} items` : `${monthTxs.length} รายการ`;
+    if (bannerNetEl) {
+      bannerNetEl.textContent = `${net < 0 ? '-' : (net > 0 ? '+' : '')}฿${Math.abs(net).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+      bannerNetEl.className = `text-2xl sm:text-3xl font-black tracking-tight num-font ${net >= 0 ? 'text-white' : 'text-rose-300'}`;
+    }
+    if (bannerIncEl) bannerIncEl.textContent = `+฿${totalIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+    if (bannerExpEl) bannerExpEl.textContent = `-฿${totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+
+    // 4. Apply Type and Search Filters to Feed
+    const filteredTxs = monthTxs.filter(t => {
+      if (this.historyTypeFilter !== 'all' && t.type !== this.historyTypeFilter) return false;
+      if (this.historySearchQuery) {
+        const cat = StorageManager.getCategoryById(t.categoryId);
+        const matchNote = (t.note || '').toLowerCase().includes(this.historySearchQuery);
+        const matchCat = (cat.name || '').toLowerCase().includes(this.historySearchQuery) || (cat.nameEn || '').toLowerCase().includes(this.historySearchQuery);
+        const matchPayment = (t.paymentMethod || '').toLowerCase().includes(this.historySearchQuery);
+        const matchAmount = String(t.amount).includes(this.historySearchQuery);
+        if (!matchNote && !matchCat && !matchPayment && !matchAmount) return false;
+      }
+      return true;
+    });
+
+    const feedContainer = document.getElementById('history-daily-feed');
+    if (!feedContainer) return;
+
+    if (filteredTxs.length === 0) {
+      feedContainer.innerHTML = `
+        <div class="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 p-6 space-y-2 shadow-2xs">
+          <span class="text-4xl block mb-1">📋</span>
+          <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No transactions found for this month' : 'ไม่มีรายการบันทึกในเดือนนี้'}</p>
+          <p class="text-xs text-slate-400">${lang === 'en' ? 'Tap the home tab to add your first transaction' : 'กดไปที่หน้าหลักเพื่อเริ่มบันทึกรายรับหรือรายจ่ายได้เลย'}</p>
+          <button type="button" onclick="App.switchTab('transactions')" class="mt-2 inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-xs hover:bg-slate-800 transition-all cursor-pointer">
+            <span>➕ ไปหน้าบันทึกรายการ</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    // 5. Group by YYYY-MM-DD
+    const groups = {};
+    filteredTxs.forEach(t => {
+      const dateKey = (t.date || '').slice(0, 10);
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(t);
+    });
+
+    const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const yest = new Date(now.getTime() - 86400000);
+    const yesterdayKey = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
+
+    const thaiDayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const enDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const enMonthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    feedContainer.innerHTML = sortedDates.map(dateKey => {
+      const dayTxs = groups[dateKey];
+      const d = new Date(dateKey + 'T00:00:00');
+
+      let dayTitle = '';
+      if (dateKey === todayKey) {
+        dayTitle = lang === 'en' ? 'Today' : 'วันนี้';
+      } else if (dateKey === yesterdayKey) {
+        dayTitle = lang === 'en' ? 'Yesterday' : 'เมื่อวาน';
+      } else {
+        dayTitle = lang === 'en' ? enDayNames[d.getDay()] : `วัน${thaiDayNames[d.getDay()]}`;
+      }
+
+      const formattedDateStr = lang === 'en'
+        ? `${d.getDate()} ${enMonthsShort[d.getMonth()]} ${d.getFullYear()}`
+        : `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${d.getFullYear() + 543}`;
+
+      const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+
+      const itemsHtml = dayTxs.map(t => {
+        const cat = StorageManager.getCategoryById(t.categoryId);
+        const catName = StorageManager.getCategoryDisplayName(cat);
+        const isExp = t.type === 'expense';
+        const timeStr = t.date && t.date.length >= 16 ? t.date.slice(11, 16) : '';
+        const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+
+        return `
+          <div 
+            onclick="App.openTransactionDetailModal('${t.id}')"
+            class="flex items-center justify-between p-3 hover:bg-slate-50/90 active:bg-slate-100/90 transition-all cursor-pointer group select-none"
+          >
+            <!-- Left: Avatar Icon + Category Name & Note -->
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+                ${cat.emoji}
+              </div>
+              <div class="min-w-0 flex-1 pr-2">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[220px]">${catName}</span>
+                  ${t.note ? `<span class="text-[11px] text-slate-500 font-medium truncate max-w-[140px] sm:max-w-[200px]">"${t.note}"</span>` : ''}
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[10px] sm:text-[11px] text-slate-400 font-semibold num-font">${timeStr ? `${timeStr} น.` : ''}</span>
+                  <span class="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-500 font-medium">${t.paymentMethod}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Amount + Actions / Chevron -->
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div class="text-right">
+                <span class="text-xs sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+                  ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                </span>
+                <span class="block text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
+              </div>
+
+              <!-- Desktop Direct Edit/Delete -->
+              <div class="hidden sm:flex items-center opacity-70 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer" title="${I18n.t('btn_edit')}">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                </button>
+                <button onclick="App.openDeleteModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer" title="${I18n.t('btn_delete')}">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+
+              <!-- Mobile Chevron -->
+              <svg class="w-4 h-4 text-slate-300 sm:hidden shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="pastel-card rounded-3xl overflow-hidden shadow-2xs">
+          <!-- Daily Header Banner -->
+          <div class="bg-slate-50/90 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${dateKey === todayKey ? 'bg-indigo-600 text-white' : 'bg-slate-200/80 text-slate-700'}">${dayTitle}</span>
+              <span class="text-xs font-bold text-slate-700">${formattedDateStr}</span>
+              <span class="text-[10px] text-slate-400 font-semibold">(${dayTxs.length})</span>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-bold num-font">
+              ${dayIncome > 0 ? `<span class="text-emerald-600">+฿${dayIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
+              ${dayExpense > 0 ? `<span class="text-rose-600">-฿${dayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
+            </div>
+          </div>
+
+          <!-- Items in Date Group -->
+          <div class="divide-y divide-slate-100/80">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
   renderTransactionList() {
     const container = document.getElementById('transaction-history-list');
     if (!container) return;
@@ -2878,6 +3119,7 @@ const App = {
   renderAll(forceAll = false) {
     this.renderActiveTab();
     if (forceAll) {
+      if (this.currentTab !== 'history') this.renderHistoryTab();
       if (this.currentTab !== 'dashboard') this.renderDashboard();
       if (this.currentTab !== 'recurring') this.renderRecurringTab();
       if (this.currentTab !== 'categories') this.renderCategoriesTab();
@@ -2893,6 +3135,8 @@ const App = {
       this.initCategoryGrid('form-category-grid', this.currentEntryType);
       this.renderTransactionList();
       this.renderQuickFixedChips();
+    } else if (this.currentTab === 'history') {
+      this.renderHistoryTab();
     } else if (this.currentTab === 'dashboard') {
       this.renderDashboard();
     } else if (this.currentTab === 'simulator') {

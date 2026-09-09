@@ -200,11 +200,20 @@ const FirebaseManager = {
       StorageManager.saveCategories(Array.from(catMap.values()));
 
       // --- 3. Merge Recurring Items ---
+      const deletedRecIds = StorageManager.getDeletedRecurringIds();
       const recMap = new Map();
-      cloudRecs.forEach(r => recMap.set(r.id, r));
+      cloudRecs.forEach(r => {
+        if (!deletedRecIds.has(r.id)) {
+          recMap.set(r.id, r);
+        } else {
+          hasUploads = true;
+          const docRef = userRef.collection('recurring_items').doc(r.id);
+          batch.delete(docRef);
+        }
+      });
 
       localRecs.forEach(r => {
-        if (!recMap.has(r.id)) {
+        if (!recMap.has(r.id) && !deletedRecIds.has(r.id)) {
           recMap.set(r.id, r);
           hasUploads = true;
           const docRef = userRef.collection('recurring_items').doc(r.id);
@@ -299,15 +308,17 @@ const FirebaseManager = {
 
       // 3. Recurring Items Live Listener
       this._recUnsubscribe = userRef.collection('recurring_items').onSnapshot((snapshot) => {
-        if (snapshot.empty) return;
+        const deletedRecIds = StorageManager.getDeletedRecurringIds();
         const list = [];
-        snapshot.forEach(doc => list.push(doc.data()));
+        snapshot.forEach(doc => {
+          const item = doc.data();
+          if (!deletedRecIds.has(item.id)) {
+            list.push(item);
+          }
+        });
         const currentLocal = StorageManager.getRecurringItems();
-        if (list.length > 0 && JSON.stringify(list) !== JSON.stringify(currentLocal)) {
-          const map = new Map();
-          currentLocal.forEach(r => map.set(r.id, r));
-          list.forEach(r => map.set(r.id, r));
-          StorageManager.saveRecurringItems(Array.from(map.values()));
+        if (JSON.stringify(list) !== JSON.stringify(currentLocal)) {
+          StorageManager.saveRecurringItems(list);
           App.requestRender();
         }
       }, (error) => {

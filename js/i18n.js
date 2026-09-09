@@ -16,10 +16,12 @@ const TRANSLATIONS = {
     btn_import_json: 'นำเข้าข้อมูล JSON',
 
     // Navigation Tabs
+    tab_home: 'หน้าหลัก',
+    tab_history: 'ประวัติรายการ',
     tab_transactions: 'บันทึก & รายการ',
-    tab_dashboard: 'แดชบอร์ด',
+    tab_dashboard: 'สถิติ & แดชบอร์ด',
     tab_simulator: 'จำลองเงินกินใช้',
-    tab_recurring: 'รายการประจำเดือน',
+    tab_recurring: 'รายการประจำ & บิล',
     tab_categories: 'จัดการหมวดหมู่',
 
     // Tab 1: Transactions
@@ -258,11 +260,13 @@ const TRANSLATIONS = {
     btn_import_json: 'Restore JSON',
 
     // Navigation Tabs
-    tab_transactions: 'Records & List',
-    tab_dashboard: 'Dashboard',
-    tab_simulator: 'Budget Simulator',
-    tab_recurring: 'Recurring Items',
-    tab_categories: 'Category Manager',
+    tab_home: 'Home',
+    tab_history: 'History / Statement',
+    tab_transactions: 'Home & Record',
+    tab_dashboard: 'Insights',
+    tab_simulator: 'Budget Planner',
+    tab_recurring: 'Bills & Recurring',
+    tab_categories: 'Categories',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'Import Monthly Recurring Items',

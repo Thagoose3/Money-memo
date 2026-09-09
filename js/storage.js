@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   TRANSACTIONS: 'smart_expense_transactions_v1',
   CATEGORIES: 'smart_expense_categories_v1',
   BUDGET_SIMULATOR: 'smart_expense_budget_sim_v1',
-  RECURRING_ITEMS: 'smart_expense_recurring_list_v2'
+  RECURRING_ITEMS: 'smart_expense_recurring_list_v2',
+  DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1'
 };
 
 const DEFAULT_CATEGORIES = [
@@ -299,43 +300,53 @@ const StorageManager = {
   },
 
   // --- รายรับ & รายจ่าย ประจำเดือน (Recurring Items Management) ---
+  getDeletedRecurringIds() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.DELETED_RECURRING);
+      if (!data) return new Set();
+      const arr = JSON.parse(data);
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch (e) {
+      return new Set();
+    }
+  },
+
+  trackDeletedRecurringId(id) {
+    if (!id) return;
+    try {
+      const set = this.getDeletedRecurringIds();
+      set.add(id);
+      localStorage.setItem(STORAGE_KEYS.DELETED_RECURRING, JSON.stringify(Array.from(set)));
+    } catch (e) {}
+  },
+
   getRecurringItems() {
     if (this._recurring) return this._recurring;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.RECURRING_ITEMS);
-      if (!data) {
+      if (data === null) {
+        // Only on fresh install if key was never created
         this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
         return this._recurring;
       }
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        let needsSave = false;
-        parsed.forEach(item => {
-          const def = DEFAULT_RECURRING_ITEMS.find(d => d.id === item.id);
-          if (def && !item.nameEn && def.nameEn) {
-            item.nameEn = def.nameEn;
-            needsSave = true;
-          }
-        });
+      if (Array.isArray(parsed)) {
         this._recurring = parsed;
-        if (needsSave) {
-          this.saveRecurringItems(parsed);
-        }
         return this._recurring;
       }
-      this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
+      this._recurring = [];
       return this._recurring;
     } catch (e) {
       console.error('Error loading recurring items:', e);
-      this._recurring = DEFAULT_RECURRING_ITEMS;
+      this._recurring = [];
       return this._recurring;
     }
   },
 
   saveRecurringItems(list) {
-    this._recurring = list;
+    this._recurring = Array.isArray(list) ? list : [];
     try {
-      localStorage.setItem(STORAGE_KEYS.RECURRING_ITEMS, JSON.stringify(list));
+      localStorage.setItem(STORAGE_KEYS.RECURRING_ITEMS, JSON.stringify(this._recurring));
     } catch (e) {
       console.error('Error saving recurring items:', e);
     }
@@ -390,6 +401,7 @@ const StorageManager = {
     let list = this.getRecurringItems();
     list = list.filter(e => e.id !== id);
     this.saveRecurringItems(list);
+    this.trackDeletedRecurringId(id);
     this._syncCloud('deleteRecurring', id);
 
     return { success: true };

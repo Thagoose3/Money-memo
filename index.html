@@ -190,7 +190,7 @@
       <div>
         <div class="flex items-center gap-1.5">
           <h1 data-i18n="app_title" class="text-sm sm:text-base font-extrabold text-slate-900 leading-none tracking-tight">Money Memo</h1>
-          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.6</span>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.7</span>
         </div>
         <p data-i18n="app_subtitle" class="text-[11px] text-slate-400 font-medium mt-0.5 hidden sm:block">ระบบบันทึกรายรับ-รายจ่าย & จัดการเงินออมอัจฉริยะ</p>
       </div>
@@ -678,139 +678,132 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- TAB 2: 📊 แดชบอร์ดสรุปรายวันและรายเดือน -->
+    <!-- TAB 3: 📊 แดชบอร์ดสรุปรายวันและรายเดือน -->
     <!-- ========================================== -->
-    <section id="tab-pane-dashboard" class="tab-content-pane hidden space-y-4 sm:space-y-6">
+    <section id="tab-pane-dashboard" class="tab-content-pane hidden space-y-3.5 sm:space-y-4">
       
-      <!-- แถบเลือกเดือน & View mode -->
-      <div class="pastel-card p-3 sm:p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <button id="prev-month-btn" onclick="App.navigateDashboardMonth(-1)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนก่อนหน้า">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      <!-- 1. แถบเลือกช่วงวันที่ (Unified Date Navigator & Range Picker - อยู่บนสุด) -->
+      <div id="dashboard-unified-date-bar" class="pastel-card p-3.5 sm:p-4 rounded-3xl space-y-2.5 shadow-2xs border border-slate-200/80">
+        <!-- Row 1: Period Navigator [ ◀ ] [ 28 ส.ค. 2569 - 27 ก.ย. 2569 ] [ ▶ ] -->
+        <div class="flex items-center justify-between gap-2">
+          <button id="prev-month-btn" onclick="App.navigateDashboardMonth(-1)" class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0" title="รอบก่อนหน้า">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
           </button>
           
-          <div class="px-3.5 py-1.5 bg-white border border-slate-200 rounded-2xl text-center shadow-2xs">
-            <span id="dashboard-current-month" class="text-xs sm:text-sm font-bold text-slate-900 block num-font">สิงหาคม 2569</span>
+          <div class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-2xl text-center shadow-2xs flex-1">
+            <span id="dashboard-current-month" class="text-xs sm:text-sm font-extrabold text-slate-900 block num-font truncate">28 ส.ค. - 27 ก.ย. 2569</span>
           </div>
 
-          <button id="next-month-btn" onclick="App.navigateDashboardMonth(1)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer" title="เดือนถัดไป">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          <button id="next-month-btn" onclick="App.navigateDashboardMonth(1)" class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0" title="รอบถัดไป">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
           </button>
+        </div>
 
-          <button id="current-month-btn" onclick="App.goToCurrentMonth()" class="px-2.5 py-1 text-xs font-medium text-slate-500 hover:text-slate-900 rounded-xl transition-colors cursor-pointer">
+        <!-- Row 2: Direct Date Pickers & Current Month Reset -->
+        <div id="dashboard-custom-range-inputs" class="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-1.5 w-full sm:w-auto">
+            <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl shadow-2xs flex-1 sm:flex-initial">
+              <span class="text-slate-400 text-[10px] font-semibold">📅 ตั้งแต่:</span>
+              <input type="date" id="dash-custom-start-date" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer w-full sm:w-auto" />
+            </div>
+            <span class="text-slate-400 font-bold text-xs">ถึง</span>
+            <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl shadow-2xs flex-1 sm:flex-initial">
+              <span class="text-slate-400 text-[10px] font-semibold">📅 ถึง:</span>
+              <input type="date" id="dash-custom-end-date" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer w-full sm:w-auto" />
+            </div>
+          </div>
+
+          <button id="current-month-btn" onclick="App.goToCurrentMonth()" class="w-full sm:w-auto px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs flex items-center justify-center gap-1">
+            <span>⚡</span>
             <span data-i18n="btn_this_month">เดือนนี้</span>
           </button>
         </div>
-
-        <!-- Mode Toggle (Monthly Pay Cycle / Daily / Yearly) -->
-        <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 text-xs flex-wrap">
-          <button id="view-mode-custom" class="px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
-            <span data-i18n="view_custom">📊 สรุปรายเดือน / รอบเงินเดือน</span>
-          </button>
-          <button id="view-mode-daily" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
-            <span data-i18n="view_daily">📅 แจกแจงรายวัน</span>
-          </button>
-          <button id="view-mode-yearly" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
-            <span data-i18n="view_yearly">📆 สรุปภาพรวมรายปี</span>
-          </button>
-        </div>
       </div>
 
-      <!-- Custom Date Range Bar (กำหนดช่วงวันที่เอง) -->
-      <div id="dashboard-custom-range-bar" class="pastel-card p-3 sm:p-3.5 rounded-3xl bg-gradient-to-r from-amber-50/50 via-white to-orange-50/30 border border-amber-200/60 flex flex-col sm:flex-row items-center justify-between gap-3 animate-modal">
-        <div class="flex items-center gap-2 text-xs text-slate-700 font-bold">
-          <span class="text-base">📅</span>
-          <span data-i18n="label_custom_date_range">กำหนดช่วงวันที่:</span>
-        </div>
-
-        <!-- Date Inputs -->
-        <div class="flex items-center gap-2 text-xs flex-wrap justify-center">
-          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2 rounded-2xl shadow-2xs">
-            <span class="text-slate-400 text-[11px] font-medium shrink-0" data-i18n="label_start_date">ตั้งแต่:</span>
-            <input type="date" id="dash-custom-start-date" class="w-auto min-w-[130px] text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1" />
-          </div>
-          <span class="text-slate-400 text-xs font-bold shrink-0">ถึง</span>
-          <div class="flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2 rounded-2xl shadow-2xs">
-            <span class="text-slate-400 text-[11px] font-medium shrink-0" data-i18n="label_end_date">ถึง:</span>
-            <input type="date" id="dash-custom-end-date" class="w-auto min-w-[130px] text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1" />
-          </div>
-        </div>
+      <!-- 2. แถบเลือกโหมดมุมมอง (View Mode Switcher - อยู่ถัดลงมา) -->
+      <div class="bg-slate-200/50 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/70 text-xs shadow-2xs">
+        <button id="view-mode-custom" onclick="App.setDashboardViewMode('custom')" class="flex-1 py-2 px-2.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer text-center">
+          <span data-i18n="view_custom">📊 สรุปภาพรวม</span>
+        </button>
+        <button id="view-mode-daily" onclick="App.setDashboardViewMode('daily')" class="flex-1 py-2 px-2.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer text-center">
+          <span data-i18n="view_daily">📅 แจกแจงรายวัน</span>
+        </button>
+        <button id="view-mode-yearly" onclick="App.setDashboardViewMode('yearly')" class="flex-1 py-2 px-2.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer text-center">
+          <span data-i18n="view_yearly">📆 สรุปภาพรวมรายปี</span>
+        </button>
       </div>
 
-      <!-- 3 Pastel KPI Cards (Monthly & Daily View) -->
-      <div id="dashboard-monthly-kpi-container" class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-emerald-50/80 to-teal-50/40 border-emerald-100/60">
-          <div class="flex items-center justify-between text-xs font-semibold text-emerald-800">
-            <span data-i18n="kpi_total_income">รายรับรวม (Total Income)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-xs"></span>
-          </div>
-          <p id="dash-total-income" class="text-2xl sm:text-3xl font-extrabold text-emerald-700 num-font mt-1.5">฿0.00</p>
-          <p data-i18n="kpi_total_income_sub" class="text-[11px] text-emerald-600/80 mt-0.5">ยอดรับทั้งหมดในเดือนนี้</p>
-        </div>
-
-        <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-rose-50/80 to-pink-50/40 border-rose-100/60">
-          <div class="flex items-center justify-between text-xs font-semibold text-rose-800">
-            <span data-i18n="kpi_total_expense">รายจ่ายรวม (Total Expense)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-xs"></span>
-          </div>
-          <p id="dash-total-expense" class="text-2xl sm:text-3xl font-extrabold text-rose-700 num-font mt-1.5">฿0.00</p>
-          <p data-i18n="kpi_total_expense_sub" class="text-[11px] text-rose-600/80 mt-0.5">ยอดใช้จ่ายทั้งหมดในเดือนนี้</p>
-        </div>
-
-        <div class="pastel-card p-4 rounded-3xl bg-gradient-to-br from-indigo-50/80 to-purple-50/40 border-indigo-100/60">
-          <div class="flex items-center justify-between text-xs font-semibold text-indigo-800">
-            <span data-i18n="kpi_net_balance">คงเหลือสุทธิ (Net Balance)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-xs"></span>
-          </div>
-          <p id="dash-net-balance" class="text-2xl sm:text-3xl font-extrabold text-slate-900 num-font mt-1.5">฿0.00</p>
-          <p id="dash-net-status" class="text-[11px] text-slate-500 font-medium mt-0.5">คำนวณจาก รายรับ - รายจ่าย</p>
-        </div>
-      </div>
-
-      <!-- Mode 1: Monthly Overview -->
-      <div id="dashboard-overview-pane" class="space-y-5 sm:space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
-          
+      <!-- 3. โหมดที่ 1: สรุปภาพรวม (Charts First Showcase) -->
+      <div id="dashboard-overview-pane" class="space-y-3.5 sm:space-y-4">
+        
+        <!-- Top Charts Row (Donut & Top 5) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4">
           <!-- Doughnut Chart -->
-          <div class="lg:col-span-6 pastel-card p-4 sm:p-5 rounded-3xl flex flex-col">
-            <div class="flex items-center justify-between mb-3">
+          <div class="lg:col-span-6 pastel-card p-4 sm:p-5 rounded-3xl flex flex-col shadow-2xs border border-slate-200/80">
+            <div class="flex items-center justify-between mb-2">
               <h3 data-i18n="chart_category_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">สัดส่วนรายจ่ายตามหมวดหมู่</h3>
             </div>
-            <div class="relative flex-1 min-h-[260px] flex items-center justify-center">
+            <div class="relative flex-1 min-h-[250px] flex items-center justify-center">
               <canvas id="chart-category-doughnut"></canvas>
               <div id="chart-doughnut-empty" class="text-center py-8 text-slate-400 hidden">
-                <p data-i18n="chart_category_empty" class="text-xs font-medium">ยังไม่มีรายการรายจ่ายในเดือนนี้</p>
+                <p data-i18n="chart_category_empty" class="text-xs font-medium">ยังไม่มีรายการรายจ่ายในช่วงที่เลือก</p>
               </div>
             </div>
           </div>
 
           <!-- Top 5 Categories -->
-          <div class="lg:col-span-6 pastel-card p-4 sm:p-5 rounded-3xl flex flex-col justify-between">
+          <div class="lg:col-span-6 pastel-card p-4 sm:p-5 rounded-3xl flex flex-col justify-between shadow-2xs border border-slate-200/80">
             <div>
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between mb-2">
                 <h3 data-i18n="top_categories_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">หมวดหมู่ที่ใช้เงินมากที่สุด (Top 5)</h3>
               </div>
-              <div id="dash-top-categories-list" class="space-y-3 mt-2">
+              <div id="dash-top-categories-list" class="space-y-2.5 mt-2">
                 <!-- Top 5 categories list -->
               </div>
             </div>
-            <div class="mt-4 p-2.5 bg-rose-50/50 rounded-2xl border border-rose-100/60 text-xs text-slate-600 flex items-center gap-2">
+            <div class="mt-3 p-2 bg-rose-50/60 rounded-xl border border-rose-100/70 text-[11px] text-slate-600 flex items-center gap-1.5">
               <span>💡</span>
               <span data-i18n="top_categories_tip">ตรวจสอบหมวดหมู่หลักเพื่อช่วยลดรายจ่ายที่ไม่จำเป็นในเดือนถัดไป</span>
             </div>
           </div>
-
         </div>
 
         <!-- Daily Trend Bar Chart -->
-        <div class="pastel-card p-4 sm:p-5 rounded-3xl">
-          <div class="flex items-center justify-between mb-3">
+        <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80">
+          <div class="flex items-center justify-between mb-2">
             <h3 data-i18n="chart_daily_trend_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">แนวโน้มการใช้จ่ายรายวัน (Daily Spending Trend)</h3>
           </div>
-          <div class="relative h-64 w-full">
+          <div class="relative h-60 sm:h-64 w-full">
             <canvas id="chart-daily-trend"></canvas>
           </div>
         </div>
+
+        <!-- Compact 3-Bento Summary Card (Under the Charts) -->
+        <div id="dashboard-monthly-kpi-container" class="pastel-card p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md border border-slate-800">
+          <div class="grid grid-cols-3 divide-x divide-white/15 text-center">
+            <!-- 1. รายรับ -->
+            <div class="px-2 sm:px-3">
+              <span class="text-[10px] sm:text-xs font-bold text-emerald-300 block">🟢 รายรับรวม</span>
+              <p id="dash-total-income" class="text-sm sm:text-xl font-extrabold text-white num-font mt-0.5">฿0.00</p>
+              <span class="text-[9px] sm:text-[10px] text-slate-300 hidden sm:block">ยอดเงินเข้าทั้งหมด</span>
+            </div>
+
+            <!-- 2. รายจ่าย -->
+            <div class="px-2 sm:px-3">
+              <span class="text-[10px] sm:text-xs font-bold text-rose-300 block">🔴 รายจ่ายรวม</span>
+              <p id="dash-total-expense" class="text-sm sm:text-xl font-extrabold text-white num-font mt-0.5">฿0.00</p>
+              <span class="text-[9px] sm:text-[10px] text-slate-300 hidden sm:block">ยอดเงินออกทั้งหมด</span>
+            </div>
+
+            <!-- 3. คงเหลือสุทธิ -->
+            <div class="px-2 sm:px-3">
+              <span class="text-[10px] sm:text-xs font-bold text-indigo-200 block">🟣 คงเหลือสุทธิ</span>
+              <p id="dash-net-balance" class="text-sm sm:text-xl font-extrabold text-white num-font mt-0.5">฿0.00</p>
+              <span id="dash-net-status" class="text-[9px] sm:text-[10px] text-emerald-300 font-bold block mt-0.5">สถานะปกติ</span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Mode 2: Daily Breakdown -->
@@ -2005,10 +1998,10 @@
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=3.6" defer></script>
-  <script src="js/storage.js?v=3.6" defer></script>
-  <script src="js/firebase-client.js?v=3.6" defer></script>
-  <script src="js/budget-simulator.js?v=3.6" defer></script>
-  <script src="js/app.js?v=3.6" defer></script>
+  <script src="js/i18n.js?v=3.7" defer></script>
+  <script src="js/storage.js?v=3.7" defer></script>
+  <script src="js/firebase-client.js?v=3.7" defer></script>
+  <script src="js/budget-simulator.js?v=3.7" defer></script>
+  <script src="js/app.js?v=3.7" defer></script>
 </body>
 </html>

@@ -76,7 +76,7 @@ const App = {
       }
     } catch(e) {}
 
-    this.renderMonthSelector();
+    this.setDashboardViewMode(this.dashboardViewMode || 'custom');
     this.renderActiveTab();
     BudgetSimulator.init();
 
@@ -295,21 +295,44 @@ const App = {
   navigateDashboardMonth(direction) {
     if (this.dashboardViewMode === 'yearly') {
       this.selectedDate.setFullYear(this.selectedDate.getFullYear() + direction);
+      this.renderMonthSelector();
+      this.renderDashboard();
+    } else {
+      this.shiftCustomDateRange(direction);
+    }
+  },
+
+  shiftCustomDateRange(direction) {
+    const pad = (n) => String(n).padStart(2, '0');
+    if (this.customStartDate && this.customEndDate) {
+      const s = new Date(this.customStartDate + 'T00:00:00');
+      const e = new Date(this.customEndDate + 'T00:00:00');
+      s.setMonth(s.getMonth() + direction);
+      e.setMonth(e.getMonth() + direction);
+      this.customStartDate = `${s.getFullYear()}-${pad(s.getMonth() + 1)}-${pad(s.getDate())}`;
+      this.customEndDate = `${e.getFullYear()}-${pad(e.getMonth() + 1)}-${pad(e.getDate())}`;
+      this.selectedDate = new Date(e);
     } else {
       this.selectedDate.setMonth(this.selectedDate.getMonth() + direction);
-      if (this.dashboardViewMode === 'custom') {
-        this.updateCustomDateRangeFromSelectedDate();
-      }
+      this.updateCustomDateRangeFromSelectedDate();
     }
+    try {
+      localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
+      localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
+    } catch(err) {}
+
+    const startInput = document.getElementById('dash-custom-start-date');
+    const endInput = document.getElementById('dash-custom-end-date');
+    if (startInput) startInput.value = this.customStartDate;
+    if (endInput) endInput.value = this.customEndDate;
+
     this.renderMonthSelector();
     this.renderDashboard();
   },
 
   goToCurrentMonth() {
     this.selectedDate = new Date();
-    if (this.dashboardViewMode === 'custom') {
-      this.updateCustomDateRangeFromSelectedDate();
-    }
+    this.updateCustomDateRangeFromSelectedDate();
     this.renderMonthSelector();
     this.renderDashboard();
   },
@@ -401,59 +424,6 @@ const App = {
         this.handleUpdateTransaction();
       });
     }
-
-    // Month / Year Navigation in Dashboard
-    const prevMonthBtn = document.getElementById('prev-month-btn');
-    const nextMonthBtn = document.getElementById('next-month-btn');
-    const currentMonthBtn = document.getElementById('current-month-btn');
-
-    if (prevMonthBtn) {
-      prevMonthBtn.addEventListener('click', () => {
-        if (this.dashboardViewMode === 'yearly') {
-          this.selectedDate.setFullYear(this.selectedDate.getFullYear() - 1);
-        } else if (this.dashboardViewMode === 'custom') {
-          this.shiftCustomDateRange(-1);
-          return;
-        } else {
-          this.selectedDate.setMonth(this.selectedDate.getMonth() - 1);
-        }
-        this.renderMonthSelector();
-        this.renderDashboard();
-      });
-    }
-    if (nextMonthBtn) {
-      nextMonthBtn.addEventListener('click', () => {
-        if (this.dashboardViewMode === 'yearly') {
-          this.selectedDate.setFullYear(this.selectedDate.getFullYear() + 1);
-        } else if (this.dashboardViewMode === 'custom') {
-          this.shiftCustomDateRange(1);
-          return;
-        } else {
-          this.selectedDate.setMonth(this.selectedDate.getMonth() + 1);
-        }
-        this.renderMonthSelector();
-        this.renderDashboard();
-      });
-    }
-    if (currentMonthBtn) {
-      currentMonthBtn.addEventListener('click', () => {
-        this.selectedDate = new Date();
-        if (this.dashboardViewMode === 'custom') {
-          this.applyPayCyclePreset(this.currentPayCyclePreset || 28);
-          return;
-        }
-        this.renderMonthSelector();
-        this.renderDashboard();
-      });
-    }
-
-    // Dashboard View Mode Toggle (Monthly Pay Cycle / Daily / Yearly)
-    const viewModeCustom = document.getElementById('view-mode-custom');
-    const viewModeDaily = document.getElementById('view-mode-daily');
-    const viewModeYearly = document.getElementById('view-mode-yearly');
-    if (viewModeCustom) viewModeCustom.addEventListener('click', () => this.setDashboardViewMode('custom'));
-    if (viewModeDaily) viewModeDaily.addEventListener('click', () => this.setDashboardViewMode('daily'));
-    if (viewModeYearly) viewModeYearly.addEventListener('click', () => this.setDashboardViewMode('yearly'));
 
     // Filter & Search in History
     const searchInput = document.getElementById('tx-search-input');
@@ -1718,34 +1688,30 @@ const App = {
     const viewDaily = document.getElementById('view-mode-daily');
     const viewYearly = document.getElementById('view-mode-yearly');
 
-    const customRangeBar = document.getElementById('dashboard-custom-range-bar');
-    const monthlyKpis = document.getElementById('dashboard-monthly-kpi-container');
+    const customRangeInputs = document.getElementById('dashboard-custom-range-inputs');
     const paneOverview = document.getElementById('dashboard-overview-pane');
     const paneDaily = document.getElementById('dashboard-daily-pane');
     const paneYearly = document.getElementById('dashboard-yearly-pane');
 
-    const activeClass = 'px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
-    const inactiveClass = 'px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+    const activeClass = 'flex-1 py-2 px-2.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer text-center';
+    const inactiveClass = 'flex-1 py-2 px-2.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer text-center';
 
     if (viewCustom) viewCustom.className = (mode === 'custom') ? activeClass : inactiveClass;
     if (viewDaily) viewDaily.className = (mode === 'daily') ? activeClass : inactiveClass;
     if (viewYearly) viewYearly.className = (mode === 'yearly') ? activeClass : inactiveClass;
 
     if (mode === 'custom') {
-      if (customRangeBar) customRangeBar.classList.remove('hidden');
-      if (monthlyKpis) monthlyKpis.classList.remove('hidden');
+      if (customRangeInputs) customRangeInputs.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.remove('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
       if (paneYearly) paneYearly.classList.add('hidden');
     } else if (mode === 'daily') {
-      if (customRangeBar) customRangeBar.classList.add('hidden');
-      if (monthlyKpis) monthlyKpis.classList.remove('hidden');
+      if (customRangeInputs) customRangeInputs.classList.remove('hidden');
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.remove('hidden');
       if (paneYearly) paneYearly.classList.add('hidden');
     } else if (mode === 'yearly') {
-      if (customRangeBar) customRangeBar.classList.add('hidden');
-      if (monthlyKpis) monthlyKpis.classList.add('hidden');
+      if (customRangeInputs) customRangeInputs.classList.add('hidden');
       if (paneOverview) paneOverview.classList.add('hidden');
       if (paneDaily) paneDaily.classList.add('hidden');
       if (paneYearly) paneYearly.classList.remove('hidden');
@@ -1821,7 +1787,7 @@ const App = {
     if (expEl) expEl.textContent = '฿' + totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (netEl) {
       netEl.textContent = (netBalance >= 0 ? '+' : '') + '฿' + netBalance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      netEl.className = `text-2xl sm:text-3xl font-extrabold num-font ${netBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`;
+      netEl.className = `text-sm sm:text-xl font-extrabold num-font mt-0.5 ${netBalance >= 0 ? 'text-white' : 'text-rose-300'}`;
     }
     
     if (isCustom) {
@@ -1835,13 +1801,13 @@ const App = {
     if (netStatusEl) {
       if (netBalance > 0) {
         netStatusEl.textContent = I18n.t('status_surplus');
-        netStatusEl.className = 'text-[11px] text-emerald-600 font-semibold mt-0.5';
+        netStatusEl.className = 'text-[9px] sm:text-[10px] text-emerald-300 font-bold block mt-0.5';
       } else if (netBalance === 0) {
         netStatusEl.textContent = I18n.t('status_balanced');
-        netStatusEl.className = 'text-[11px] text-slate-400 font-medium mt-0.5';
+        netStatusEl.className = 'text-[9px] sm:text-[10px] text-slate-300 font-medium block mt-0.5';
       } else {
         netStatusEl.textContent = I18n.t('status_deficit');
-        netStatusEl.className = 'text-[11px] text-rose-600 font-semibold mt-0.5';
+        netStatusEl.className = 'text-[9px] sm:text-[10px] text-rose-300 font-bold block mt-0.5';
       }
     }
 

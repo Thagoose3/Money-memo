@@ -64,6 +64,14 @@ const App = {
     this.renderMonthSelector();
     this.renderAll();
     BudgetSimulator.init();
+
+    // Ensure mobile browsers don't retain stale autofill or cached time
+    setTimeout(() => {
+      this.initDateTimeInput();
+    }, 150);
+    setTimeout(() => {
+      this.initDateTimeInput();
+    }, 500);
   },
 
   initTimeDropdowns() {
@@ -123,15 +131,23 @@ const App = {
     const hourSelect = document.getElementById('tx-hour');
     const minSelect = document.getElementById('tx-minute');
     const dateInput = document.getElementById('tx-date');
+    const curHour = pad(now.getHours());
+    const curMin = pad(now.getMinutes());
+    const curDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
     if (dateInput) {
-      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      dateInput.value = curDate;
     }
     if (hourSelect) {
-      hourSelect.value = pad(now.getHours());
+      hourSelect.value = curHour;
     }
     if (minSelect) {
-      minSelect.value = pad(now.getMinutes());
+      minSelect.value = curMin;
     }
+
+    const lang = I18n.getLanguage();
+    const timeMsg = `${curHour}:${curMin}`;
+    this.showToast(lang === 'en' ? `🕒 Time updated to ${timeMsg}` : `🕒 ปรับเป็นเวลาปัจจุบัน ${timeMsg} น. แล้ว`);
   },
 
   initCustomDateInputs() {

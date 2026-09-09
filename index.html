@@ -405,6 +405,15 @@
               <div class="sm:col-span-4">
                 <div class="flex items-center justify-between mb-1">
                   <label data-i18n="label_time" class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">เวลา (24 ชม.)</label>
+                  <!-- ปุ่มเวลาปัจจุบัน เฉพาะบนมือถือ (sm:hidden) -->
+                  <button 
+                    type="button" 
+                    onclick="App.setCurrentTime()" 
+                    class="sm:hidden text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 active:bg-amber-200 px-2 py-0.5 rounded-lg border border-amber-200/80 transition-all flex items-center gap-1 cursor-pointer shadow-2xs active:scale-95"
+                    title="ตั้งค่าเป็นเวลาปัจจุบันทันที"
+                  >
+                    <span>🕒 เวลาปัจจุบัน</span>
+                  </button>
                 </div>
                 <div class="flex items-center justify-center bg-slate-50/80 focus-within:bg-white border border-slate-200 rounded-2xl px-2 py-1.5 shadow-2xs gap-1">
                   <select id="tx-hour" class="flex-1 bg-transparent text-xs sm:text-sm font-extrabold text-slate-800 text-center focus:outline-none cursor-pointer py-0.5 num-font">

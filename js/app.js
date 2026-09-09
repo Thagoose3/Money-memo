@@ -12,6 +12,7 @@ const App = {
 
   // Tab 2 (History / Statement Feed) state
   historyDate: new Date(),
+  historyCycleMode: 'cycle', // 'cycle' (uses configured pay cycle) or 'calendar' (standard 1st-end)
   historyTypeFilter: 'all', // 'all', 'expense', 'income'
   historyCategoryFilter: 'all', // 'all' or categoryId
   historySearchQuery: '',
@@ -66,7 +67,6 @@ const App = {
     } else if (typeof SupabaseManager !== 'undefined') {
       SupabaseManager.init();
     }
-    this.initOverviewFilter();
     this.initTimeDropdowns();
     this.initDateTimeInput();
     this.initCustomDateInputs();
@@ -177,35 +177,24 @@ const App = {
     const startInput = document.getElementById('dash-custom-start-date');
     const endInput = document.getElementById('dash-custom-end-date');
 
-    try {
-      const savedPreset = localStorage.getItem('money_memo_pay_cycle_preset');
-      if (savedPreset) {
-        this.currentPayCyclePreset = (savedPreset === 'custom' || isNaN(Number(savedPreset))) 
-          ? savedPreset 
-          : Number(savedPreset);
-      } else {
-        this.currentPayCyclePreset = 28;
-      }
-      this.customStartDate = localStorage.getItem('money_memo_dash_start_date') || '';
-      this.customEndDate = localStorage.getItem('money_memo_dash_end_date') || '';
-    } catch (e) {
-      this.currentPayCyclePreset = 28;
-    }
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    this.currentPayCyclePreset = payCycleSetting.type;
 
-    if (this.currentPayCyclePreset === 'custom' && this.customStartDate && this.customEndDate) {
+    this.customStartDate = localStorage.getItem('money_memo_dash_start_date') || '';
+    this.customEndDate = localStorage.getItem('money_memo_dash_end_date') || '';
+
+    if (!this.customStartDate || !this.customEndDate) {
+      this.updateCustomDateRangeFromSelectedDate();
+    } else {
       if (startInput) startInput.value = this.customStartDate;
       if (endInput) endInput.value = this.customEndDate;
-    } else {
-      this.updateCustomDateRangeFromSelectedDate();
     }
 
     if (startInput) {
-      if (this.customStartDate) startInput.value = this.customStartDate;
       startInput.addEventListener('change', (e) => {
         this.customStartDate = e.target.value;
         this.currentPayCyclePreset = 'custom';
         try {
-          localStorage.setItem('money_memo_pay_cycle_preset', 'custom');
           localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
         } catch(err) {}
         this.renderMonthSelector();
@@ -214,12 +203,10 @@ const App = {
     }
 
     if (endInput) {
-      if (this.customEndDate) endInput.value = this.customEndDate;
       endInput.addEventListener('change', (e) => {
         this.customEndDate = e.target.value;
         this.currentPayCyclePreset = 'custom';
         try {
-          localStorage.setItem('money_memo_pay_cycle_preset', 'custom');
           localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
         } catch(err) {}
         this.renderMonthSelector();
@@ -229,51 +216,15 @@ const App = {
   },
 
   updateCustomDateRangeFromSelectedDate() {
-    const pad = (n) => String(n).padStart(2, '0');
-    const Y = this.selectedDate.getFullYear();
-    const M = this.selectedDate.getMonth(); // 0-11
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycle = StorageManager.getCycleDateRange(this.selectedDate, payCycleSetting);
 
-    let sDate, eDate;
-    const preset = this.currentPayCyclePreset || 28;
-
-    if (preset === 28) {
-      sDate = new Date(Y, M - 1, 28);
-      eDate = new Date(Y, M, 27);
-    } else if (preset === 25) {
-      sDate = new Date(Y, M - 1, 25);
-      eDate = new Date(Y, M, 24);
-    } else if (preset === 1) {
-      sDate = new Date(Y, M, 1);
-      eDate = new Date(Y, M + 1, 0);
-    } else if (preset === 'last30') {
-      const now = new Date(this.selectedDate);
-      sDate = new Date(now.getTime() - 30 * 86400000);
-      eDate = now;
-    } else if (preset === 'last7') {
-      const now = new Date(this.selectedDate);
-      sDate = new Date(now.getTime() - 7 * 86400000);
-      eDate = now;
-    } else {
-      if (this.customStartDate && this.customEndDate) {
-        const partsS = this.customStartDate.split('-');
-        const partsE = this.customEndDate.split('-');
-        const sDay = parseInt(partsS[2], 10) || 1;
-        const eDay = parseInt(partsE[2], 10) || 28;
-        sDate = new Date(Y, M - 1, sDay);
-        eDate = new Date(Y, M, eDay);
-      } else {
-        sDate = new Date(Y, M - 1, 28);
-        eDate = new Date(Y, M, 27);
-      }
-    }
-
-    this.customStartDate = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
-    this.customEndDate = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
+    this.customStartDate = cycle.startDate;
+    this.customEndDate = cycle.endDate;
 
     try {
       localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
       localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
-      localStorage.setItem('money_memo_pay_cycle_preset', String(preset));
     } catch(e) {}
 
     const startInput = document.getElementById('dash-custom-start-date');
@@ -284,14 +235,16 @@ const App = {
 
   applyPayCyclePreset(preset) {
     this.currentPayCyclePreset = preset;
-    try {
-      localStorage.setItem('money_memo_pay_cycle_preset', String(preset));
-    } catch(e) {}
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    payCycleSetting.type = preset;
+    if (preset === 'day_25') payCycleSetting.customDay = 25;
+    else if (preset === 'day_28') payCycleSetting.customDay = 28;
+    else if (preset === 'end_of_month') payCycleSetting.customDay = 31;
+    else if (preset === 'calendar') payCycleSetting.customDay = 1;
+    
+    StorageManager.savePayCycleSetting(payCycleSetting);
+
     this.updateCustomDateRangeFromSelectedDate();
-    try {
-      localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
-      localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
-    } catch(e) {}
     this.renderMonthSelector();
     this.renderDashboard();
   },
@@ -307,28 +260,11 @@ const App = {
   },
 
   shiftCustomDateRange(direction) {
-    const pad = (n) => String(n).padStart(2, '0');
-    if (this.customStartDate && this.customEndDate) {
-      const s = new Date(this.customStartDate + 'T00:00:00');
-      const e = new Date(this.customEndDate + 'T00:00:00');
-      s.setMonth(s.getMonth() + direction);
-      e.setMonth(e.getMonth() + direction);
-      this.customStartDate = `${s.getFullYear()}-${pad(s.getMonth() + 1)}-${pad(s.getDate())}`;
-      this.customEndDate = `${e.getFullYear()}-${pad(e.getMonth() + 1)}-${pad(e.getDate())}`;
-      this.selectedDate = new Date(e);
-    } else {
-      this.selectedDate.setMonth(this.selectedDate.getMonth() + direction);
-      this.updateCustomDateRangeFromSelectedDate();
-    }
-    try {
-      localStorage.setItem('money_memo_dash_start_date', this.customStartDate);
-      localStorage.setItem('money_memo_dash_end_date', this.customEndDate);
-    } catch(err) {}
-
-    const startInput = document.getElementById('dash-custom-start-date');
-    const endInput = document.getElementById('dash-custom-end-date');
-    if (startInput) startInput.value = this.customStartDate;
-    if (endInput) endInput.value = this.customEndDate;
+    // Shifting month always uses safe 1st-of-month math to avoid 31st overflow:
+    const curYear = this.selectedDate.getFullYear();
+    const curMonth = this.selectedDate.getMonth();
+    this.selectedDate = new Date(curYear, curMonth + direction, 1);
+    this.updateCustomDateRangeFromSelectedDate();
 
     this.renderMonthSelector();
     this.renderDashboard();
@@ -1659,7 +1595,7 @@ const App = {
     const monthIndex = this.selectedDate.getMonth();
     const year = this.selectedDate.getFullYear();
 
-    if (this.dashboardViewMode === 'custom') {
+    if (this.dashboardViewMode === 'custom' || this.dashboardViewMode === 'daily') {
       if (this.customStartDate && this.customEndDate) {
         const s = new Date(this.customStartDate + 'T00:00:00');
         const e = new Date(this.customEndDate + 'T00:00:00');
@@ -1671,7 +1607,7 @@ const App = {
           monthEl.textContent = `${s.getDate()} ${thMonths[s.getMonth()]} - ${e.getDate()} ${thMonths[e.getMonth()]} ${e.getFullYear() + 543}`;
         }
       } else {
-        monthEl.textContent = lang === 'en' ? 'Custom Pay Cycle' : 'รอบเงินเดือน / กำหนดเอง';
+        monthEl.textContent = lang === 'en' ? 'Pay Cycle' : 'รอบบัญชีเงินเดือน';
       }
       return;
     }
@@ -2465,12 +2401,22 @@ const App = {
   // ==========================================
   navigateHistoryMonth(direction) {
     if (!this.historyDate) this.historyDate = new Date();
-    this.historyDate.setMonth(this.historyDate.getMonth() + direction);
+    const curY = this.historyDate.getFullYear();
+    const curM = this.historyDate.getMonth();
+    this.historyDate = new Date(curY, curM + direction, 1);
     this.renderHistoryTab();
   },
 
   resetHistoryToCurrentMonth() {
     this.historyDate = new Date();
+    this.renderHistoryTab();
+  },
+
+  setHistoryCycleMode(mode) {
+    this.historyCycleMode = mode;
+    try {
+      localStorage.setItem('money_memo_history_cycle_mode', mode);
+    } catch(e) {}
     this.renderHistoryTab();
   },
 
@@ -2540,22 +2486,52 @@ const App = {
     const month = this.historyDate.getMonth(); // 0-11
     const lang = I18n.getLanguage();
 
+    try {
+      const savedMode = localStorage.getItem('money_memo_history_cycle_mode');
+      if (savedMode && (savedMode === 'cycle' || savedMode === 'calendar')) {
+        this.historyCycleMode = savedMode;
+      }
+    } catch(e) {}
+
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const isCalendarView = (this.historyCycleMode === 'calendar' || payCycleSetting.type === 'calendar');
+    const activeSetting = (this.historyCycleMode === 'calendar') ? { type: 'calendar', customDay: 1 } : payCycleSetting;
+    const cycleRange = StorageManager.getCycleDateRange(this.historyDate, activeSetting);
+
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const monthNames = (lang === 'en') ? enMonths : thaiMonths;
     const yearDisplay = (lang === 'en') ? year : (year + 543);
 
-    // 1. Month Label
+    // 1. Month / Cycle Label
     const monthLabelEl = document.getElementById('history-current-month-label');
     if (monthLabelEl) {
-      monthLabelEl.textContent = `${monthNames[month]} ${yearDisplay}`;
+      if (isCalendarView) {
+        monthLabelEl.textContent = `${monthNames[month]} ${yearDisplay}`;
+      } else {
+        monthLabelEl.textContent = (lang === 'en') ? cycleRange.labelEn : cycleRange.labelTh;
+      }
     }
 
-    // 2. Filter transactions for the selected month
+    // 1.1 Mode Switcher Pills Active States
+    const cycleModeBtn = document.getElementById('history-mode-cycle-btn');
+    const calModeBtn = document.getElementById('history-mode-calendar-btn');
+    const activePill = 'flex-1 sm:flex-initial px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer text-center';
+    const inactivePill = 'flex-1 sm:flex-initial px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer text-center';
+
+    if (cycleModeBtn) {
+      cycleModeBtn.className = (this.historyCycleMode === 'cycle') ? activePill : inactivePill;
+    }
+    if (calModeBtn) {
+      calModeBtn.className = (this.historyCycleMode === 'calendar') ? activePill : inactivePill;
+    }
+
+    // 2. Filter transactions for the selected range (Smart Pay Cycle Range)
     const allTxs = StorageManager.getTransactions();
-    const pad = (n) => String(n).padStart(2, '0');
-    const monthPrefix = `${year}-${pad(month + 1)}`;
-    const monthTxs = allTxs.filter(t => (t.date || '').startsWith(monthPrefix));
+    const monthTxs = allTxs.filter(t => {
+      const d = (t.date || '').slice(0, 10);
+      return d >= cycleRange.startDate && d <= cycleRange.endDate;
+    });
 
     // 3. Populate Category Filter Dropdown
     const catSelect = document.getElementById('history-category-filter');
@@ -3191,9 +3167,12 @@ const App = {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
 
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
+
     const currentTxs = allTxs.filter(t => {
-      const d = new Date(t.date);
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      const d = (t.date || '').slice(0, 10);
+      return d >= cycleRange.startDate && d <= cycleRange.endDate;
     });
 
     let income = 0;
@@ -3207,7 +3186,10 @@ const App = {
 
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthLabel = (lang === 'en') ? `${enMonths[currentMonth]} ${currentYear}` : `${thaiMonths[currentMonth]} ${currentYear + 543}`;
+    
+    const periodLabel = (payCycleSetting.type === 'calendar')
+      ? ((lang === 'en') ? `${enMonths[currentMonth]} ${currentYear}` : `${thaiMonths[currentMonth]} ${currentYear + 543}`)
+      : ((lang === 'en') ? cycleRange.labelEn : cycleRange.labelTh);
 
     heroEl.innerHTML = `
       <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800 space-y-3.5">
@@ -3219,7 +3201,7 @@ const App = {
         <div class="relative z-10 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-xs font-bold text-indigo-200 tracking-wider flex items-center gap-1.5">
-              <span>📅</span> <span>${monthLabel}</span>
+              <span>📅</span> <span>${periodLabel}</span>
             </span>
           </div>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold ${net >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
@@ -3229,7 +3211,7 @@ const App = {
 
         <!-- Middle Section: Big Net Balance -->
         <div class="relative z-10">
-          <span class="text-[11px] font-semibold text-slate-300 block">${lang === 'en' ? 'Net Balance This Month' : 'คงเหลือสุทธิเดือนนี้'}</span>
+          <span class="text-[11px] font-semibold text-slate-300 block">${lang === 'en' ? 'Net Balance This Period' : 'คงเหลือสุทธิรอบนี้'}</span>
           <div class="mt-0.5 flex items-baseline gap-2">
             <span class="text-3xl sm:text-4xl font-black tracking-tight num-font ${net >= 0 ? 'text-white' : 'text-rose-300'}">
               ${net < 0 ? '-' : ''}฿${Math.abs(net).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
@@ -3352,9 +3334,125 @@ const App = {
   // ==========================================
   renderSettingsTab() {
     this.renderSettingsGoogleAccount();
+    this.renderSettingsPayCycleSection();
     this.renderSettingsRecurringSummary();
     this.renderSettingsCategorySummary();
     this.renderSettingsStorageStats();
+  },
+
+  renderSettingsPayCycleSection() {
+    const setting = StorageManager.getPayCycleSetting();
+    const lang = I18n.getLanguage();
+    const badgeEl = document.getElementById('settings-paycycle-badge');
+    const customDayInput = document.getElementById('settings-custom-cycle-day');
+    const previewEl = document.getElementById('settings-paycycle-preview');
+
+    const types = ['end_of_month', 'calendar', 'day_25', 'day_28'];
+    types.forEach(t => {
+      const card = document.getElementById(`paycycle-opt-${t}`);
+      if (card) {
+        if (setting.type === t) {
+          card.className = 'paycycle-card p-3 sm:p-3.5 rounded-2xl border-2 border-indigo-600 bg-indigo-50/50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-xs ring-2 ring-indigo-500/10';
+        } else {
+          card.className = 'paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs';
+        }
+      }
+    });
+
+    if (customDayInput) {
+      customDayInput.value = (setting.type === 'custom') ? (setting.customDay || 1) : '';
+    }
+
+    if (badgeEl) {
+      if (setting.type === 'end_of_month') {
+        badgeEl.textContent = lang === 'en' ? '💼 End of Month' : '💼 วันสิ้นเดือน';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+      } else if (setting.type === 'day_25') {
+        badgeEl.textContent = lang === 'en' ? '💳 Day 25' : '💳 วันที่ 25';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+      } else if (setting.type === 'day_28') {
+        badgeEl.textContent = lang === 'en' ? '🏦 Day 28' : '🏦 วันที่ 28';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+      } else if (setting.type === 'custom') {
+        badgeEl.textContent = lang === 'en' ? `⚙️ Day ${setting.customDay}` : `⚙️ วันที่ ${setting.customDay}`;
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+      } else {
+        badgeEl.textContent = lang === 'en' ? '📆 Calendar (1-End)' : '📆 เดือนปฏิทิน';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 num-font';
+      }
+    }
+
+    if (previewEl) {
+      const now = new Date();
+      const cycle = StorageManager.getCycleDateRange(now, setting);
+      const rangeLabel = (lang === 'en') ? cycle.labelEn : cycle.labelTh;
+
+      let explanation = '';
+      if (setting.type === 'end_of_month') {
+        explanation = lang === 'en' ? 'Salary on last day of month is counted in this period' : 'เงินเดือนที่เข้าวันสุดท้ายของเดือนจะถูกนับเป็นรายรับของงวดนี้ทันที';
+      } else if (setting.type === 'day_25') {
+        explanation = lang === 'en' ? 'Income from 25th is counted for the upcoming period' : 'เงินเดือนเข้าวันที่ 25 จะถูกนำมาจัดสรรสำหรับงวดนี้';
+      } else if (setting.type === 'day_28') {
+        explanation = lang === 'en' ? 'Income from 28th is counted for the upcoming period' : 'เงินเดือนเข้าวันที่ 28 จะถูกนำมาจัดสรรสำหรับงวดนี้';
+      } else if (setting.type === 'custom') {
+        explanation = lang === 'en' ? `Cut-off every ${setting.customDay}th of month` : `ตัดรอบทุกวันที่ ${setting.customDay} ของเดือน`;
+      } else {
+        explanation = lang === 'en' ? 'Standard calendar month (1st to last day)' : 'รอบเดือนปฏิทินมาตรฐาน 1 ถึงวันสิ้นเดือน';
+      }
+
+      previewEl.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-base">ℹ️</span>
+          <div>
+            <span class="font-bold text-slate-800">${lang === 'en' ? 'Active Cycle Range' : 'รอบงวดบัญชีปัจจุบัน'}:</span>
+            <strong class="text-indigo-900 ml-1 num-font">${rangeLabel}</strong>
+          </div>
+        </div>
+        <span class="text-[11px] text-slate-500 font-medium sm:text-right">(${explanation})</span>
+      `;
+    }
+  },
+
+  handleSetPayCycleType(type) {
+    const setting = StorageManager.getPayCycleSetting();
+    setting.type = type;
+    if (type === 'day_25') setting.customDay = 25;
+    else if (type === 'day_28') setting.customDay = 28;
+    else if (type === 'end_of_month') setting.customDay = 31;
+    else if (type === 'calendar') setting.customDay = 1;
+
+    StorageManager.savePayCycleSetting(setting);
+    this.currentPayCyclePreset = type;
+
+    this.updateCustomDateRangeFromSelectedDate();
+    this.renderSettingsPayCycleSection();
+    this.renderTab1OverviewHero();
+    this.renderHistoryTab();
+    this.renderMonthSelector();
+    this.renderDashboard();
+
+    const lang = I18n.getLanguage();
+    this.showToast(lang === 'en' ? '🗓️ Payday cycle updated' : '🗓️ บันทึกรอบบัญชีและวันเงินเดือนออกแล้ว');
+  },
+
+  handleSetPayCycleCustomDay(day) {
+    const d = Math.max(1, Math.min(31, parseInt(day, 10) || 1));
+    const setting = {
+      type: 'custom',
+      customDay: d
+    };
+    StorageManager.savePayCycleSetting(setting);
+    this.currentPayCyclePreset = 'custom';
+
+    this.updateCustomDateRangeFromSelectedDate();
+    this.renderSettingsPayCycleSection();
+    this.renderTab1OverviewHero();
+    this.renderHistoryTab();
+    this.renderMonthSelector();
+    this.renderDashboard();
+
+    const lang = I18n.getLanguage();
+    this.showToast(lang === 'en' ? `🗓️ Pay cycle set to Day ${d}` : `🗓️ ตั้งวันตัดรอบเป็นวันที่ ${d} ของเดือนแล้ว`);
   },
 
   renderSettingsGoogleAccount() {

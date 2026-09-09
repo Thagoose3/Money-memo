@@ -374,23 +374,35 @@
           </div>
         </div>
 
-        <!-- Row 2: Month Navigator [ ◀ ] กันยายน 2026 [ ▶ ] -->
-        <div class="flex items-center justify-center gap-2 pt-0.5">
-          <button onclick="App.navigateHistoryMonth(-1)" class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs" title="เดือนก่อนหน้า">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          
-          <div class="px-5 py-1.5 bg-white border border-slate-200 rounded-2xl text-center shadow-2xs min-w-[150px]">
-            <span id="history-current-month-label" class="text-xs sm:text-sm font-extrabold text-slate-900 block num-font">กันยายน 2569</span>
+        <!-- Row 2: Month Navigator [ ◀ ] 31 ส.ค. - 30 ก.ย. 2569 [ ▶ ] & View Switcher -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-0.5">
+          <div class="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+            <button onclick="App.navigateHistoryMonth(-1)" class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0" title="เดือนก่อนหน้า">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            
+            <div class="px-3 sm:px-4 py-1.5 bg-white border border-slate-200 rounded-2xl text-center shadow-2xs flex-1 sm:min-w-[170px]">
+              <span id="history-current-month-label" class="text-xs sm:text-sm font-extrabold text-slate-900 block num-font">31 ส.ค. - 30 ก.ย. 2569</span>
+            </div>
+
+            <button onclick="App.navigateHistoryMonth(1)" class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0" title="เดือนถัดไป">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
+            </button>
+
+            <button onclick="App.resetHistoryToCurrentMonth()" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 px-2.5 sm:px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer active:scale-95 shadow-2xs shrink-0">
+              เดือนนี้
+            </button>
           </div>
 
-          <button onclick="App.navigateHistoryMonth(1)" class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-2xs" title="เดือนถัดไป">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" /></svg>
-          </button>
-
-          <button onclick="App.resetHistoryToCurrentMonth()" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer active:scale-95 shadow-2xs">
-            เดือนนี้
-          </button>
+          <!-- Cycle / Calendar View Switcher Pills -->
+          <div id="history-cycle-mode-container" class="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl text-xs w-full sm:w-auto justify-center">
+            <button type="button" id="history-mode-cycle-btn" onclick="App.setHistoryCycleMode('cycle')" class="flex-1 sm:flex-initial px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer text-center">
+              💼 รอบเงินเดือน
+            </button>
+            <button type="button" id="history-mode-calendar-btn" onclick="App.setHistoryCycleMode('calendar')" class="flex-1 sm:flex-initial px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer text-center">
+              📆 เดือนปฏิทิน
+            </button>
+          </div>
         </div>
 
         <!-- Row 3: Summary Capsule ( สรุปงวดนี้: 🟢 รับ +฿18,000 | 🔴 จ่าย -฿6,850 | คงเหลือ +฿11,150 ) -->
@@ -980,7 +992,108 @@
         </div>
       </div>
 
-      <!-- 3. Section: 🛠️ ปรับแต่งระบบ & ข้อมูลพื้นฐาน (Customization & Master Data) -->
+      <!-- 3. Section: 🗓️ รอบบัญชี & วันเงินเดือนออก (Payday / Cut-off Cycle) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🗓️</span>
+            <span data-i18n="settings_paycycle_title">รอบบัญชี & วันเงินเดือนออก (Payday Cycle)</span>
+          </h3>
+          <span id="settings-paycycle-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">
+            เดือนปฏิทิน
+          </span>
+        </div>
+        <p data-i18n="settings_paycycle_desc" class="text-[11px] text-slate-400">
+          กำหนดวันตัดรอบเงินเดือนเพื่อคำนวณรายรับ-รายจ่าย และยอดเงินคงเหลือในหน้าหลัก สเตทเมนต์ และสถิติให้ตรงกับชีวิตจริง
+        </p>
+
+        <!-- Pay Cycle Options Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="settings-paycycle-options">
+          <!-- 1. วันสิ้นเดือน (End of Month) -->
+          <button 
+            type="button" 
+            onclick="App.handleSetPayCycleType('end_of_month')" 
+            id="paycycle-opt-end_of_month"
+            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+          >
+            <span class="text-xl mt-0.5 shrink-0">💼</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-xs font-bold text-slate-900 block leading-tight">วันสิ้นเดือน (เช่น 31 ส.ค. - 30 ก.ย.)</span>
+              <span class="text-[10px] text-slate-400 block mt-0.5">สำหรับผู้ที่เงินเดือนออกทุกวันสุดท้ายของเดือน</span>
+            </div>
+          </button>
+
+          <!-- 2. เดือนปฏิทิน (Calendar 1-30) -->
+          <button 
+            type="button" 
+            onclick="App.handleSetPayCycleType('calendar')" 
+            id="paycycle-opt-calendar"
+            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+          >
+            <span class="text-xl mt-0.5 shrink-0">📆</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-xs font-bold text-slate-900 block leading-tight">เดือนปฏิทิน (วันที่ 1 - สิ้นเดือน)</span>
+              <span class="text-[10px] text-slate-400 block mt-0.5">ค่าเริ่มต้นทั่วไป (1 ก.ย. - 30 ก.ย.)</span>
+            </div>
+          </button>
+
+          <!-- 3. วันที่ 25 -->
+          <button 
+            type="button" 
+            onclick="App.handleSetPayCycleType('day_25')" 
+            id="paycycle-opt-day_25"
+            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+          >
+            <span class="text-xl mt-0.5 shrink-0">💳</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 25 (25 ส.ค. - 24 ก.ย.)</span>
+              <span class="text-[10px] text-slate-400 block mt-0.5">สำหรับพนักงานที่เงินเดือนออกวันที่ 25</span>
+            </div>
+          </button>
+
+          <!-- 4. วันที่ 28 -->
+          <button 
+            type="button" 
+            onclick="App.handleSetPayCycleType('day_28')" 
+            id="paycycle-opt-day_28"
+            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+          >
+            <span class="text-xl mt-0.5 shrink-0">🏦</span>
+            <div class="flex-1 min-w-0">
+              <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 28 (28 ส.ค. - 27 ก.ย.)</span>
+              <span class="text-[10px] text-slate-400 block mt-0.5">สำหรับพนักงานที่เงินเดือนออกวันที่ 28</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Custom Day Input row -->
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-1.5">
+            <span>⚙️</span>
+            <span class="font-semibold text-slate-700">หรือกำหนดวันที่ตัดรอบเอง:</span>
+          </div>
+          <div class="flex items-center gap-1.5 self-end sm:self-center">
+            <span class="text-slate-400 text-[11px]">วันที่</span>
+            <input 
+              type="number" 
+              id="settings-custom-cycle-day" 
+              min="1" 
+              max="31" 
+              class="w-14 px-2 py-1 bg-white border border-slate-200 rounded-xl text-xs font-bold text-center text-slate-800 num-font"
+              placeholder="1"
+              onchange="App.handleSetPayCycleCustomDay(this.value)"
+            />
+            <span class="text-slate-400 text-[11px]">ของทุกเดือน</span>
+          </div>
+        </div>
+
+        <!-- Live Cycle Preview Box -->
+        <div id="settings-paycycle-preview" class="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-xs text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+          <!-- Dynamically updated via JS -->
+        </div>
+      </div>
+
+      <!-- 4. Section: 🛠️ ปรับแต่งระบบ & ข้อมูลพื้นฐาน (Customization & Master Data) -->
       <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
         <div>
           <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">

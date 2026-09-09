@@ -7,7 +7,13 @@ const STORAGE_KEYS = {
   CATEGORIES: 'smart_expense_categories_v1',
   BUDGET_SIMULATOR: 'smart_expense_budget_sim_v1',
   RECURRING_ITEMS: 'smart_expense_recurring_list_v2',
-  DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1'
+  DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1',
+  PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1'
+};
+
+const DEFAULT_PAY_CYCLE = {
+  type: 'calendar', // 'calendar' | 'end_of_month' | 'day_25' | 'day_28' | 'custom'
+  customDay: 1
 };
 
 const DEFAULT_CATEGORIES = [
@@ -540,6 +546,111 @@ const StorageManager = {
     }
   },
 
+  // --- รอบบัญชี & วันเงินเดือนออก (Payday / Cut-off Cycle) ---
+  _payCycleSetting: null,
+
+  getPayCycleSetting() {
+    if (this._payCycleSetting) return this._payCycleSetting;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PAY_CYCLE);
+      if (!data) {
+        // Migration support from legacy pay_cycle_preset key
+        const legacyPreset = localStorage.getItem('money_memo_pay_cycle_preset');
+        if (legacyPreset === '25') {
+          this._payCycleSetting = { type: 'day_25', customDay: 25 };
+        } else if (legacyPreset === '28') {
+          this._payCycleSetting = { type: 'day_28', customDay: 28 };
+        } else if (legacyPreset === 'end_of_month' || legacyPreset === 'last_day') {
+          this._payCycleSetting = { type: 'end_of_month', customDay: 31 };
+        } else {
+          this._payCycleSetting = JSON.parse(JSON.stringify(DEFAULT_PAY_CYCLE));
+        }
+        return this._payCycleSetting;
+      }
+      this._payCycleSetting = JSON.parse(data);
+      return this._payCycleSetting;
+    } catch (e) {
+      this._payCycleSetting = JSON.parse(JSON.stringify(DEFAULT_PAY_CYCLE));
+      return this._payCycleSetting;
+    }
+  },
+
+  savePayCycleSetting(setting) {
+    this._payCycleSetting = setting;
+    try {
+      localStorage.setItem(STORAGE_KEYS.PAY_CYCLE, JSON.stringify(setting));
+    } catch (e) {
+      console.error('Error saving pay cycle setting:', e);
+    }
+  },
+
+  getCycleDateRange(referenceDate = new Date(), payCycleSetting = null) {
+    const setting = payCycleSetting || this.getPayCycleSetting();
+    const ref = new Date(referenceDate);
+    const Y = ref.getFullYear();
+    const M = ref.getMonth(); // 0 to 11
+    const pad = (n) => String(n).padStart(2, '0');
+
+    let sDate, eDate;
+
+    if (setting.type === 'end_of_month' || setting.type === 'last_day') {
+      // Last day of previous month to last day of current month (e.g. 31 Aug to 30 Sep)
+      sDate = new Date(Y, M, 0); // Last day of month M-1
+      eDate = new Date(Y, M + 1, 0); // Last day of month M
+    } else if (setting.type === 'day_25') {
+      sDate = new Date(Y, M - 1, 25);
+      eDate = new Date(Y, M, 24);
+    } else if (setting.type === 'day_28') {
+      sDate = new Date(Y, M - 1, 28);
+      eDate = new Date(Y, M, 27);
+    } else if (setting.type === 'custom') {
+      const customDay = Math.max(1, Math.min(31, parseInt(setting.customDay, 10) || 1));
+      if (customDay === 1) {
+        sDate = new Date(Y, M, 1);
+        eDate = new Date(Y, M + 1, 0);
+      } else {
+        const prevMonthMax = new Date(Y, M, 0).getDate();
+        const actualStartDay = Math.min(customDay, prevMonthMax);
+        sDate = new Date(Y, M - 1, actualStartDay);
+
+        const curMonthMax = new Date(Y, M + 1, 0).getDate();
+        const actualEndDay = Math.min(customDay - 1, curMonthMax);
+        eDate = new Date(Y, M, actualEndDay);
+      }
+    } else {
+      // 'calendar' (1st of current month to last day of current month)
+      sDate = new Date(Y, M, 1);
+      eDate = new Date(Y, M + 1, 0);
+    }
+
+    const startDateStr = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
+    const endDateStr = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
+
+    const thShortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const enShortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const thFullMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const enFullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const labelTh = `${sDate.getDate()} ${thShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${thShortMonths[eDate.getMonth()]} ${eDate.getFullYear() + 543}`;
+    const labelEn = `${sDate.getDate()} ${enShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${enShortMonths[eDate.getMonth()]} ${eDate.getFullYear()}`;
+    const monthTitleTh = `${thFullMonths[M]} ${Y + 543}`;
+    const monthTitleEn = `${enFullMonths[M]} ${Y}`;
+
+    return {
+      startDate: startDateStr,
+      endDate: endDateStr,
+      sDate,
+      eDate,
+      labelTh,
+      labelEn,
+      monthTitleTh,
+      monthTitleEn,
+      year: Y,
+      monthIndex: M,
+      isCalendar: setting.type === 'calendar'
+    };
+  },
+
   // --- นำเข้า / ส่งออก ข้อมูล พร้อมตัวกรองและหัวตารางสมบูรณ์ ---
   getFilteredTransactions(filters = {}) {
     const transactions = this.getTransactions();
@@ -670,12 +781,13 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '2.9',
+      version: '3.9.1',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
       recurringItems: this.getRecurringItems(),
-      budgetSimulator: this.getBudgetSimulator()
+      budgetSimulator: this.getBudgetSimulator(),
+      payCycleSetting: this.getPayCycleSetting()
     };
 
     const jsonStr = JSON.stringify(backupData, null, 2);
@@ -703,6 +815,7 @@ const StorageManager = {
         if (Array.isArray(data.categories)) this.saveCategories(data.categories);
         if (Array.isArray(data.recurringItems)) this.saveRecurringItems(data.recurringItems);
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
+        if (data.payCycleSetting) this.savePayCycleSetting(data.payCycleSetting);
       }
       return { success: true };
     } catch (e) {

@@ -13,6 +13,7 @@ const App = {
   // Tab 2 (History / Statement Feed) state
   historyDate: new Date(),
   historyTypeFilter: 'all', // 'all', 'expense', 'income'
+  historyCategoryFilter: 'all', // 'all' or categoryId
   historySearchQuery: '',
   
   // Tab 4 (Recurring Items) state
@@ -2510,9 +2511,25 @@ const App = {
     this.renderHistoryTab();
   },
 
+  setHistoryCategoryFilter(catId) {
+    this.historyCategoryFilter = catId;
+    this.renderHistoryTab();
+  },
+
   onHistorySearch(query) {
     this.historySearchQuery = (query || '').toLowerCase().trim();
     this.renderHistoryTab();
+  },
+
+  quickOpenAddForm() {
+    this.switchTab('transactions');
+    setTimeout(() => {
+      const amountInput = document.getElementById('tx-amount');
+      if (amountInput) {
+        amountInput.focus();
+        amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 80);
   },
 
   renderHistoryTab() {
@@ -2539,7 +2556,21 @@ const App = {
     const monthPrefix = `${year}-${pad(month + 1)}`;
     const monthTxs = allTxs.filter(t => (t.date || '').startsWith(monthPrefix));
 
-    // 3. Flow Summary Banner Stats (Calculate for whole month)
+    // 3. Populate Category Filter Dropdown
+    const catSelect = document.getElementById('history-category-filter');
+    if (catSelect) {
+      const currentCatVal = this.historyCategoryFilter || 'all';
+      let cats = StorageManager.getCategories();
+      if (this.historyTypeFilter !== 'all') {
+        cats = cats.filter(c => c.type === this.historyTypeFilter);
+      }
+      catSelect.innerHTML = `<option value="all">🏷️ ${lang === 'en' ? 'All Categories' : 'ทุกหมวดหมู่'}</option>` + cats.map(c => {
+        const cName = StorageManager.getCategoryDisplayName(c);
+        return `<option value="${c.id}" ${c.id === currentCatVal ? 'selected' : ''}>${c.emoji} ${cName}</option>`;
+      }).join('');
+    }
+
+    // 4. Flow Summary Capsule Stats (Calculate for whole month)
     let totalIncome = 0;
     let totalExpense = 0;
     monthTxs.forEach(t => {
@@ -2556,14 +2587,15 @@ const App = {
     if (bannerCountEl) bannerCountEl.textContent = lang === 'en' ? `${monthTxs.length} items` : `${monthTxs.length} รายการ`;
     if (bannerNetEl) {
       bannerNetEl.textContent = `${net < 0 ? '-' : (net > 0 ? '+' : '')}฿${Math.abs(net).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
-      bannerNetEl.className = `text-2xl sm:text-3xl font-black tracking-tight num-font ${net >= 0 ? 'text-white' : 'text-rose-300'}`;
+      bannerNetEl.className = `font-black ${net >= 0 ? 'text-emerald-300' : 'text-rose-300'}`;
     }
     if (bannerIncEl) bannerIncEl.textContent = `+฿${totalIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
     if (bannerExpEl) bannerExpEl.textContent = `-฿${totalExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
 
-    // 4. Apply Type and Search Filters to Feed
+    // 5. Apply Type, Category, and Search Filters to Feed
     const filteredTxs = monthTxs.filter(t => {
       if (this.historyTypeFilter !== 'all' && t.type !== this.historyTypeFilter) return false;
+      if (this.historyCategoryFilter && this.historyCategoryFilter !== 'all' && t.categoryId !== this.historyCategoryFilter) return false;
       if (this.historySearchQuery) {
         const cat = StorageManager.getCategoryById(t.categoryId);
         const matchNote = (t.note || '').toLowerCase().includes(this.historySearchQuery);
@@ -2582,9 +2614,9 @@ const App = {
       feedContainer.innerHTML = `
         <div class="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 p-6 space-y-2 shadow-2xs">
           <span class="text-4xl block mb-1">📋</span>
-          <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No transactions found for this month' : 'ไม่มีรายการบันทึกในเดือนนี้'}</p>
-          <p class="text-xs text-slate-400">${lang === 'en' ? 'Tap the home tab to add your first transaction' : 'กดไปที่หน้าหลักเพื่อเริ่มบันทึกรายรับหรือรายจ่ายได้เลย'}</p>
-          <button type="button" onclick="App.switchTab('transactions')" class="mt-2 inline-flex items-center gap-1 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-xs hover:bg-slate-800 transition-all cursor-pointer">
+          <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No transactions found for this filter' : 'ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก'}</p>
+          <p class="text-xs text-slate-400">${lang === 'en' ? 'Try adjusting your search or add a new transaction' : 'ลองปรับตัวกรองหรือกดปุ่มบันทึกรายการใหม่'}</p>
+          <button type="button" onclick="App.quickOpenAddForm()" class="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-xs hover:bg-slate-800 transition-all cursor-pointer">
             <span>➕ ไปหน้าบันทึกรายการ</span>
           </button>
         </div>
@@ -2592,7 +2624,7 @@ const App = {
       return;
     }
 
-    // 5. Group by YYYY-MM-DD
+    // 6. Group by YYYY-MM-DD
     const groups = {};
     filteredTxs.forEach(t => {
       const dateKey = (t.date || '').slice(0, 10);
@@ -2606,9 +2638,7 @@ const App = {
     const yest = new Date(now.getTime() - 86400000);
     const yesterdayKey = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
 
-    const thaiDayNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
     const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    const enDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const enMonthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     feedContainer.innerHTML = sortedDates.map(dateKey => {
@@ -2621,15 +2651,18 @@ const App = {
       } else if (dateKey === yesterdayKey) {
         dayTitle = lang === 'en' ? 'Yesterday' : 'เมื่อวาน';
       } else {
-        dayTitle = lang === 'en' ? enDayNames[d.getDay()] : `วัน${thaiDayNames[d.getDay()]}`;
+        dayTitle = '';
       }
 
       const formattedDateStr = lang === 'en'
         ? `${d.getDate()} ${enMonthsShort[d.getMonth()]} ${d.getFullYear()}`
         : `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${d.getFullYear() + 543}`;
 
+      const fullDayHeader = dayTitle ? `${dayTitle} (${formattedDateStr})` : formattedDateStr;
+
       const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
       const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      const dayNet = dayIncome - dayExpense;
 
       const itemsHtml = dayTxs.map(t => {
         const cat = StorageManager.getCategoryById(t.categoryId);
@@ -2641,36 +2674,36 @@ const App = {
         return `
           <div 
             onclick="App.openTransactionDetailModal('${t.id}')"
-            class="flex items-center justify-between p-3 hover:bg-slate-50/90 active:bg-slate-100/90 transition-all cursor-pointer group select-none"
+            class="flex items-center justify-between p-3 sm:p-3.5 hover:bg-slate-50/90 active:bg-slate-100 transition-all cursor-pointer group select-none"
           >
-            <!-- Left: Avatar Icon + Category Name & Note -->
+            <!-- Left: Emoji + Category (Note) & Time • Payment -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
                 ${cat.emoji}
               </div>
               <div class="min-w-0 flex-1 pr-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[140px] sm:max-w-[220px]">${catName}</span>
-                  ${t.note ? `<span class="text-[11px] text-slate-500 font-medium truncate max-w-[140px] sm:max-w-[200px]">"${t.note}"</span>` : ''}
+                  <span class="font-bold text-slate-900 text-xs sm:text-sm truncate max-w-[150px] sm:max-w-[220px]">${catName}</span>
+                  ${t.note ? `<span class="text-xs text-slate-500 font-medium truncate max-w-[160px] sm:max-w-[240px]">(${t.note})</span>` : ''}
                 </div>
-                <div class="flex items-center gap-1.5 mt-0.5">
-                  <span class="text-[10px] sm:text-[11px] text-slate-400 font-semibold num-font">${timeStr ? `${timeStr} น.` : ''}</span>
-                  <span class="text-[10px] px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-500 font-medium">${t.paymentMethod}</span>
+                <div class="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 font-medium">
+                  ${timeStr ? `<span>${timeStr} น.</span> <span>•</span>` : ''}
+                  <span class="text-slate-500">${t.paymentMethod}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Right: Amount + Actions / Chevron -->
-            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+            <!-- Right: Amount & Actions -->
+            <div class="flex items-center gap-2 shrink-0">
               <div class="text-right">
-                <span class="text-xs sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+                <span class="text-sm sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
                   ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </span>
-                <span class="block text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
+                <span class="block sm:hidden text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
               </div>
 
-              <!-- Desktop Direct Edit/Delete -->
-              <div class="hidden sm:flex items-center opacity-70 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+              <!-- Desktop Direct Edit/Delete Buttons -->
+              <div class="hidden sm:flex items-center opacity-70 group-hover:opacity-100 transition-opacity ml-1" onclick="event.stopPropagation()">
                 <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer" title="${I18n.t('btn_edit')}">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 </button>
@@ -2689,17 +2722,16 @@ const App = {
       }).join('');
 
       return `
-        <div class="pastel-card rounded-3xl overflow-hidden shadow-2xs">
-          <!-- Daily Header Banner -->
+        <div class="pastel-card rounded-3xl overflow-hidden shadow-2xs border border-slate-200/80">
+          <!-- Daily Header Banner: 📅 วันนี้ (9 ก.ย. 2026)      [ รวมวัน: -฿120.00 ] -->
           <div class="bg-slate-50/90 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${dateKey === todayKey ? 'bg-indigo-600 text-white' : 'bg-slate-200/80 text-slate-700'}">${dayTitle}</span>
-              <span class="text-xs font-bold text-slate-700">${formattedDateStr}</span>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm">📅</span>
+              <span class="text-xs font-bold text-slate-800">${fullDayHeader}</span>
               <span class="text-[10px] text-slate-400 font-semibold">(${dayTxs.length})</span>
             </div>
-            <div class="flex items-center gap-2 text-xs font-bold num-font">
-              ${dayIncome > 0 ? `<span class="text-emerald-600">+฿${dayIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
-              ${dayExpense > 0 ? `<span class="text-rose-600">-฿${dayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
+            <div class="px-2.5 py-0.5 rounded-full text-[11px] font-black num-font ${dayNet >= 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'}">
+              รวมวัน: ${dayNet < 0 ? '-' : (dayNet > 0 ? '+' : '')}฿${Math.abs(dayNet).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </div>
           </div>
 

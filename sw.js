@@ -3,17 +3,17 @@
  * Provides instant page load, offline capability, and background asset revalidation
  */
 
-const CACHE_NAME = 'money-memo-v3.5';
+const CACHE_NAME = 'money-memo-v3.6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
-  './js/i18n.js?v=3.5',
-  './js/storage.js?v=3.5',
-  './js/firebase-client.js?v=3.5',
-  './js/budget-simulator.js?v=3.5',
-  './js/app.js?v=3.5',
+  './js/i18n.js?v=3.6',
+  './js/storage.js?v=3.6',
+  './js/firebase-client.js?v=3.6',
+  './js/budget-simulator.js?v=3.6',
+  './js/app.js?v=3.6',
   './assets/favicon.png',
   './assets/icon-192.png',
   './assets/icon-512.png',

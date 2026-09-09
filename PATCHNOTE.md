@@ -4,7 +4,18 @@
 
 ---
 
-## 📱 Version 3.5 (Current Version) — *Dedicated K PLUS-Style Statement Feed & Recurring Items Deletion Fix*
+## 📱 Version 3.6 (Current Version) — *Full K PLUS Mockup Design & Raised Quick Add Dock*
+**วันที่อัปเดต:** กันยายน 2026
+
+### 🎨 ปรับหน้าประวัติรายการ & สเตทเมนต์ ให้ตรงตาม Mockup 100%
+- **Month Switcher & Summary Capsule**: แถบเลือกเดือน `[ ◀ ] กันยายน 2569 [ ▶ ]` พร้อมแคปซูลสรุปยอดเงิน `( 🟢 รับ | 🔴 จ่าย | คงเหลือสุทธิ )` สไตล์มินิมอลโมเดิร์น
+- **Search & Category Dropdown Filter**: เพิ่มตัวกรองหมวดหมู่ `🏷️ ทุกหมวดหมู่` และชิปกรอง `ทั้งหมด`, `🔴 รายจ่าย`, `🟢 รายรับ` ให้ค้นหาและกรองได้ละเอียดขึ้น
+- **Daily Grouped Cards**: บัตรกลุ่มรายการประจำวัน `📅 วันนี้ (9 ก.ย. 2569)` พร้อมป้าย `[ รวมวัน: -฿120 ]` ทางขวา และรายการแสดงผล `🍔 หมวดหมู่ (โน้ตช่วยจำ)` และ `เวลา • ช่องทางชำระเงิน`
+- **Center Raised Action Button ( ➕ ) บน Mobile Dock**: ปุ่มลัดตรงกลางแบบลอยเด่น สำหรับกดบันทึกรายการด่วนได้จากทุกหน้าจอ สลับไปโฟกัสช่องจำนวนเงินทันที
+
+---
+
+## 📱 Version 3.5 — *Dedicated Statement Feed & Recurring Items Deletion Fix*
 **วันที่อัปเดต:** กันยายน 2026
 
 ### 📋 หน้าประวัติรายการ & สเตทเมนต์แยก (Dedicated Statement Feed — K PLUS Style)

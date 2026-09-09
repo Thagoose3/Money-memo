@@ -225,6 +225,7 @@ const TRANSLATIONS = {
     modal_batch_select_all: 'เลือกทั้งหมด',
     modal_batch_btn_save: '➕ บันทึกรายการที่เลือกเข้าบัญชี',
 
+    modal_detail_title: 'รายละเอียดรายการ',
     modal_edit_title: 'แก้ไขข้อมูลรายการ',
     modal_edit_btn_save: 'บันทึกการแก้ไข',
 
@@ -466,6 +467,7 @@ const TRANSLATIONS = {
     modal_batch_select_all: 'Select All',
     modal_batch_btn_save: '➕ Log Selected Items',
 
+    modal_detail_title: 'Transaction Details',
     modal_edit_title: 'Edit Transaction',
     modal_edit_btn_save: 'Save Changes',
 

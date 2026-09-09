@@ -2432,33 +2432,40 @@ const App = {
       const d = new Date(t.date);
       const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
       const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
-      const catColor = cat.color || (isExp ? '#f87171' : '#34d399');
 
       return `
-        <div class="bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/80 hover:border-slate-300 hover:shadow-xs transition-all flex items-center justify-between group">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow-2xs flex-shrink-0" style="background-color: ${catColor}15; color: ${catColor}; border: 1px solid ${catColor}30;">
+        <div 
+          onclick="App.openTransactionDetailModal('${t.id}')"
+          class="bg-white hover:bg-slate-50/90 active:bg-slate-100 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between cursor-pointer group select-none"
+        >
+          <!-- Left Side: Emoji Icon + Category Name & Date/Time -->
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-base sm:text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
               ${cat.emoji}
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1 pr-1">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="font-bold text-slate-900 text-xs truncate max-w-[130px] sm:max-w-[180px]">${catName}</span>
-                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
-                  ${typeBadge}
-                </span>
-                <span class="text-[10px] text-slate-400 font-medium">${dateFormatted}</span>
+                <span class="font-bold text-slate-800 text-xs sm:text-sm truncate max-w-[130px] sm:max-w-[200px]">${catName}</span>
+                ${t.note ? `<span class="hidden sm:inline text-[11px] text-slate-500 font-medium truncate max-w-[160px]">"${t.note}"</span>` : ''}
               </div>
-              <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">${t.paymentMethod}</span>
-                ${t.note ? `<span class="text-[11px] text-slate-600 font-medium truncate max-w-[140px] sm:max-w-xs">"${t.note}"</span>` : ''}
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[10px] sm:text-[11px] text-slate-400 font-medium num-font">${dateFormatted}</span>
+                <span class="hidden sm:inline text-[10px] px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-500 font-medium">${t.paymentMethod}</span>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-2.5 sm:gap-3 flex-shrink-0 ml-2">
-            <span class="text-sm sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-              ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-            </span>
-            <div class="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
+
+          <!-- Right Side: Amount in Red/Green + Arrow / Action Buttons -->
+          <div class="flex items-center gap-2 sm:gap-3 shrink-0 ml-1">
+            <div class="text-right">
+              <span class="text-xs sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+                ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              </span>
+              <span class="block sm:hidden text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
+            </div>
+
+            <!-- Desktop Direct Edit/Delete Buttons -->
+            <div class="hidden sm:flex items-center opacity-70 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
               <button onclick="App.openEditModal('${t.id}')" class="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer" title="${I18n.t('btn_edit')}">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               </button>
@@ -2466,10 +2473,105 @@ const App = {
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             </div>
+
+            <!-- Mobile Arrow Chevron -->
+            <svg class="w-4 h-4 text-slate-300 sm:hidden shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
       `;
     }).join('');
+  },
+
+  openTransactionDetailModal(id) {
+    const tx = StorageManager.getTransactionById(id);
+    if (!tx) return;
+
+    const modal = document.getElementById('tx-detail-modal');
+    const content = document.getElementById('tx-detail-content');
+    const actions = document.getElementById('tx-detail-actions');
+    if (!modal || !content || !actions) return;
+
+    const cat = StorageManager.getCategoryById(tx.categoryId);
+    const catName = StorageManager.getCategoryDisplayName(cat);
+    const isExp = tx.type === 'expense';
+    const lang = I18n.getLanguage();
+    const typeLabel = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+    
+    const d = new Date(tx.date);
+    const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    const timeFormatted = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+    content.innerHTML = `
+      <!-- Hero Top inside Modal -->
+      <div class="text-center p-4 rounded-3xl ${isExp ? 'bg-rose-50/70 border border-rose-100/70' : 'bg-emerald-50/70 border border-emerald-100/70'}">
+        <div class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center text-3xl mx-auto shadow-xs border ${isExp ? 'border-rose-200' : 'border-emerald-200'}">
+          ${cat.emoji}
+        </div>
+        <div class="mt-2.5">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+            <span>${isExp ? '🔴' : '🟢'}</span> ${typeLabel}
+          </span>
+        </div>
+        <p class="text-3xl font-black num-font mt-2 ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+          ${isExp ? '-' : '+'}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+        </p>
+        <p class="text-xs font-bold text-slate-700 mt-1">${catName}</p>
+      </div>
+
+      <!-- Info Details Grid -->
+      <div class="bg-slate-50/80 rounded-2xl p-3.5 space-y-3 border border-slate-100 text-xs">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+          <span class="text-slate-400 font-medium">${lang === 'en' ? 'Date & Time' : 'วันที่และเวลา'}</span>
+          <span class="font-bold text-slate-800 num-font">${dateFormatted} • ${timeFormatted} น.</span>
+        </div>
+
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+          <span class="text-slate-400 font-medium">${lang === 'en' ? 'Category' : 'หมวดหมู่'}</span>
+          <span class="font-bold text-slate-800 flex items-center gap-1">${cat.emoji} ${catName}</span>
+        </div>
+
+        <div class="flex items-center justify-between pb-2 border-b border-slate-200/60">
+          <span class="text-slate-400 font-medium">${lang === 'en' ? 'Payment Method' : 'ช่องทางชำระเงิน'}</span>
+          <span class="font-bold text-slate-800">${tx.paymentMethod || '-'}</span>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <span class="text-slate-400 font-medium">${lang === 'en' ? 'Note' : 'บันทึกช่วยจำ (Note)'}</span>
+          <p class="font-semibold text-slate-800 bg-white p-2.5 rounded-xl border border-slate-200/70 text-xs">
+            ${tx.note ? `"${tx.note}"` : `<span class="text-slate-400 italic">${lang === 'en' ? 'No note' : 'ไม่มีบันทึกช่วยจำ'}</span>`}
+          </p>
+        </div>
+      </div>
+    `;
+
+    actions.innerHTML = `
+      <button 
+        type="button" 
+        onclick="App.closeTransactionDetailModal(); App.openDeleteModal('${tx.id}');" 
+        class="flex-1 py-2.5 px-3 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-2xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <span>${lang === 'en' ? 'Delete' : 'ลบรายการ'}</span>
+      </button>
+
+      <button 
+        type="button" 
+        onclick="App.closeTransactionDetailModal(); App.openEditModal('${tx.id}');" 
+        class="flex-1 py-2.5 px-3 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-2xl border border-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+        <span>${lang === 'en' ? 'Edit' : 'แก้ไขรายการ'}</span>
+      </button>
+    `;
+
+    modal.classList.add('show');
+  },
+
+  closeTransactionDetailModal() {
+    const modal = document.getElementById('tx-detail-modal');
+    if (modal) modal.classList.remove('show');
   },
 
   openEditModal(id) {

@@ -96,31 +96,25 @@ const App = {
 
     if (dateInput) {
       dateInput.value = curDate;
-      dateInput.addEventListener('change', (e) => {
-        try { localStorage.setItem('money_memo_last_tx_date', e.target.value); } catch(err){}
-      });
     }
 
-    let savedHour = null;
-    let savedMin = null;
-    try {
-      savedHour = localStorage.getItem('money_memo_last_tx_hour');
-      savedMin = localStorage.getItem('money_memo_last_tx_min');
-    } catch (e) {}
+    const curHour = pad(now.getHours());
+    const curMin = pad(now.getMinutes());
 
     if (hourSelect) {
-      hourSelect.value = (savedHour !== null && savedHour !== undefined && savedHour !== '') ? savedHour : pad(now.getHours());
-      hourSelect.addEventListener('change', (e) => {
-        try { localStorage.setItem('money_memo_last_tx_hour', e.target.value); } catch(err){}
-      });
+      hourSelect.value = curHour;
     }
 
     if (minSelect) {
-      minSelect.value = (savedMin !== null && savedMin !== undefined && savedMin !== '') ? savedMin : pad(now.getMinutes());
-      minSelect.addEventListener('change', (e) => {
-        try { localStorage.setItem('money_memo_last_tx_min', e.target.value); } catch(err){}
-      });
+      minSelect.value = curMin;
     }
+
+    // Clean up stale localStorage time keys so form always defaults to current time
+    try {
+      localStorage.removeItem('money_memo_last_tx_hour');
+      localStorage.removeItem('money_memo_last_tx_min');
+      localStorage.removeItem('money_memo_last_tx_date');
+    } catch(e) {}
   },
 
   setCurrentTime() {
@@ -128,15 +122,15 @@ const App = {
     const pad = (n) => String(n).padStart(2, '0');
     const hourSelect = document.getElementById('tx-hour');
     const minSelect = document.getElementById('tx-minute');
-    const h = pad(now.getHours());
-    const m = pad(now.getMinutes());
+    const dateInput = document.getElementById('tx-date');
+    if (dateInput) {
+      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
     if (hourSelect) {
-      hourSelect.value = h;
-      try { localStorage.setItem('money_memo_last_tx_hour', h); } catch(err){}
+      hourSelect.value = pad(now.getHours());
     }
     if (minSelect) {
-      minSelect.value = m;
-      try { localStorage.setItem('money_memo_last_tx_min', m); } catch(err){}
+      minSelect.value = pad(now.getMinutes());
     }
   },
 
@@ -286,6 +280,19 @@ const App = {
   },
 
   bindEvents() {
+    // Auto-update date & time to current on page focus, visibility change, or pageshow (especially for mobile devices & PWAs)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.initDateTimeInput();
+      }
+    });
+    window.addEventListener('focus', () => {
+      this.initDateTimeInput();
+    });
+    window.addEventListener('pageshow', () => {
+      this.initDateTimeInput();
+    });
+
     // Tab switching (Both Desktop top pills and Mobile bottom bar)
     document.querySelectorAll('[data-tab-target]').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1534,12 +1541,6 @@ const App = {
     const hVal = hourSelect?.value || pad(now.getHours());
     const mVal = minSelect?.value || pad(now.getMinutes());
     const fullDateTime = `${dVal}T${hVal}:${mVal}`;
-
-    try {
-      localStorage.setItem('money_memo_last_tx_date', dVal);
-      localStorage.setItem('money_memo_last_tx_hour', hVal);
-      localStorage.setItem('money_memo_last_tx_min', mVal);
-    } catch(err) {}
 
     const tx = {
       type: this.currentEntryType,

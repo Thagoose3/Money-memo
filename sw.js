@@ -1,19 +1,19 @@
-﻿/**
+/**
  * Service Worker for Money Memo v3.3
  * Provides instant page load, offline capability, and background asset revalidation
  */
 
-const CACHE_NAME = 'money-memo-v3.3';
+const CACHE_NAME = 'money-memo-v3.4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
-  './js/i18n.js?v=3.3',
-  './js/storage.js?v=3.3',
-  './js/firebase-client.js?v=3.3',
-  './js/budget-simulator.js?v=3.3',
-  './js/app.js?v=3.3',
+  './js/i18n.js?v=3.4',
+  './js/storage.js?v=3.4',
+  './js/firebase-client.js?v=3.4',
+  './js/budget-simulator.js?v=3.4',
+  './js/app.js?v=3.4',
   './assets/favicon.png',
   './assets/icon-192.png',
   './assets/icon-512.png',

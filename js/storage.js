@@ -239,6 +239,43 @@ const StorageManager = {
     };
   },
 
+  getCategoryUsageStats(type = 'expense') {
+    const transactions = this.getTransactions();
+    const usageStats = {};
+    transactions.forEach(t => {
+      if (t.type === type && t.categoryId) {
+        if (!usageStats[t.categoryId]) {
+          usageStats[t.categoryId] = { count: 0, lastUsed: 0 };
+        }
+        usageStats[t.categoryId].count += 1;
+        const txTime = t.createdAt || (t.date ? new Date(t.date).getTime() : 0);
+        if (txTime > usageStats[t.categoryId].lastUsed) {
+          usageStats[t.categoryId].lastUsed = txTime;
+        }
+      }
+    });
+    return usageStats;
+  },
+
+  getCategoriesSortedByUsage(type = 'expense') {
+    const categories = this.getCategories().filter(c => c.type === type);
+    const usageStats = this.getCategoryUsageStats(type);
+
+    // Sort categories: highest count first, then most recently used, then original index
+    return [...categories].sort((a, b) => {
+      const statsA = usageStats[a.id] || { count: 0, lastUsed: 0 };
+      const statsB = usageStats[b.id] || { count: 0, lastUsed: 0 };
+
+      if (statsB.count !== statsA.count) {
+        return statsB.count - statsA.count; // Most frequently used first
+      }
+      if (statsB.lastUsed !== statsA.lastUsed) {
+        return statsB.lastUsed - statsA.lastUsed; // Most recently used first
+      }
+      return 0;
+    });
+  },
+
   guessCategoryByName(name = '', type = 'expense') {
     const lower = name.toLowerCase();
     if (type === 'income') {

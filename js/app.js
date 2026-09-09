@@ -561,10 +561,12 @@ const App = {
   },
 
   initCategoryGrid(containerId, type, preselectedId = null) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+    const gridContainer = document.getElementById(containerId);
+    const selectContainer = document.getElementById(containerId.replace('-grid', '-select'));
+    const previewContainer = document.getElementById(containerId.replace('-grid', '-dropdown-preview'));
 
-    const categories = StorageManager.getCategories().filter(c => c.type === type);
+    const categories = StorageManager.getCategoriesSortedByUsage(type);
+    const usageStats = StorageManager.getCategoryUsageStats(type);
     
     if (!preselectedId || !categories.some(c => c.id === preselectedId)) {
       this.selectedCategoryId = categories.length > 0 ? categories[0].id : null;
@@ -573,52 +575,130 @@ const App = {
     }
 
     const lang = I18n.getLanguage();
+    const selectedCat = categories.find(c => c.id === this.selectedCategoryId) || categories[0];
 
-    const itemsHtml = categories.map(c => {
-      const displayName = StorageManager.getCategoryDisplayName(c);
-      return `
+    // 1. Render Mobile Dropdown (<select>) if element exists
+    if (selectContainer) {
+      let optionsHtml = '';
+      const usedCategories = categories.filter(c => (usageStats[c.id]?.count || 0) > 0);
+      const otherCategories = categories.filter(c => (usageStats[c.id]?.count || 0) === 0);
+
+      if (usedCategories.length > 0 && otherCategories.length > 0) {
+        const topLabel = lang === 'en' ? '⭐ Frequently Used' : '⭐ ใช้บ่อย / ล่าสุด';
+        const otherLabel = lang === 'en' ? '📂 Other Categories' : '📂 หมวดหมู่อื่นๆ';
+
+        optionsHtml += `<optgroup label="${topLabel}">`;
+        usedCategories.forEach(c => {
+          const displayName = StorageManager.getCategoryDisplayName(c);
+          const count = usageStats[c.id]?.count || 0;
+          const countText = count > 1 ? ` (${count} ครั้ง)` : '';
+          optionsHtml += `<option value="${c.id}" ${c.id === this.selectedCategoryId ? 'selected' : ''}>${c.emoji} ${displayName}${countText}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+
+        optionsHtml += `<optgroup label="${otherLabel}">`;
+        otherCategories.forEach(c => {
+          const displayName = StorageManager.getCategoryDisplayName(c);
+          optionsHtml += `<option value="${c.id}" ${c.id === this.selectedCategoryId ? 'selected' : ''}>${c.emoji} ${displayName}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+      } else {
+        categories.forEach(c => {
+          const displayName = StorageManager.getCategoryDisplayName(c);
+          const count = usageStats[c.id]?.count || 0;
+          const countText = count > 1 ? ` (${count} ครั้ง)` : '';
+          optionsHtml += `<option value="${c.id}" ${c.id === this.selectedCategoryId ? 'selected' : ''}>${c.emoji} ${displayName}${countText}</option>`;
+        });
+      }
+
+      selectContainer.innerHTML = optionsHtml;
+      selectContainer.value = this.selectedCategoryId;
+    }
+
+    if (previewContainer && selectedCat) {
+      previewContainer.textContent = selectedCat.emoji || '📦';
+    }
+
+    // 2. Render Desktop Grid
+    if (gridContainer) {
+      const itemsHtml = categories.map((c, index) => {
+        const displayName = StorageManager.getCategoryDisplayName(c);
+        const count = usageStats[c.id]?.count || 0;
+        const isTopUsed = index < 3 && count > 0;
+        return `
+          <button 
+            type="button" 
+            data-cat-id="${c.id}"
+            class="cat-item-btn p-2 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100/80 bg-white hover:bg-slate-50'}"
+            onclick="App.selectCategory('${containerId}', '${c.id}')"
+            title="${displayName} ${count > 0 ? `(ใช้ไป ${count} ครั้ง)` : ''}"
+          >
+            ${isTopUsed ? `<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 ring-2 ring-white" title="ใช้บ่อย"></span>` : ''}
+            <span class="text-xl leading-none">${c.emoji}</span>
+            <span class="text-[11px] font-medium text-slate-700 text-center truncate max-w-full leading-tight">${displayName}</span>
+          </button>
+        `;
+      }).join('');
+
+      // Append quick "+ เพิ่มหมวด" tile at the end of the grid
+      const addText = lang === 'en' ? 'Add Cat' : 'เพิ่มหมวด';
+      const addTileHtml = `
         <button 
           type="button" 
-          data-cat-id="${c.id}"
-          class="cat-item-btn p-2 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${c.id === this.selectedCategoryId ? 'selected border-slate-900 bg-slate-50' : 'border-slate-100/80 bg-white hover:bg-slate-50'}"
-          onclick="App.selectCategory('${containerId}', '${c.id}')"
-          title="${displayName}"
+          onclick="App.openAddCategoryModal('${type}')"
+          class="p-2 rounded-2xl border border-dashed border-slate-300 hover:border-slate-500 bg-white/60 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition-all cursor-pointer group"
+          title="${lang === 'en' ? 'Create new category' : 'สร้างหมวดหมู่ใหม่'}"
         >
-          <span class="text-xl leading-none">${c.emoji}</span>
-          <span class="text-[11px] font-medium text-slate-700 text-center truncate max-w-full leading-tight">${displayName}</span>
+          <span class="text-lg leading-none group-hover:scale-110 transition-transform">➕</span>
+          <span class="text-[10px] font-bold">${addText}</span>
         </button>
       `;
-    }).join('');
 
-    // Append quick "+ เพิ่มหมวด" tile at the end of the grid
-    const addText = lang === 'en' ? 'Add Cat' : 'เพิ่มหมวด';
-    const addTileHtml = `
-      <button 
-        type="button" 
-        onclick="App.openAddCategoryModal('${type}')"
-        class="p-2 rounded-2xl border border-dashed border-slate-300 hover:border-slate-500 bg-white/60 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-slate-900 transition-all cursor-pointer group"
-        title="${lang === 'en' ? 'Create new category' : 'สร้างหมวดหมู่ใหม่'}"
-      >
-        <span class="text-lg leading-none group-hover:scale-110 transition-transform">➕</span>
-        <span class="text-[10px] font-bold">${addText}</span>
-      </button>
-    `;
+      gridContainer.innerHTML = itemsHtml + addTileHtml;
+    }
+  },
 
-    container.innerHTML = itemsHtml + addTileHtml;
+  onCategorySelectDropdown(catId, gridContainerId) {
+    this.selectedCategoryId = catId;
+    const select = document.getElementById(gridContainerId.replace('-grid', '-select'));
+    const preview = document.getElementById(gridContainerId.replace('-grid', '-dropdown-preview'));
+    const gridContainer = document.getElementById(gridContainerId);
+
+    const cat = StorageManager.getCategoryById(catId);
+    if (preview && cat) {
+      preview.textContent = cat.emoji || '📦';
+    }
+
+    if (gridContainer) {
+      gridContainer.querySelectorAll('.cat-item-btn').forEach(el => {
+        if (el.getAttribute('data-cat-id') === catId) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
+      });
+    }
   },
 
   selectCategory(containerId, catId) {
     this.selectedCategoryId = catId;
     const container = document.getElementById(containerId);
-    if (!container) return;
+    const select = document.getElementById(containerId.replace('-grid', '-select'));
+    const preview = document.getElementById(containerId.replace('-grid', '-dropdown-preview'));
 
-    container.querySelectorAll('.cat-item-btn').forEach(el => {
-      if (el.getAttribute('data-cat-id') === catId) {
-        el.classList.add('selected');
-      } else {
-        el.classList.remove('selected');
-      }
-    });
+    if (select) select.value = catId;
+    const cat = StorageManager.getCategoryById(catId);
+    if (preview && cat) preview.textContent = cat.emoji || '📦';
+
+    if (container) {
+      container.querySelectorAll('.cat-item-btn').forEach(el => {
+        if (el.getAttribute('data-cat-id') === catId) {
+          el.classList.add('selected');
+        } else {
+          el.classList.remove('selected');
+        }
+      });
+    }
   },
 
   // ==========================================

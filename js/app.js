@@ -40,6 +40,15 @@ const App = {
   overviewStartDate: '',
   overviewEndDate: '',
 
+  _renderRaf: null,
+
+  requestRender() {
+    if (this._renderRaf) cancelAnimationFrame(this._renderRaf);
+    this._renderRaf = requestAnimationFrame(() => {
+      this.renderAll();
+    });
+  },
+
   init() {
     I18n.init();
     if (typeof FirebaseManager !== 'undefined') {
@@ -62,16 +71,17 @@ const App = {
     } catch(e) {}
 
     this.renderMonthSelector();
-    this.renderAll();
+    this.renderActiveTab();
     BudgetSimulator.init();
 
-    // Ensure mobile browsers don't retain stale autofill or cached time
-    setTimeout(() => {
-      this.initDateTimeInput();
-    }, 150);
-    setTimeout(() => {
-      this.initDateTimeInput();
-    }, 500);
+    // Register Service Worker for instant PWA caching & offline support
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.warn('PWA Service Worker registration skipped:', err);
+        });
+      });
+    }
   },
 
   initTimeDropdowns() {
@@ -506,19 +516,7 @@ const App = {
     // Scroll to top gently on mobile
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    if (tabName === 'dashboard') {
-      this.renderDashboard();
-    } else if (tabName === 'transactions') {
-      this.renderTransactionList();
-      this.renderQuickFixedChips();
-    } else if (tabName === 'recurring') {
-      this.setInlineRecurringType(this.inlineRecurringType);
-      this.renderRecurringTab();
-    } else if (tabName === 'simulator') {
-      BudgetSimulator.render();
-    } else if (tabName === 'categories') {
-      this.renderCategoriesTab();
-    }
+    this.renderActiveTab();
   },
 
   setEntryType(type) {
@@ -2794,16 +2792,35 @@ const App = {
     }
   },
 
-  renderAll() {
-    this.renderTab1OverviewHero();
-    this.initCategoryGrid('form-category-grid', this.currentEntryType);
-    this.renderTransactionList();
-    this.renderDashboard();
-    this.renderRecurringTab();
-    this.renderQuickFixedChips();
-    this.renderCategoriesTab();
-    if (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
-      BudgetSimulator.render();
+  renderAll(forceAll = false) {
+    this.renderActiveTab();
+    if (forceAll) {
+      if (this.currentTab !== 'dashboard') this.renderDashboard();
+      if (this.currentTab !== 'recurring') this.renderRecurringTab();
+      if (this.currentTab !== 'categories') this.renderCategoriesTab();
+      if (this.currentTab !== 'simulator' && typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
+        BudgetSimulator.render();
+      }
+    }
+  },
+
+  renderActiveTab() {
+    if (this.currentTab === 'transactions') {
+      this.renderTab1OverviewHero();
+      this.initCategoryGrid('form-category-grid', this.currentEntryType);
+      this.renderTransactionList();
+      this.renderQuickFixedChips();
+    } else if (this.currentTab === 'dashboard') {
+      this.renderDashboard();
+    } else if (this.currentTab === 'simulator') {
+      if (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
+        BudgetSimulator.render();
+      }
+    } else if (this.currentTab === 'recurring') {
+      this.setInlineRecurringType(this.inlineRecurringType);
+      this.renderRecurringTab();
+    } else if (this.currentTab === 'categories') {
+      this.renderCategoriesTab();
     }
   },
 

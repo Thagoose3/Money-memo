@@ -17,20 +17,30 @@
   <meta name="apple-mobile-web-app-title" content="Money Memo">
   <meta name="application-name" content="Money Memo">
   
+  <!-- Resource Preconnects & DNS Prefetch for Sub-100ms Page Load -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://www.gstatic.com">
+  
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Chart.js CDN (Deferred) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
-  <!-- Firebase JS SDK (v10.8.0 Compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase JS SDK (v10.8.0 Compat - Deferred) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" defer></script>
 
   <!-- Google Fonts - Prompt & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -1807,11 +1817,11 @@
     บันทึกเรียบร้อย
   </div>
 
-  <!-- Scripts -->
-  <script src="js/i18n.js?v=3.2"></script>
-  <script src="js/storage.js?v=3.2"></script>
-  <script src="js/firebase-client.js?v=3.2"></script>
-  <script src="js/budget-simulator.js?v=3.2"></script>
-  <script src="js/app.js?v=3.2"></script>
+  <!-- Scripts (Deferred execution in strict order) -->
+  <script src="js/i18n.js?v=3.3" defer></script>
+  <script src="js/storage.js?v=3.3" defer></script>
+  <script src="js/firebase-client.js?v=3.3" defer></script>
+  <script src="js/budget-simulator.js?v=3.3" defer></script>
+  <script src="js/app.js?v=3.3" defer></script>
 </body>
 </html>

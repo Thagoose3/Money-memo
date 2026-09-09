@@ -21,7 +21,6 @@ const BudgetSimulator = {
       ];
       this.save();
     }
-    this.render();
     this.bindEvents();
   },
 

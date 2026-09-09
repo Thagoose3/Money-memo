@@ -58,6 +58,13 @@ const DEFAULT_BUDGET_SIMULATOR = {
 };
 
 const StorageManager = {
+  // In-memory cache for blazing fast synchronous lookups & 60fps renders
+  _categories: null,
+  _catMap: null,
+  _recurring: null,
+  _transactions: null,
+  _budgetSimulator: null,
+
   // Helper to sync with Cloud (Firebase / Supabase)
   _syncCloud(action, data) {
     if (typeof FirebaseManager !== 'undefined' && FirebaseManager.isLoggedIn()) {
@@ -78,13 +85,21 @@ const StorageManager = {
     }
   },
 
+  _updateCatMap() {
+    this._catMap = new Map();
+    if (Array.isArray(this._categories)) {
+      this._categories.forEach(c => this._catMap.set(c.id, c));
+    }
+  },
+
   // --- หมวดหมู่ (Categories) ---
   getCategories() {
+    if (this._categories) return this._categories;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (!data) {
         this.saveCategories(DEFAULT_CATEGORIES);
-        return DEFAULT_CATEGORIES;
+        return this._categories;
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -102,15 +117,19 @@ const StorageManager = {
             }
           }
         });
+        this._categories = parsed;
+        this._updateCatMap();
         if (needsSave) {
           this.saveCategories(parsed);
         }
-        return parsed;
+        return this._categories;
       }
       this.saveCategories(DEFAULT_CATEGORIES);
-      return DEFAULT_CATEGORIES;
+      return this._categories;
     } catch (e) {
-      return DEFAULT_CATEGORIES;
+      this._categories = DEFAULT_CATEGORIES;
+      this._updateCatMap();
+      return this._categories;
     }
   },
 
@@ -137,6 +156,8 @@ const StorageManager = {
   },
 
   saveCategories(categories) {
+    this._categories = categories;
+    this._updateCatMap();
     try {
       localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
     } catch (e) {
@@ -204,8 +225,10 @@ const StorageManager = {
   },
 
   getCategoryById(id) {
-    const categories = this.getCategories();
-    return categories.find(c => c.id === id) || {
+    if (!this._catMap) {
+      this.getCategories();
+    }
+    return (this._catMap && this._catMap.get(id)) || {
       id: 'unknown',
       name: 'ค่าใช้จ่ายทั่วไป',
       nameEn: 'General Expense',
@@ -240,11 +263,12 @@ const StorageManager = {
 
   // --- รายรับ & รายจ่าย ประจำเดือน (Recurring Items Management) ---
   getRecurringItems() {
+    if (this._recurring) return this._recurring;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.RECURRING_ITEMS);
       if (!data) {
         this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
-        return DEFAULT_RECURRING_ITEMS;
+        return this._recurring;
       }
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -256,20 +280,23 @@ const StorageManager = {
             needsSave = true;
           }
         });
+        this._recurring = parsed;
         if (needsSave) {
           this.saveRecurringItems(parsed);
         }
-        return parsed;
+        return this._recurring;
       }
       this.saveRecurringItems(DEFAULT_RECURRING_ITEMS);
-      return DEFAULT_RECURRING_ITEMS;
+      return this._recurring;
     } catch (e) {
       console.error('Error loading recurring items:', e);
-      return DEFAULT_RECURRING_ITEMS;
+      this._recurring = DEFAULT_RECURRING_ITEMS;
+      return this._recurring;
     }
   },
 
   saveRecurringItems(list) {
+    this._recurring = list;
     try {
       localStorage.setItem(STORAGE_KEYS.RECURRING_ITEMS, JSON.stringify(list));
     } catch (e) {
@@ -333,17 +360,24 @@ const StorageManager = {
 
   // --- รายการบันทึกจริง (Transactions) ---
   getTransactions() {
+    if (this._transactions) return this._transactions;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-      if (!data) return [];
+      if (!data) {
+        this._transactions = [];
+        return this._transactions;
+      }
       const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? parsed : [];
+      this._transactions = Array.isArray(parsed) ? parsed : [];
+      return this._transactions;
     } catch (e) {
-      return [];
+      this._transactions = [];
+      return this._transactions;
     }
   },
 
   saveTransactions(transactions) {
+    this._transactions = transactions;
     try {
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
     } catch (e) {
@@ -432,19 +466,23 @@ const StorageManager = {
 
   // --- ระบบวิเคราะห์งบประมาณจำลอง (Budget Simulator Sandbox) ---
   getBudgetSimulator() {
+    if (this._budgetSimulator) return this._budgetSimulator;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.BUDGET_SIMULATOR);
       if (!data) {
         this.saveBudgetSimulator(DEFAULT_BUDGET_SIMULATOR);
-        return DEFAULT_BUDGET_SIMULATOR;
+        return this._budgetSimulator;
       }
-      return JSON.parse(data);
+      this._budgetSimulator = JSON.parse(data);
+      return this._budgetSimulator;
     } catch (e) {
-      return DEFAULT_BUDGET_SIMULATOR;
+      this._budgetSimulator = DEFAULT_BUDGET_SIMULATOR;
+      return this._budgetSimulator;
     }
   },
 
   saveBudgetSimulator(data) {
+    this._budgetSimulator = data;
     try {
       localStorage.setItem(STORAGE_KEYS.BUDGET_SIMULATOR, JSON.stringify(data));
       this._syncCloud('saveBudgetSimulator', data);

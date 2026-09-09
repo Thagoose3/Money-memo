@@ -63,7 +63,7 @@ const FirebaseManager = {
             this.stopRealtimeSync();
             if (wasLoggedIn) {
               App.showToast(I18n.getLanguage() === 'en' ? 'Logged out' : 'ออกจากระบบเรียบร้อยแล้ว');
-              App.renderAll();
+              App.requestRender();
             }
           }
         });
@@ -233,7 +233,7 @@ const FirebaseManager = {
       }
 
       this.debouncedUpdateAggregations();
-      App.renderAll();
+      App.requestRender();
 
       if (!isSilent) {
         const lang = I18n.getLanguage();
@@ -271,7 +271,7 @@ const FirebaseManager = {
           });
           const merged = Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
           StorageManager.saveTransactions(merged);
-          App.renderAll();
+          App.requestRender();
         }
       }, (error) => {
         console.error('Realtime transactions sync error:', error);
@@ -291,7 +291,7 @@ const FirebaseManager = {
           currentLocal.forEach(c => map.set(c.id, c));
           list.forEach(c => map.set(c.id, c));
           StorageManager.saveCategories(Array.from(map.values()));
-          App.renderAll();
+          App.requestRender();
         }
       }, (error) => {
         console.error('Realtime categories sync error:', error);
@@ -308,7 +308,7 @@ const FirebaseManager = {
           currentLocal.forEach(r => map.set(r.id, r));
           list.forEach(r => map.set(r.id, r));
           StorageManager.saveRecurringItems(Array.from(map.values()));
-          App.renderAll();
+          App.requestRender();
         }
       }, (error) => {
         console.error('Realtime recurring sync error:', error);

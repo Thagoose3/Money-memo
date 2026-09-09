@@ -152,7 +152,8 @@
     .modal-overlay {
       display: none;
     }
-    .modal-overlay.show {
+    .modal-overlay.show,
+    .modal-overlay.active {
       display: flex !important;
     }
     .color-swatch {
@@ -206,23 +207,23 @@
   <!-- Desktop Top Pill Tabs (Hidden on Mobile) -->
   <div class="hidden sm:block max-w-5xl w-full mx-auto px-4 sm:px-6 pt-5">
     <div class="bg-slate-200/50 p-1.5 rounded-3xl flex items-center gap-1.5 text-xs sm:text-sm font-medium border border-slate-200/60 shadow-2xs">
-      <button data-tab-target="transactions" class="nav-tab-btn active flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="transactions" onclick="App.switchTab('transactions')" class="nav-tab-btn active flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>🏠</span>
         <span data-i18n="tab_home">หน้าหลัก</span>
       </button>
-      <button data-tab-target="history" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="history" onclick="App.switchTab('history')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📋</span>
         <span data-i18n="tab_history">ประวัติรายการ</span>
       </button>
-      <button data-tab-target="dashboard" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="dashboard" onclick="App.switchTab('dashboard')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📊</span>
         <span data-i18n="tab_dashboard">สถิติ & แดชบอร์ด</span>
       </button>
-      <button data-tab-target="simulator" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="simulator" onclick="App.switchTab('simulator')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>🧮</span>
         <span data-i18n="tab_simulator">จำลองเงินกินใช้</span>
       </button>
-      <button data-tab-target="settings" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+      <button data-tab-target="settings" onclick="App.switchTab('settings')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>⚙️</span>
         <span data-i18n="tab_settings">ตั้งค่า</span>
       </button>
@@ -340,19 +341,37 @@
       <div class="pastel-card p-4 sm:p-5 rounded-3xl space-y-3.5 shadow-2xs border border-slate-200/80">
         
         <!-- Row 1: Header Title & Export CSV Button -->
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xl sm:text-2xl">📑</span>
+        <div class="flex items-center justify-between gap-2 sm:gap-3">
+          <div class="flex items-center gap-2.5">
+            <button 
+              type="button" 
+              onclick="App.switchTab('transactions')" 
+              class="w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold transition-all border border-slate-200/80 cursor-pointer shadow-2xs active:scale-95 shrink-0"
+              title="ย้อนกลับไปหน้าหลัก"
+            >
+              ◀
+            </button>
+            <span class="text-xl sm:text-2xl hidden sm:inline">📑</span>
             <div>
               <h2 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">ประวัติรายการ (Statement)</h2>
               <p class="text-[11px] text-slate-400 font-medium hidden sm:block">บันทึกสเตทเมนต์รายรับ-รายจ่าย แยกตามวัน</p>
             </div>
           </div>
 
-          <button onclick="App.openExportModal()" class="px-3 py-1.5 rounded-2xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            <span>📤 ส่งออก CSV</span>
-          </button>
+          <div class="flex items-center gap-1.5">
+            <button 
+              type="button" 
+              onclick="App.switchTab('transactions')" 
+              class="hidden sm:inline-flex px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-all items-center gap-1 cursor-pointer active:scale-95"
+            >
+              <span>🏠</span>
+              <span>หน้าหลัก</span>
+            </button>
+            <button onclick="App.openExportModal()" class="px-3 py-1.5 rounded-2xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span>📤 ส่งออก CSV</span>
+            </button>
+          </div>
         </div>
 
         <!-- Row 2: Month Navigator [ ◀ ] กันยายน 2026 [ ▶ ] -->
@@ -701,24 +720,54 @@
     </section>
 
     <!-- ========================================================== -->
-    <!-- TAB 3: 🧮 เครื่องมือจำลองงบประมาณ & คำนวณเงินกินใช้ (Sandbox) -->
+    <!-- TAB 4: 🧮 เครื่องมือจำลองงบประมาณ & คำนวณเงินกินใช้ (Sandbox) -->
     <!-- ========================================================== -->
-    <section id="tab-pane-simulator" class="tab-content-pane hidden space-y-5 sm:space-y-6">
+    <section id="tab-pane-simulator" class="tab-content-pane hidden space-y-4 sm:space-y-5">
+      
+      <!-- Top Navigation & Return Header (Back to Home) -->
+      <div class="pastel-card p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <button 
+            type="button" 
+            onclick="App.switchTab('transactions')" 
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center text-sm font-bold transition-all border border-white/15 cursor-pointer shadow-2xs shrink-0"
+            title="ย้อนกลับไปหน้าหลัก"
+          >
+            ◀
+          </button>
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/10 backdrop-blur-md hidden sm:flex items-center justify-center text-xl border border-white/15">
+            🧮
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 data-i18n="sim_title" class="text-xs sm:text-base font-extrabold text-white leading-tight">เครื่องมือจำลองงบประมาณ (Sandbox)</h2>
+            </div>
+            <p data-i18n="sim_desc" class="text-[10px] sm:text-[11px] text-indigo-200 mt-0.5">ทดลองปรับเปลี่ยนตัวเลขได้อิสระ ไม่ส่งผลกระทบต่อบัญชีจริง</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button 
+            type="button" 
+            onclick="App.switchTab('transactions')" 
+            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 border border-white/20 cursor-pointer"
+          >
+            <span>🏠</span>
+            <span class="hidden sm:inline">หน้าหลัก</span>
+          </button>
+          <button 
+            id="sim-reset-btn" 
+            data-i18n="sim_btn_reset" 
+            class="px-2.5 py-1.5 text-xs text-rose-300 hover:text-rose-100 hover:bg-rose-500/20 rounded-xl transition-colors cursor-pointer font-semibold"
+          >
+            รีเซ็ตค่า
+          </button>
+        </div>
+      </div>
       
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
         
         <!-- ซ้าย: การตั้งค่าจำลองรายได้ & Fixed Expenses -->
         <div class="lg:col-span-6 pastel-card p-4 sm:p-6 rounded-3xl space-y-4">
-          
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 data-i18n="sim_title" class="text-sm font-bold text-slate-900">เครื่องมือจำลองงบประมาณ (Sandbox)</h3>
-              <p data-i18n="sim_desc" class="text-[11px] text-slate-400">ทดลองปรับเปลี่ยนตัวเลขได้อิสระ ไม่ส่งผลกระทบต่อบัญชีจริง</p>
-            </div>
-            <button id="sim-reset-btn" data-i18n="sim_btn_reset" class="text-xs text-slate-400 hover:text-slate-700 cursor-pointer">
-              รีเซ็ตค่าจำลอง
-            </button>
-          </div>
 
           <!-- รายได้ & เงินออม จำลอง -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -883,17 +932,35 @@
     <section id="tab-pane-settings" class="tab-content-pane hidden space-y-4 sm:space-y-5">
       
       <!-- 1. Header Banner -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-2xl border border-white/15">
+      <div class="pastel-card p-3.5 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3">
+          <button 
+            type="button" 
+            onclick="App.switchTab('transactions')" 
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center text-sm font-bold transition-all border border-white/15 cursor-pointer shadow-2xs shrink-0"
+            title="ย้อนกลับไปหน้าหลัก"
+          >
+            ◀
+          </button>
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white/10 backdrop-blur-md hidden sm:flex items-center justify-center text-xl border border-white/15">
             ⚙️
           </div>
           <div>
-            <h2 data-i18n="settings_title" class="text-sm sm:text-base font-extrabold text-white leading-tight">ศูนย์รวมการตั้งค่า & ข้อมูล</h2>
-            <p data-i18n="settings_subtitle" class="text-[11px] text-slate-300 mt-0.5">จัดการรายการประจำ หมวดหมู่ ภาษา คลาวด์ และสำรองข้อมูล</p>
+            <h2 data-i18n="settings_title" class="text-xs sm:text-base font-extrabold text-white leading-tight">ศูนย์รวมการตั้งค่า & ข้อมูล</h2>
+            <p data-i18n="settings_subtitle" class="text-[10px] sm:text-[11px] text-slate-300 mt-0.5">จัดการรายการประจำ หมวดหมู่ ภาษา คลาวด์ และสำรองข้อมูล</p>
           </div>
         </div>
-        <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9</span>
+        <div class="flex items-center gap-1.5">
+          <button 
+            type="button" 
+            onclick="App.switchTab('transactions')" 
+            class="px-3 py-1.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold rounded-2xl transition-all flex items-center gap-1.5 border border-white/20 cursor-pointer"
+          >
+            <span>🏠</span>
+            <span class="hidden sm:inline">หน้าหลัก</span>
+          </button>
+          <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9</span>
+        </div>
       </div>
 
       <!-- 2. Section: ☁️ บัญชี & การซิงค์คลาวด์ (Cloud Sync & Google Account) -->
@@ -1170,7 +1237,7 @@
     <nav class="bg-white/95 backdrop-blur-2xl border border-slate-200/90 px-1.5 py-1.5 flex items-center justify-around shadow-[0_12px_35px_-6px_rgba(15,23,42,0.18)] rounded-3xl pb-safe">
       
       <!-- 1. หน้าหลัก -->
-      <button data-tab-target="transactions" class="mobile-nav-btn active flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
+      <button data-tab-target="transactions" onclick="App.switchTab('transactions')" class="mobile-nav-btn active flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
         <div class="mobile-icon-wrap w-8 h-8 rounded-2xl flex items-center justify-center text-base transition-all duration-200">
           🏠
         </div>
@@ -1178,7 +1245,7 @@
       </button>
 
       <!-- 2. ประวัติ -->
-      <button data-tab-target="history" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
+      <button data-tab-target="history" onclick="App.switchTab('history')" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
         <div class="mobile-icon-wrap w-8 h-8 rounded-2xl flex items-center justify-center text-base transition-all duration-200">
           📋
         </div>
@@ -1194,7 +1261,7 @@
       </button>
 
       <!-- 4. สถิติ -->
-      <button data-tab-target="dashboard" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
+      <button data-tab-target="dashboard" onclick="App.switchTab('dashboard')" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
         <div class="mobile-icon-wrap w-8 h-8 rounded-2xl flex items-center justify-center text-base transition-all duration-200">
           📊
         </div>
@@ -1202,7 +1269,7 @@
       </button>
 
       <!-- 5. ตั้งค่า -->
-      <button data-tab-target="settings" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
+      <button data-tab-target="settings" onclick="App.switchTab('settings')" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
         <div class="mobile-icon-wrap w-8 h-8 rounded-2xl flex items-center justify-center text-base transition-all duration-200">
           ⚙️
         </div>
@@ -1248,7 +1315,7 @@
           <span id="quick-chips-title" class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
             ปุ่มลัดรายจ่ายประจำ:
           </span>
-          <button type="button" onclick="App.closeQuickEntryModal(); App.switchTab('recurring');" data-i18n="btn_setup_shortcuts" class="text-[10px] text-blue-600 hover:underline font-semibold cursor-pointer">+ ตั้งค่าปุ่มลัด</button>
+          <button type="button" onclick="App.closeQuickEntryModal(); App.switchTab('settings'); App.toggleSettingsRecurringManager(true);" data-i18n="btn_setup_shortcuts" class="text-[10px] text-blue-600 hover:underline font-semibold cursor-pointer">+ ตั้งค่าปุ่มลัด</button>
         </div>
         <div id="quick-fixed-chips-list" class="flex flex-wrap gap-1.5">
           <!-- JS Populates Chips dynamically matching Expense or Income -->

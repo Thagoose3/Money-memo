@@ -477,6 +477,18 @@ const App = {
   },
 
   switchTab(tabName) {
+    // Handle alias/legacy tab names defensively
+    if (tabName === 'recurring') {
+      this.switchTab('settings');
+      this.toggleSettingsRecurringManager(true);
+      return;
+    }
+    if (tabName === 'categories') {
+      this.switchTab('settings');
+      this.toggleSettingsCategoryManager(true);
+      return;
+    }
+
     this.currentTab = tabName;
     
     // Sync both desktop tabs and mobile bottom bar
@@ -2498,7 +2510,7 @@ const App = {
     this.initDateTimeInput();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.renderQuickFixedChips();
-    modal.classList.add('active');
+    modal.classList.add('show', 'active');
     document.body.style.overflow = 'hidden';
 
     setTimeout(() => {
@@ -2512,7 +2524,7 @@ const App = {
   closeQuickEntryModal() {
     const modal = document.getElementById('quick-entry-modal');
     if (modal) {
-      modal.classList.remove('active');
+      modal.classList.remove('show', 'active');
       document.body.style.overflow = '';
     }
   },

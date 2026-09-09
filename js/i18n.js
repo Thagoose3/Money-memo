@@ -18,11 +18,12 @@ const TRANSLATIONS = {
     // Navigation Tabs
     tab_home: 'หน้าหลัก',
     tab_history: 'ประวัติรายการ',
-    tab_transactions: 'บันทึก & รายการ',
+    tab_transactions: 'หน้าหลัก & ภาพรวม',
     tab_dashboard: 'สถิติ & แดชบอร์ด',
     tab_simulator: 'จำลองเงินกินใช้',
     tab_recurring: 'รายการประจำ & บิล',
     tab_categories: 'จัดการหมวดหมู่',
+    quick_services_title: 'บริการด่วน',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'ดึงรายการประจำเดือนมาบันทึก',
@@ -262,11 +263,12 @@ const TRANSLATIONS = {
     // Navigation Tabs
     tab_home: 'Home',
     tab_history: 'History / Statement',
-    tab_transactions: 'Home & Record',
+    tab_transactions: 'Home & Overview',
     tab_dashboard: 'Insights',
     tab_simulator: 'Budget Planner',
     tab_recurring: 'Bills & Recurring',
     tab_categories: 'Categories',
+    quick_services_title: 'Quick Services',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'Import Monthly Recurring Items',

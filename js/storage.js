@@ -413,9 +413,45 @@ const StorageManager = {
     return { success: true };
   },
 
+  // Invalidate all memory caches when external/cloud data changes
+  invalidateCache() {
+    this._categories = null;
+    this._catMap = null;
+    this._recurring = null;
+    this._transactions = null;
+    this._budgetSimulator = null;
+    this._payCycleSetting = null;
+  },
+
+  // Helper to normalize any date input to YYYY-MM-DD
+  normalizeDateString(dateVal) {
+    if (!dateVal) return '';
+    if (typeof dateVal === 'string') {
+      const trimmed = dateVal.trim();
+      const matchIso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (matchIso) {
+        return `${matchIso[1]}-${matchIso[2].padStart(2, '0')}-${matchIso[3].padStart(2, '0')}`;
+      }
+      const matchSlash = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+      if (matchSlash) {
+        return `${matchSlash[3]}-${matchSlash[2].padStart(2, '0')}-${matchSlash[1].padStart(2, '0')}`;
+      }
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
+      }
+      return trimmed.slice(0, 10);
+    } else if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${dateVal.getFullYear()}-${pad(dateVal.getMonth() + 1)}-${pad(dateVal.getDate())}`;
+    }
+    return '';
+  },
+
   // --- รายการบันทึกจริง (Transactions) ---
-  getTransactions() {
-    if (this._transactions) return this._transactions;
+  getTransactions(forceRefresh = false) {
+    if (!forceRefresh && this._transactions) return this._transactions;
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
       if (!data) {

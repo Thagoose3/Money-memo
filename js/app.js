@@ -2479,6 +2479,42 @@ const App = {
     this.openQuickEntryModal();
   },
 
+  normalizeDateString(dateVal) {
+    if (!dateVal) return '';
+    if (typeof dateVal === 'string') {
+      const trimmed = dateVal.trim();
+      const matchIso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (matchIso) {
+        return `${matchIso[1]}-${matchIso[2].padStart(2, '0')}-${matchIso[3].padStart(2, '0')}`;
+      }
+      const matchSlash = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+      if (matchSlash) {
+        return `${matchSlash[3]}-${matchSlash[2].padStart(2, '0')}-${matchSlash[1].padStart(2, '0')}`;
+      }
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`;
+      }
+      return trimmed.slice(0, 10);
+    } else if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${dateVal.getFullYear()}-${pad(dateVal.getMonth() + 1)}-${pad(dateVal.getDate())}`;
+    }
+    return '';
+  },
+
+  jumpHistoryToDate(dateStr) {
+    if (!dateStr) return;
+    const parts = dateStr.split('-');
+    if (parts.length >= 2) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      this.historyDate = new Date(y, m, 1);
+      this.renderHistoryTab();
+    }
+  },
+
   renderHistoryTab() {
     if (!this.historyDate) this.historyDate = new Date();
 
@@ -2494,9 +2530,18 @@ const App = {
     } catch(e) {}
 
     const payCycleSetting = StorageManager.getPayCycleSetting();
-    const isCalendarView = (this.historyCycleMode === 'calendar' || payCycleSetting.type === 'calendar');
-    const activeSetting = (this.historyCycleMode === 'calendar') ? { type: 'calendar', customDay: 1 } : payCycleSetting;
-    const cycleRange = StorageManager.getCycleDateRange(this.historyDate, activeSetting);
+    // In cycle mode, if user setting is calendar, provide end_of_month (payday) cycle
+    let effectiveCycleSetting;
+    if (this.historyCycleMode === 'calendar') {
+      effectiveCycleSetting = { type: 'calendar', customDay: 1 };
+    } else {
+      effectiveCycleSetting = (payCycleSetting.type === 'calendar') 
+        ? { type: 'end_of_month', customDay: 31 }
+        : payCycleSetting;
+    }
+
+    const isCalendarView = (this.historyCycleMode === 'calendar');
+    const cycleRange = StorageManager.getCycleDateRange(this.historyDate, effectiveCycleSetting);
 
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -2526,10 +2571,11 @@ const App = {
       calModeBtn.className = (this.historyCycleMode === 'calendar') ? activePill : inactivePill;
     }
 
-    // 2. Filter transactions for the selected range (Smart Pay Cycle Range)
-    const allTxs = StorageManager.getTransactions();
+    // 2. Fetch all transactions (fresh from storage) & filter for selected cycle range
+    const allTxs = StorageManager.getTransactions(true);
     const monthTxs = allTxs.filter(t => {
-      const d = (t.date || '').slice(0, 10);
+      const d = this.normalizeDateString(t.date);
+      if (!d) return false;
       return d >= cycleRange.startDate && d <= cycleRange.endDate;
     });
 
@@ -2543,16 +2589,17 @@ const App = {
       }
       catSelect.innerHTML = `<option value="all">🏷️ ${lang === 'en' ? 'All Categories' : 'ทุกหมวดหมู่'}</option>` + cats.map(c => {
         const cName = StorageManager.getCategoryDisplayName(c);
-        return `<option value="${c.id}" ${c.id === currentCatVal ? 'selected' : ''}>${c.emoji} ${cName}</option>`;
+        return `<option value="${c.id}" ${c.id === currentCatVal ? 'selected' : ''}>${c.emoji || '📦'} ${cName}</option>`;
       }).join('');
     }
 
-    // 4. Flow Summary Capsule Stats (Calculate for whole month)
+    // 4. Flow Summary Capsule Stats (Calculate for active period)
     let totalIncome = 0;
     let totalExpense = 0;
     monthTxs.forEach(t => {
-      if (t.type === 'income') totalIncome += t.amount;
-      else totalExpense += t.amount;
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') totalIncome += amt;
+      else totalExpense += amt;
     });
     const net = totalIncome - totalExpense;
 
@@ -2574,7 +2621,7 @@ const App = {
       if (this.historyTypeFilter !== 'all' && t.type !== this.historyTypeFilter) return false;
       if (this.historyCategoryFilter && this.historyCategoryFilter !== 'all' && t.categoryId !== this.historyCategoryFilter) return false;
       if (this.historySearchQuery) {
-        const cat = StorageManager.getCategoryById(t.categoryId);
+        const cat = StorageManager.getCategoryById(t.categoryId) || {};
         const matchNote = (t.note || '').toLowerCase().includes(this.historySearchQuery);
         const matchCat = (cat.name || '').toLowerCase().includes(this.historySearchQuery) || (cat.nameEn || '').toLowerCase().includes(this.historySearchQuery);
         const matchPayment = (t.paymentMethod || '').toLowerCase().includes(this.historySearchQuery);
@@ -2588,14 +2635,47 @@ const App = {
     if (!feedContainer) return;
 
     if (filteredTxs.length === 0) {
+      // Find if there are transactions in other months
+      let jumpButtonHtml = '';
+      if (allTxs.length > 0) {
+        const sortedAll = [...allTxs].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+        const latestTx = sortedAll[0];
+        const latestNorm = this.normalizeDateString(latestTx.date);
+        if (latestNorm) {
+          const lParts = latestNorm.split('-');
+          const lYear = parseInt(lParts[0], 10);
+          const lMonth = parseInt(lParts[1], 10) - 1;
+          const lMonthName = (lang === 'en') ? enMonths[lMonth] : thaiMonths[lMonth];
+          const lYearDisp = (lang === 'en') ? lYear : (lYear + 543);
+          jumpButtonHtml = `
+            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col items-center gap-1.5">
+              <span class="text-xs text-slate-500 font-medium">
+                ${lang === 'en' ? `💡 Found recent transactions in ${lMonthName} ${lYearDisp}` : `💡 พบรายการบันทึกล่าสุดในเดือน ${lMonthName} ${lYearDisp}`}
+              </span>
+              <button 
+                type="button" 
+                onclick="App.jumpHistoryToDate('${latestNorm}')" 
+                class="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200/60 transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+              >
+                <span>📅</span>
+                <span>${lang === 'en' ? `Go to ${lMonthName} ${lYearDisp}` : `ไปดูเดือน ${lMonthName} ${lYearDisp}`}</span>
+              </button>
+            </div>
+          `;
+        }
+      }
+
       feedContainer.innerHTML = `
-        <div class="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 p-6 space-y-2 shadow-2xs">
+        <div class="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 p-6 space-y-2 shadow-2xs">
           <span class="text-4xl block mb-1">📋</span>
-          <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No transactions found for this filter' : 'ไม่พบรายการบันทึกตามเงื่อนไขที่เลือก'}</p>
-          <p class="text-xs text-slate-400">${lang === 'en' ? 'Try adjusting your search or add a new transaction' : 'ลองปรับตัวกรองหรือกดปุ่มบันทึกรายการใหม่'}</p>
-          <button type="button" onclick="App.quickOpenAddForm()" class="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-xs hover:bg-slate-800 transition-all cursor-pointer">
-            <span>➕ ไปหน้าบันทึกรายการ</span>
-          </button>
+          <p class="font-bold text-slate-700 text-sm">${lang === 'en' ? 'No transactions found for this period' : 'ไม่พบรายการบันทึกในงวดนี้'}</p>
+          <p class="text-xs text-slate-400">${lang === 'en' ? 'Try changing the month navigator or add a new entry' : 'ลองกดเลื่อนเดือนด้านบน หรือกดบันทึกรายการใหม่'}</p>
+          <div class="flex items-center justify-center gap-2 pt-1">
+            <button type="button" onclick="App.quickOpenAddForm()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-2xl shadow-xs hover:bg-slate-800 transition-all cursor-pointer active:scale-95">
+              <span>➕ บันทึกรายการใหม่</span>
+            </button>
+          </div>
+          ${jumpButtonHtml}
         </div>
       `;
       return;
@@ -2604,13 +2684,15 @@ const App = {
     // 6. Group by YYYY-MM-DD
     const groups = {};
     filteredTxs.forEach(t => {
-      const dateKey = (t.date || '').slice(0, 10);
+      const dateKey = this.normalizeDateString(t.date);
+      if (!dateKey) return;
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(t);
     });
 
     const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
     const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
     const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const yest = new Date(now.getTime() - 86400000);
     const yesterdayKey = `${yest.getFullYear()}-${pad(yest.getMonth() + 1)}-${pad(yest.getDate())}`;
@@ -2620,33 +2702,38 @@ const App = {
 
     feedContainer.innerHTML = sortedDates.map(dateKey => {
       const dayTxs = groups[dateKey];
-      const d = new Date(dateKey + 'T00:00:00');
+      const parts = dateKey.split('-');
+      let formattedDateStr = dateKey;
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const dt = parseInt(parts[2], 10);
+        formattedDateStr = (lang === 'en')
+          ? `${dt} ${enMonthsShort[m] || ''} ${y}`
+          : `${dt} ${thaiMonthsShort[m] || ''} ${y + 543}`;
+      }
 
       let dayTitle = '';
       if (dateKey === todayKey) {
         dayTitle = lang === 'en' ? 'Today' : 'วันนี้';
       } else if (dateKey === yesterdayKey) {
         dayTitle = lang === 'en' ? 'Yesterday' : 'เมื่อวาน';
-      } else {
-        dayTitle = '';
       }
-
-      const formattedDateStr = lang === 'en'
-        ? `${d.getDate()} ${enMonthsShort[d.getMonth()]} ${d.getFullYear()}`
-        : `${d.getDate()} ${thaiMonthsShort[d.getMonth()]} ${d.getFullYear() + 543}`;
 
       const fullDayHeader = dayTitle ? `${dayTitle} (${formattedDateStr})` : formattedDateStr;
 
-      const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-      const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+      const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
       const dayNet = dayIncome - dayExpense;
 
       const itemsHtml = dayTxs.map(t => {
-        const cat = StorageManager.getCategoryById(t.categoryId);
-        const catName = StorageManager.getCategoryDisplayName(cat);
+        const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
+        const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
+        const emoji = cat.emoji || '📦';
         const isExp = t.type === 'expense';
         const timeStr = t.date && t.date.length >= 16 ? t.date.slice(11, 16) : '';
         const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+        const amountNum = Number(t.amount) || 0;
 
         return `
           <div 
@@ -2656,7 +2743,7 @@ const App = {
             <!-- Left: Emoji + Category (Note) & Time • Payment -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
-                ${cat.emoji}
+                ${emoji}
               </div>
               <div class="min-w-0 flex-1 pr-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -2665,7 +2752,7 @@ const App = {
                 </div>
                 <div class="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 font-medium">
                   ${timeStr ? `<span>${timeStr} น.</span> <span>•</span>` : ''}
-                  <span class="text-slate-500">${t.paymentMethod}</span>
+                  <span class="text-slate-500">${t.paymentMethod || '-'}</span>
                 </div>
               </div>
             </div>
@@ -2674,7 +2761,7 @@ const App = {
             <div class="flex items-center gap-2 shrink-0">
               <div class="text-right">
                 <span class="text-sm sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-                  ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </span>
                 <span class="block sm:hidden text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
               </div>
@@ -2700,7 +2787,6 @@ const App = {
 
       return `
         <div class="pastel-card rounded-3xl overflow-hidden shadow-2xs border border-slate-200/80">
-          <!-- Daily Header Banner: 📅 วันนี้ (9 ก.ย. 2026)      [ รวมวัน: -฿120.00 ] -->
           <div class="bg-slate-50/90 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-1.5">
               <span class="text-sm">📅</span>
@@ -2712,7 +2798,6 @@ const App = {
             </div>
           </div>
 
-          <!-- Items in Date Group -->
           <div class="divide-y divide-slate-100/80">
             ${itemsHtml}
           </div>

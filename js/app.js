@@ -77,7 +77,10 @@ const App = {
     // Register Service Worker for instant PWA caching & offline support
     if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+          // Always check for latest updates from GitHub in the background
+          reg.update();
+        }).catch(err => {
           console.warn('PWA Service Worker registration skipped:', err);
         });
       });

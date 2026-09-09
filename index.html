@@ -190,45 +190,16 @@
       <div>
         <div class="flex items-center gap-1.5">
           <h1 data-i18n="app_title" class="text-sm sm:text-base font-extrabold text-slate-900 leading-none tracking-tight">Money Memo</h1>
-          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.8</span>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9</span>
         </div>
         <p data-i18n="app_subtitle" class="text-[11px] text-slate-400 font-medium mt-0.5 hidden sm:block">ระบบบันทึกรายรับ-รายจ่าย & จัดการเงินออมอัจฉริยะ</p>
       </div>
     </div>
 
-    <!-- Actions, Auth & Language Switcher -->
+    <!-- Actions & Google Auth Profile Container -->
     <div class="flex items-center gap-1.5 sm:gap-2">
-      
       <!-- Google Auth Profile / Login Button Container -->
       <div id="auth-header-container"></div>
-
-      <!-- Bilingual Language Toggle (TH / EN) -->
-      <div class="flex items-center bg-slate-100 p-0.5 rounded-2xl text-xs font-semibold border border-slate-200/60">
-        <button type="button" id="lang-btn-th" onclick="I18n.setLanguage('th')" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer">
-          🇹🇭 TH
-        </button>
-        <button type="button" id="lang-btn-en" onclick="I18n.setLanguage('en')" class="px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-400 hover:text-slate-700 transition-all cursor-pointer">
-          🇬🇧 EN
-        </button>
-      </div>
-
-      <button id="btn-load-sample" class="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-all cursor-pointer" title="โหลดข้อมูลตัวอย่าง">
-        <span data-i18n="btn_sample">✨ โหลดตัวอย่าง</span>
-      </button>
-
-      <button id="btn-export-csv" onclick="App.openExportModal()" class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-2xl text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 transition-colors cursor-pointer" title="Export CSV / Excel with Filters">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-        <span data-i18n="btn_export_csv" class="hidden sm:inline">CSV / Excel</span>
-      </button>
-
-      <button id="btn-export-json" class="p-2 rounded-2xl text-xs font-medium text-slate-500 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors cursor-pointer" title="สำรองข้อมูล JSON (Backup)">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-      </button>
-
-      <label class="p-2 rounded-2xl text-xs font-medium text-slate-500 bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs transition-colors cursor-pointer" title="นำเข้าข้อมูลจาก JSON (Restore)">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-        <input type="file" id="import-json-file" accept=".json" class="hidden" />
-      </label>
     </div>
   </header>
 
@@ -236,8 +207,8 @@
   <div class="hidden sm:block max-w-5xl w-full mx-auto px-4 sm:px-6 pt-5">
     <div class="bg-slate-200/50 p-1.5 rounded-3xl flex items-center gap-1.5 text-xs sm:text-sm font-medium border border-slate-200/60 shadow-2xs">
       <button data-tab-target="transactions" class="nav-tab-btn active flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
-        <span>📝</span>
-        <span data-i18n="tab_transactions">หน้าหลัก & บันทึก</span>
+        <span>🏠</span>
+        <span data-i18n="tab_home">หน้าหลัก</span>
       </button>
       <button data-tab-target="history" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📋</span>
@@ -251,13 +222,9 @@
         <span>🧮</span>
         <span data-i18n="tab_simulator">จำลองเงินกินใช้</span>
       </button>
-      <button data-tab-target="recurring" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
-        <span>📌</span>
-        <span data-i18n="tab_recurring">รายการประจำ & บิล</span>
-      </button>
-      <button data-tab-target="categories" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
-        <span>🏷️</span>
-        <span data-i18n="tab_categories">จัดการหมวดหมู่</span>
+      <button data-tab-target="settings" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+        <span>⚙️</span>
+        <span data-i18n="tab_settings">ตั้งค่า</span>
       </button>
     </div>
   </div>
@@ -329,18 +296,18 @@
             <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">ดูประวัติ</span>
           </button>
 
-          <!-- 4. รายการประจำ & บิล -->
+          <!-- 4. ตั้งค่า & บิลประจำ -->
           <button 
             type="button" 
-            onclick="App.switchTab('recurring')" 
+            onclick="App.switchTab('settings')" 
             class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-amber-50 border border-slate-200/80 hover:border-amber-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
-            title="จัดการบิลและรายการประจำ"
+            title="ตั้งค่าระบบ จัดการบิลและหมวดหมู่"
           >
             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
-              📌
+              ⚙️
             </div>
-            <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">รายการประจำ</span>
-            <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">จัดการบิล</span>
+            <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">ตั้งค่า & บิล</span>
+            <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">จัดการระบบ</span>
           </button>
         </div>
       </div>
@@ -911,214 +878,285 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- TAB 4: 📌 รายการประจำเดือน (Recurring Transactions: Incomes & Expenses) -->
+    <!-- TAB 5: ⚙️ ศูนย์รวมการตั้งค่า & ข้อมูล (Settings Hub) -->
     <!-- ========================================================================= -->
-    <section id="tab-pane-recurring" class="tab-content-pane hidden space-y-5 sm:space-y-6">
+    <section id="tab-pane-settings" class="tab-content-pane hidden space-y-4 sm:space-y-5">
       
-      <!-- Guide Banner -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 data-i18n="rec_banner_title" class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-            <span>📌</span> จัดการรายรับ & รายจ่าย ประจำเดือน (Recurring Manager)
-          </h2>
-          <p data-i18n="rec_banner_desc" class="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
-            กำหนดรายการที่ต้องรับหรือจ่ายทุกเดือนที่นี่ รายการเหล่านี้จะกลายเป็น <strong>ปุ่มลัด (Quick Chips)</strong> ในหน้าบันทึกโดยอัตโนมัติ!
-          </p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button 
-            type="button"
-            onclick="App.openAddRecurringModal()" 
-            class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-2xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
-          >
-            <span data-i18n="btn_open_add_recurring">➕ เปิดหน้าต่างเพิ่มรายการ</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 3 KPI Summary Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div class="pastel-card p-4 rounded-3xl bg-emerald-50/60 border-emerald-100/60">
-          <div class="flex items-center justify-between text-xs font-semibold text-emerald-800">
-            <span data-i18n="rec_kpi_income">รายรับประจำรวม (Incomes)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-xs"></span>
+      <!-- 1. Header Banner -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-2xl border border-white/15">
+            ⚙️
           </div>
-          <p id="rec-tab-total-income" class="text-2xl font-extrabold text-emerald-700 num-font mt-1">฿0.00</p>
-          <p data-i18n="rec_kpi_income_sub" class="text-[11px] text-emerald-600/80 mt-0.5">เงินเดือน & รายได้ประจำ</p>
-        </div>
-
-        <div class="pastel-card p-4 rounded-3xl bg-rose-50/60 border-rose-100/60">
-          <div class="flex items-center justify-between text-xs font-semibold text-rose-800">
-            <span data-i18n="rec_kpi_expense">รายจ่ายประจำรวม (Expenses)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-xs"></span>
-          </div>
-          <p id="rec-tab-total-expense" class="text-2xl font-extrabold text-rose-700 num-font mt-1">฿0.00</p>
-          <p data-i18n="rec_kpi_expense_sub" class="text-[11px] text-rose-600/80 mt-0.5">บิล & ค่าใช้จ่ายฟิกซ์</p>
-        </div>
-
-        <div class="pastel-card p-4 rounded-3xl bg-indigo-50/60 border-indigo-100/60">
-          <div class="flex items-center justify-between text-xs font-semibold text-indigo-800">
-            <span data-i18n="rec_kpi_net">คงเหลือประจำสุทธิ (Net)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-xs"></span>
-          </div>
-          <p id="rec-tab-net-amount" class="text-2xl font-extrabold text-slate-900 num-font mt-1">฿0.00</p>
-          <p data-i18n="rec_kpi_net_sub" class="text-[11px] text-indigo-600/80 mt-0.5">รายรับประจำ - รายจ่ายประจำ</p>
-        </div>
-      </div>
-
-      <!-- Quick Inline Add Form Card -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl space-y-4">
-        <div class="flex items-center justify-between">
           <div>
-            <h3 data-i18n="rec_inline_form_title" class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-              <span>➕</span> เพิ่มรายการประจำเดือนใหม่ (รายรับ / รายจ่าย)
-            </h3>
-            <p data-i18n="rec_inline_form_desc" class="text-xs text-slate-400 mt-0.5">เลือกประเภท กรอกข้อมูล แล้วกดบันทึกเป็นปุ่มลัดได้ทันที</p>
+            <h2 data-i18n="settings_title" class="text-sm sm:text-base font-extrabold text-white leading-tight">ศูนย์รวมการตั้งค่า & ข้อมูล</h2>
+            <p data-i18n="settings_subtitle" class="text-[11px] text-slate-300 mt-0.5">จัดการรายการประจำ หมวดหมู่ ภาษา คลาวด์ และสำรองข้อมูล</p>
           </div>
         </div>
+        <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9</span>
+      </div>
 
-        <form id="recurring-inline-add-form" class="space-y-3">
-          
-          <!-- Type Switch -->
-          <div class="grid grid-cols-2 gap-2 max-w-xs bg-slate-100/80 p-1 rounded-2xl">
-            <button type="button" id="inline-rec-type-exp" onclick="App.setInlineRecurringType('expense')" class="py-1.5 px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer">
-              <span data-i18n="rec_filter_expense">🔴 รายจ่ายประจำ</span>
-            </button>
-            <button type="button" id="inline-rec-type-inc" onclick="App.setInlineRecurringType('income')" class="py-1.5 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1 cursor-pointer">
-              <span data-i18n="rec_filter_income">🟢 รายรับประจำ</span>
-            </button>
-          </div>
+      <!-- 2. Section: ☁️ บัญชี & การซิงค์คลาวด์ (Cloud Sync & Google Account) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>☁️</span>
+            <span data-i18n="settings_account_title">บัญชี & การซิงค์คลาวด์ (Cloud Sync)</span>
+          </h3>
+          <span id="settings-sync-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Local Only</span>
+        </div>
+        <p data-i18n="settings_account_desc" class="text-[11px] text-slate-400">ซิงค์ข้อมูลอัตโนมัติแบบเรียลไทม์ระหว่างมือถือและคอมพิวเตอร์ผ่าน Google Account</p>
+        
+        <!-- Google Account Profile / Status Card -->
+        <div id="settings-google-account-card" class="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
 
-          <!-- Preset Chips -->
-          <div class="space-y-1.5 pt-1">
-            <span data-i18n="rec_preset_hint" class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">ตัวอย่างรายการยอดนิยม (กดเพื่อกรอกอัตโนมัติ):</span>
-            <div id="inline-rec-presets-container" class="flex flex-wrap gap-1.5">
-              <!-- JS Populates Preset Chips -->
+      <!-- 3. Section: 🛠️ ปรับแต่งระบบ & ข้อมูลพื้นฐาน (Customization & Master Data) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
+        <div>
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🛠️</span>
+            <span data-i18n="settings_custom_title">ปรับแต่งระบบ & ข้อมูลพื้นฐาน</span>
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">จัดการรายการประจำและหมวดหมู่รายรับ-รายจ่ายที่ใช้ในระบบ</p>
+        </div>
+
+        <div class="space-y-3">
+          <!-- Row 1: ปรับแต่งรายการประจำ & บิล -->
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0 mt-0.5">
+                📌
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 data-i18n="settings_recurring_title" class="text-xs sm:text-sm font-extrabold text-slate-900">ปรับแต่งรายการประจำ & บิล</h4>
+                  <span id="settings-rec-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 num-font">0 รายการ</span>
+                </div>
+                <p data-i18n="settings_recurring_desc" class="text-[11px] text-slate-500 mt-0.5">กำหนดรายรับ-รายจ่ายที่ต้องจ่ายทุกเดือน และปุ่มลัดในหน้าบันทึก</p>
+              </div>
             </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
-            <div class="sm:col-span-4">
-              <label data-i18n="rec_label_name" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ชื่อรายการประจำ *</label>
-              <input 
-                type="text" 
-                id="inline-rec-name" 
-                placeholder="เช่น ค่าเช่าห้อง, เงินเดือน..." 
-                class="w-full px-3 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800" 
-                required
-              />
-            </div>
-
-            <div class="sm:col-span-3">
-              <label data-i18n="rec_label_amount" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">จำนวนเงิน (บาท) *</label>
-              <input 
-                type="number" 
-                id="inline-rec-amount" 
-                step="any" 
-                min="0.01" 
-                placeholder="0"
-                class="w-full px-3 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 num-font" 
-                required
-              />
-            </div>
-
-            <div class="sm:col-span-3">
-              <label data-i18n="rec_label_cat" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">หมวดหมู่</label>
-              <select id="inline-rec-category" class="w-full px-2.5 py-2 bg-slate-50/80 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                <!-- Populated via JS -->
-              </select>
-            </div>
-
-            <div class="sm:col-span-2 flex items-end">
-              <button 
-                type="submit" 
-                class="w-full py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
-              >
-                <span data-i18n="rec_btn_save">➕ บันทึก</span>
+            <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              <button type="button" onclick="App.toggleSettingsRecurringManager()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                <span>📋</span>
+                <span id="settings-rec-toggle-text">ดูรายการทั้งหมด</span>
+              </button>
+              <button type="button" onclick="App.openAddRecurringModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                <span>➕</span>
+                <span>เพิ่มรายการ</span>
               </button>
             </div>
           </div>
 
-        </form>
+          <!-- Inline Recurring Manager Drawer (Collapsible) -->
+          <div id="settings-recurring-drawer" class="hidden p-4 rounded-2xl bg-slate-100/60 border border-slate-200/80 space-y-3.5 animate-modal">
+            <div class="flex items-center justify-between">
+              <h5 class="text-xs font-bold text-slate-700 uppercase">จัดการรายการประจำเดือน</h5>
+              <div class="flex items-center gap-1">
+                <button type="button" id="settings-rec-filter-all" onclick="App.setSettingsRecFilter('all')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs cursor-pointer">ทั้งหมด</button>
+                <button type="button" id="settings-rec-filter-exp" onclick="App.setSettingsRecFilter('expense')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer">🔴 รายจ่าย</button>
+                <button type="button" id="settings-rec-filter-inc" onclick="App.setSettingsRecFilter('income')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer">🟢 รายรับ</button>
+              </div>
+            </div>
+            <div id="settings-recurring-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+          <!-- Row 2: ปรับแต่งหมวดหมู่ & บิล -->
+          <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl shrink-0 mt-0.5">
+                🏷️
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h4 data-i18n="settings_categories_title" class="text-xs sm:text-sm font-extrabold text-slate-900">ปรับแต่งหมวดหมู่ & บิล</h4>
+                  <span id="settings-cat-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200/60 num-font">0 หมวดหมู่</span>
+                </div>
+                <p data-i18n="settings_categories_desc" class="text-[11px] text-slate-500 mt-0.5">เพิ่ม ลบ หรือแก้ไขชื่อและไอคอนอิโมจิของหมวดหมู่</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+              <button type="button" onclick="App.toggleSettingsCategoryManager()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                <span>🏷️</span>
+                <span id="settings-cat-toggle-text">ดูหมวดหมู่ทั้งหมด</span>
+              </button>
+              <button type="button" onclick="App.openAddCategoryModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                <span>➕</span>
+                <span>เพิ่มหมวด</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Inline Category Manager Drawer (Collapsible) -->
+          <div id="settings-category-drawer" class="hidden p-4 rounded-2xl bg-slate-100/60 border border-slate-200/80 space-y-3.5 animate-modal">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1">
+                <button type="button" id="settings-cat-type-exp" onclick="App.setSettingsCatType('expense')" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer">🔴 หมวดหมู่รายจ่าย</button>
+                <button type="button" id="settings-cat-type-inc" onclick="App.setSettingsCatType('income')" class="px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer">🟢 หมวดหมู่รายรับ</button>
+              </div>
+              <button type="button" onclick="App.handleRestoreDefaultCategories()" class="text-[11px] text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">🔄 คืนค่าเริ่มต้น</button>
+            </div>
+            <div id="settings-categories-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
+        </div>
       </div>
 
-      <!-- Filter Tabs & List of Recurring Item Cards -->
-      <div class="space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h3 data-i18n="rec_list_title" class="text-xs font-bold text-slate-700 uppercase tracking-wider">รายการประจำเดือนทั้งหมดที่ตั้งค่าไว้</h3>
-          
-          <!-- Filter Buttons -->
-          <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 text-xs">
-            <button type="button" id="rec-filter-all" onclick="App.setRecurringCardFilter('all')" class="px-3 py-1.5 rounded-xl font-bold bg-white text-slate-900 shadow-2xs cursor-pointer">
-              <span data-i18n="rec_filter_all">ทั้งหมด</span>
-            </button>
-            <button type="button" id="rec-filter-expense" onclick="App.setRecurringCardFilter('expense')" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 cursor-pointer">
-              <span data-i18n="rec_filter_expense">🔴 รายจ่ายประจำ</span>
-            </button>
-            <button type="button" id="rec-filter-income" onclick="App.setRecurringCardFilter('income')" class="px-3 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 cursor-pointer">
-              <span data-i18n="rec_filter_income">🟢 รายรับประจำ</span>
-            </button>
+      <!-- 4. Section: 🌐 ภาษาและการแสดงผล (Language & Preferences) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <span>🌐</span>
+              <span data-i18n="settings_lang_title">ภาษาและการแสดงผล (Language)</span>
+            </h3>
+            <p data-i18n="settings_lang_desc" class="text-[11px] text-slate-400 mt-0.5">เลือกภาษาที่ต้องการใช้งานในแอปพลิเคชัน</p>
           </div>
         </div>
 
-        <div id="recurring-items-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          <!-- Rendered via JS -->
+        <div class="bg-slate-100 p-1.5 rounded-2xl flex items-center gap-2 border border-slate-200/60 max-w-md">
+          <button 
+            type="button" 
+            id="settings-lang-th" 
+            onclick="I18n.setLanguage('th')" 
+            class="flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold bg-white text-slate-900 shadow-xs border border-slate-200/80 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span>🇹🇭</span>
+            <span>ภาษาไทย (TH)</span>
+          </button>
+          <button 
+            type="button" 
+            id="settings-lang-en" 
+            onclick="I18n.setLanguage('en')" 
+            class="flex-1 py-2.5 px-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span>🇬🇧</span>
+            <span>English (EN)</span>
+          </button>
         </div>
       </div>
 
-    </section>
-
-    <!-- ========================================================================= -->
-    <!-- TAB 5: 🏷️ จัดการหมวดหมู่ (Category Manager) -->
-    <!-- ========================================================================= -->
-    <section id="tab-pane-categories" class="tab-content-pane hidden space-y-5 sm:space-y-6">
-      
-      <!-- Category Manager Header Banner -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <!-- 5. Section: 💾 จัดการข้อมูล & สำรองไฟล์ (Data Management & Backup) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
         <div>
-          <h2 data-i18n="cat_mgr_title" class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
-            <span>🏷️</span> จัดการหมวดหมู่ (Category Manager)
-          </h2>
-          <p data-i18n="cat_mgr_desc" class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            เพิ่ม แก้ไข หรือลบหมวดหมู่รายรับ-รายจ่ายตามความต้องการของคุณ
-          </p>
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>💾</span>
+            <span data-i18n="settings_data_title">จัดการข้อมูล & สำรองไฟล์ (Data Hub)</span>
+          </h3>
+          <p data-i18n="settings_data_desc" class="text-[11px] text-slate-400 mt-0.5">ส่งออกรายงาน Excel/CSV, สำรองไฟล์ JSON หรือโหลดข้อมูลตัวอย่าง</p>
         </div>
-        <div class="flex items-center gap-2">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          <!-- 1. Export CSV / Excel -->
           <button 
-            type="button"
-            onclick="App.openAddCategoryModal()" 
-            class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl shadow-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
+            type="button" 
+            onclick="App.openExportModal()" 
+            class="p-3.5 rounded-2xl bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
           >
-            <span data-i18n="btn_add_new_category">➕ เพิ่มหมวดหมู่ใหม่</span>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                📊
+              </div>
+              <div>
+                <span class="text-xs sm:text-sm font-extrabold text-emerald-900 block leading-tight">ส่งออก CSV / Excel</span>
+                <span class="text-[11px] text-emerald-700/80">กรองช่วงเวลา หมวดหมู่ หรือช่องทางจ่าย</span>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-emerald-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
           </button>
+
+          <!-- 2. Backup JSON -->
           <button 
-            type="button"
-            onclick="App.handleRestoreDefaultCategories()" 
-            class="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 font-semibold text-xs rounded-2xl border border-slate-200 transition-all whitespace-nowrap cursor-pointer"
-            title="คืนค่าหมวดหมู่มาตรฐาน"
+            type="button" 
+            onclick="StorageManager.exportToJSON()" 
+            class="p-3.5 rounded-2xl bg-indigo-50/60 hover:bg-indigo-100/70 border border-indigo-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
           >
-            <span data-i18n="btn_restore_default_categories">🔄 คืนค่าเริ่มต้น</span>
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                📤
+              </div>
+              <div>
+                <span class="text-xs sm:text-sm font-extrabold text-indigo-900 block leading-tight">สำรองข้อมูล JSON (Backup)</span>
+                <span class="text-[11px] text-indigo-700/80">ดาวน์โหลดไฟล์สำรองเก็บไว้ในเครื่อง</span>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+
+          <!-- 3. Restore JSON -->
+          <label class="p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                📥
+              </div>
+              <div>
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900 block leading-tight">นำเข้าข้อมูล JSON (Restore)</span>
+                <span class="text-[11px] text-slate-500">กู้คืนข้อมูลจากไฟล์ JSON ที่เคยสำรองไว้</span>
+              </div>
+            </div>
+            <input type="file" id="settings-import-json-file" accept=".json" class="hidden" onchange="App.handleImportJsonFile(this)" />
+            <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </label>
+
+          <!-- 4. Load Sample Data -->
+          <button 
+            type="button" 
+            onclick="App.handleLoadSampleData()" 
+            class="p-3.5 rounded-2xl bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                ✨
+              </div>
+              <div>
+                <span class="text-xs sm:text-sm font-extrabold text-amber-900 block leading-tight">โหลดข้อมูลตัวอย่าง (Sample)</span>
+                <span class="text-[11px] text-amber-700/80">เติมรายการตัวอย่างเพื่อทดลองระบบ</span>
+              </div>
+            </div>
+            <svg class="w-4 h-4 text-amber-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+
+        </div>
+
+        <!-- Danger Zone: Reset Data -->
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-[11px] text-slate-400 font-medium">ล้างข้อมูลเฉพาะในเครื่องนี้</span>
+          <button 
+            type="button" 
+            onclick="App.handleClearAllData()" 
+            class="px-3 py-1.5 rounded-xl text-[11px] font-bold text-rose-600 hover:bg-rose-50 border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+          >
+            <span>🗑️</span>
+            <span data-i18n="btn_clear_data">ล้างข้อมูลทั้งหมดในเครื่อง</span>
           </button>
         </div>
       </div>
 
-      <!-- Expense vs Income Switch -->
-      <div class="flex items-center justify-between">
-        <div class="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 text-xs">
-          <button type="button" id="cat-tab-expense" onclick="App.setCategoryManagerType('expense')" class="px-3.5 py-1.5 rounded-xl font-bold bg-rose-400 text-white shadow-xs transition-all cursor-pointer">
-            <span data-i18n="cat_mgr_expenses_tab">🔴 หมวดหมู่รายจ่าย</span>
-          </button>
-          <button type="button" id="cat-tab-income" onclick="App.setCategoryManagerType('income')" class="px-3.5 py-1.5 rounded-xl font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer">
-            <span data-i18n="cat_mgr_incomes_tab">🟢 หมวดหมู่รายรับ</span>
-          </button>
+      <!-- 6. Section: ℹ️ เกี่ยวกับแอปพลิเคชัน (About App & System Info) -->
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm font-bold shadow-2xs">
+              🪙
+            </div>
+            <div>
+              <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Money Memo</h4>
+              <p class="text-[10px] text-slate-400">Offline-First Fintech Edition</p>
+            </div>
+          </div>
+          <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200/70 num-font">v3.9</span>
         </div>
 
-        <span id="cat-mgr-count-badge" class="text-xs font-semibold text-slate-400"></span>
-      </div>
-
-      <!-- Categories Cards Grid -->
-      <div id="categories-manager-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-        <!-- Rendered via JS -->
+        <div id="settings-storage-stats-container" class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+          <!-- Dynamically populated via JS -->
+        </div>
       </div>
 
     </section>
@@ -1163,12 +1201,12 @@
         <span data-i18n="tab_dashboard" class="text-[10px] font-bold mt-0.5">สถิติ</span>
       </button>
 
-      <!-- 5. บิลประจำ -->
-      <button data-tab-target="recurring" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
+      <!-- 5. ตั้งค่า -->
+      <button data-tab-target="settings" class="mobile-nav-btn flex-1 flex flex-col items-center justify-center py-1 px-0.5 rounded-2xl transition-all cursor-pointer">
         <div class="mobile-icon-wrap w-8 h-8 rounded-2xl flex items-center justify-center text-base transition-all duration-200">
-          📌
+          ⚙️
         </div>
-        <span data-i18n="tab_recurring" class="text-[10px] font-bold mt-0.5">บิลประจำ</span>
+        <span data-i18n="tab_settings" class="text-[10px] font-bold mt-0.5">ตั้งค่า</span>
       </button>
 
     </nav>
@@ -1989,10 +2027,10 @@
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=3.8" defer></script>
-  <script src="js/storage.js?v=3.8" defer></script>
-  <script src="js/firebase-client.js?v=3.8" defer></script>
-  <script src="js/budget-simulator.js?v=3.8" defer></script>
-  <script src="js/app.js?v=3.8" defer></script>
+  <script src="js/i18n.js?v=3.9" defer></script>
+  <script src="js/storage.js?v=3.9" defer></script>
+  <script src="js/firebase-client.js?v=3.9" defer></script>
+  <script src="js/budget-simulator.js?v=3.9" defer></script>
+  <script src="js/app.js?v=3.9" defer></script>
 </body>
 </html>

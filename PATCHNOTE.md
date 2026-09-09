@@ -4,7 +4,21 @@
 
 ---
 
-## 📱 Version 3.8 (Current Version) — *Fintech Home Hub, Daily Budget Tracker & Quick Services Menu*
+## 📱 Version 3.9 (Current Version) — *Unified Settings Hub, Direct Language Switcher & Clean Header*
+**วันที่อัปเดต:** กันยายน 2026
+
+### ⚙️ ยกระดับแท็บที่ 5 เป็นศูนย์รวมการตั้งค่า (Settings Hub) ครบวงจร
+- **1. Clean Minimal Header**: เก็บปุ่มเปลี่ยนภาษา (TH/EN) และปุ่มสำรองข้อมูลออกจากแถบด้านบน ให้ส่วนหัวแอปโล่ง สะอาดตา สบายตาตามสไตล์โมเดิร์น
+- **2. คลาวด์ & บัญชี Google (Google Sync & Account Card)**: แสดงสถานะการเข้าสู่ระบบ สถานะการซิงค์ข้อมูลก้อนเมฆ (🟢 Cloud Synced / Local Only) พร้อมปุ่มซิงค์ทันท่วงที
+- **3. ปรับแต่งรายการประจำ (Recurring Items)**: รวมเครื่องมือจัดการค่าใช้จ่ายประจำและบิลไว้ใน Settings แสดงสรุปจำนวนรายการ พร้อม Drawer ขยายดู/แก้ไข/ลบ และปุ่ม `[ ➕ เพิ่มรายการประจำ ]`
+- **4. ปรับแต่งหมวดหมู่ (Custom Categories)**: รวมเครื่องมือจัดการหมวดหมู่รายรับ-รายจ่ายไว้ใน Settings พร้อมตัวกรองแยกประเภทและปุ่ม `[ ➕ เพิ่มหมวดใหม่ ]`
+- **5. เปลี่ยนภาษาแอป (Language Switcher)**: ปุ่มสลับภาษา `[ 🇹🇭 ภาษาไทย ]` และ `[ 🇬🇧 English ]` ภายในหน้า Settings ตอบสนองทันทีแบบ Real-time
+- **6. สำรองและจัดการข้อมูล (Data Management)**: รวมฟังก์ชันส่งออก Excel/CSV, สำรองข้อมูลเป็นไฟล์ JSON (Backup), นำเข้ากู้คืนข้อมูล (Restore), โหลดข้อมูลตัวอย่าง (Sample Data) และรีเซ็ตข้อมูลทั้งหมด
+- **7. ข้อมูลระบบ & เวอร์ชัน (About System)**: แสดงเวอร์ชันแอป `v3.9`, จำนวนรายการที่บันทึก, ขนาดพื้นที่จัดเก็บ และสถานะความพร้อมทำงานออฟไลน์ (PWA Ready)
+
+---
+
+## 📱 Version 3.8 — *Fintech Home Hub, Daily Budget Tracker & Quick Services Menu*
 **วันที่อัปเดต:** กันยายน 2026
 
 ### 🏠 ปรับหน้าหลัก (Home Screen) โฉมใหม่ สไตล์ K PLUS & Fintech

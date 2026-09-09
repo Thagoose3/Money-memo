@@ -3,7 +3,7 @@
  */
 
 const App = {
-  currentTab: 'transactions', // 'transactions', 'history', 'dashboard', 'simulator', 'recurring', 'categories'
+  currentTab: 'transactions', // 'transactions', 'history', 'dashboard', 'simulator', 'settings'
   dashboardViewMode: 'custom', // 'custom' (Monthly / Pay cycle), 'daily' (Daily breakdown), 'yearly' (Annual overview)
   selectedDate: new Date(), // สำหรับ Dashboard
   currentEntryType: 'expense', // 'expense' or 'income' for transaction form
@@ -16,15 +16,19 @@ const App = {
   historyCategoryFilter: 'all', // 'all' or categoryId
   historySearchQuery: '',
   
-  // Tab 4 (Recurring Items) state
+  // Recurring & Category state
   inlineRecurringType: 'expense', // 'expense' or 'income'
   recurringCardFilter: 'all', // 'all', 'expense', 'income'
   editingRecurringId: null,
-
-  // Tab 5 (Category Manager) state
   categoryManagerType: 'expense', // 'expense' or 'income'
   editingCategoryId: null,
   deletingCategoryId: null,
+
+  // Tab 5 (Settings Hub) state
+  settingsRecFilter: 'all', // 'all', 'expense', 'income'
+  settingsCatType: 'expense', // 'expense' or 'income'
+  isSettingsRecOpen: false,
+  isSettingsCatOpen: false,
 
   // Modals & Pending actions
   editingTransactionId: null,
@@ -3142,8 +3146,7 @@ const App = {
       }
       if (this.currentTab !== 'history') this.renderHistoryTab();
       if (this.currentTab !== 'dashboard') this.renderDashboard();
-      if (this.currentTab !== 'recurring') this.renderRecurringTab();
-      if (this.currentTab !== 'categories') this.renderCategoriesTab();
+      if (this.currentTab !== 'settings') this.renderSettingsTab();
       if (this.currentTab !== 'simulator' && typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
         BudgetSimulator.render();
       }
@@ -3162,11 +3165,8 @@ const App = {
       if (typeof BudgetSimulator !== 'undefined' && BudgetSimulator.data) {
         BudgetSimulator.render();
       }
-    } else if (this.currentTab === 'recurring') {
-      this.setInlineRecurringType(this.inlineRecurringType);
-      this.renderRecurringTab();
-    } else if (this.currentTab === 'categories') {
-      this.renderCategoriesTab();
+    } else if (this.currentTab === 'settings') {
+      this.renderSettingsTab();
     }
   },
 
@@ -3333,6 +3333,400 @@ const App = {
         </div>
       </div>
     `;
+  },
+
+  // ==========================================
+  // TAB 5: ⚙️ SETTINGS HUB & DATA MANAGEMENT
+  // ==========================================
+  renderSettingsTab() {
+    this.renderSettingsGoogleAccount();
+    this.renderSettingsRecurringSummary();
+    this.renderSettingsCategorySummary();
+    this.renderSettingsStorageStats();
+  },
+
+  renderSettingsGoogleAccount() {
+    const cardEl = document.getElementById('settings-google-account-card');
+    const badgeEl = document.getElementById('settings-sync-badge');
+    if (!cardEl) return;
+
+    const user = (typeof FirebaseManager !== 'undefined' && FirebaseManager.getUser) ? FirebaseManager.getUser() : null;
+    const lang = I18n.getLanguage();
+
+    if (user) {
+      const avatarUrl = user.photoURL;
+      const fullName = user.displayName || user.email.split('@')[0];
+      const initial = fullName.charAt(0).toUpperCase();
+
+      if (badgeEl) {
+        badgeEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60';
+        badgeEl.textContent = lang === 'en' ? '🟢 Cloud Synced' : '🟢 ซิงค์คลาวด์แล้ว';
+      }
+
+      cardEl.innerHTML = `
+        <div class="flex items-center gap-3">
+          ${avatarUrl 
+            ? `<img src="${avatarUrl}" alt="${fullName}" class="w-11 h-11 rounded-2xl object-cover shadow-2xs border border-slate-200" />`
+            : `<div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-slate-800 text-white font-black text-base flex items-center justify-center shadow-2xs">${initial}</div>`
+          }
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h4 class="text-xs sm:text-sm font-extrabold text-slate-900">${fullName}</h4>
+              <span class="text-[9px] px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/50">Google Account</span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium">${user.email}</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+          <button 
+            type="button" 
+            onclick="FirebaseManager.performTwoWaySync()" 
+            class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            title="ซิงค์ข้อมูลเดี๋ยวนี้"
+          >
+            <span>🔄</span>
+            <span>${lang === 'en' ? 'Sync Now' : 'ซิงค์ทันที'}</span>
+          </button>
+          <button 
+            type="button" 
+            onclick="FirebaseManager.signOut()" 
+            class="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            title="ออกจากระบบ"
+          >
+            <span>🚪</span>
+            <span>${lang === 'en' ? 'Sign Out' : 'ออกจากระบบ'}</span>
+          </button>
+        </div>
+      `;
+    } else {
+      if (badgeEl) {
+        badgeEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500';
+        badgeEl.textContent = lang === 'en' ? 'Local Only' : 'ใช้งานแบบออฟไลน์';
+      }
+
+      cardEl.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-amber-100/70 text-amber-800 flex items-center justify-center text-xl shadow-2xs shrink-0">
+            👤
+          </div>
+          <div>
+            <h4 class="text-xs sm:text-sm font-extrabold text-slate-900">${lang === 'en' ? 'Guest User (Not logged in)' : 'ยังไม่ได้เข้าสู่ระบบ (Guest)'}</h4>
+            <p class="text-[11px] text-slate-400">${lang === 'en' ? 'Sign in with Google to sync your records automatically.' : 'เข้าสู่ระบบด้วย Google เพื่อซิงค์ข้อมูลและเข้าถึงจากทุกอุปกรณ์'}</p>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          onclick="FirebaseManager.signInWithGoogle()" 
+          class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer self-end sm:self-center active:scale-95"
+        >
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
+            <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+            <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+            <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.1s.7 5.4 1.9 7.8l3.7-2.9z"/>
+            <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"/>
+          </svg>
+          <span>${lang === 'en' ? 'Sign in with Google' : 'เข้าสู่ระบบด้วย Google'}</span>
+        </button>
+      `;
+    }
+  },
+
+  renderSettingsRecurringSummary() {
+    const badgeEl = document.getElementById('settings-rec-count-badge');
+    const items = StorageManager.getRecurringItems();
+    const lang = I18n.getLanguage();
+
+    if (badgeEl) {
+      badgeEl.textContent = lang === 'en' ? `${items.length} items` : `${items.length} รายการ`;
+    }
+
+    if (this.isSettingsRecOpen) {
+      this.renderSettingsRecurringList();
+    }
+  },
+
+  toggleSettingsRecurringManager() {
+    this.isSettingsRecOpen = !this.isSettingsRecOpen;
+    const drawer = document.getElementById('settings-recurring-drawer');
+    const toggleText = document.getElementById('settings-rec-toggle-text');
+    const lang = I18n.getLanguage();
+
+    if (drawer) {
+      if (this.isSettingsRecOpen) {
+        drawer.classList.remove('hidden');
+        if (toggleText) toggleText.textContent = lang === 'en' ? 'Hide List' : 'ซ่อนรายการ';
+        this.renderSettingsRecurringList();
+      } else {
+        drawer.classList.add('hidden');
+        if (toggleText) toggleText.textContent = lang === 'en' ? 'View All' : 'ดูรายการทั้งหมด';
+      }
+    }
+  },
+
+  setSettingsRecFilter(type) {
+    this.settingsRecFilter = type;
+    const allBtn = document.getElementById('settings-rec-filter-all');
+    const expBtn = document.getElementById('settings-rec-filter-exp');
+    const incBtn = document.getElementById('settings-rec-filter-inc');
+
+    [allBtn, expBtn, incBtn].forEach(b => {
+      if (b) b.className = 'px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer';
+    });
+
+    if (type === 'all' && allBtn) allBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs cursor-pointer';
+    if (type === 'expense' && expBtn) expBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-400 text-white shadow-xs cursor-pointer';
+    if (type === 'income' && incBtn) incBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-400 text-white shadow-xs cursor-pointer';
+
+    this.renderSettingsRecurringList();
+  },
+
+  renderSettingsRecurringList() {
+    const container = document.getElementById('settings-recurring-list-container');
+    if (!container) return;
+
+    const allItems = StorageManager.getRecurringItems();
+    let items = allItems;
+    if (this.settingsRecFilter === 'expense') items = allItems.filter(i => i.type === 'expense');
+    if (this.settingsRecFilter === 'income') items = allItems.filter(i => i.type === 'income');
+
+    const lang = I18n.getLanguage();
+
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full text-center py-6 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+          <p class="text-xs font-semibold">${lang === 'en' ? 'No recurring items in this filter' : 'ยังไม่มีรายการประจำในหมวดนี้'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = items.map(item => {
+      const isExp = item.type === 'expense';
+      const cat = StorageManager.getCategoryById(item.categoryId || StorageManager.guessCategoryByName(item.name, item.type));
+      const displayName = StorageManager.getItemDisplayName(item);
+
+      return `
+        <div class="bg-white p-3 rounded-2xl border border-slate-200/80 flex items-center justify-between gap-2 shadow-2xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-xl shrink-0">${cat.emoji}</span>
+            <div class="min-w-0">
+              <p class="text-xs font-extrabold text-slate-900 truncate">${displayName}</p>
+              <p class="text-[10px] text-slate-400 truncate">${StorageManager.getCategoryDisplayName(cat)} · ${item.paymentMethod || 'โอนเงิน'}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs font-extrabold num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+              ${isExp ? '-' : '+'}฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </span>
+            <div class="flex items-center gap-1">
+              <button type="button" onclick="App.openEditRecurringModal('${item.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
+              <button type="button" onclick="App.deleteRecurring('${item.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="${I18n.t('btn_delete')}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  renderSettingsCategorySummary() {
+    const badgeEl = document.getElementById('settings-cat-count-badge');
+    const categories = StorageManager.getCategories();
+    const lang = I18n.getLanguage();
+
+    if (badgeEl) {
+      badgeEl.textContent = lang === 'en' ? `${categories.length} categories` : `${categories.length} หมวดหมู่`;
+    }
+
+    if (this.isSettingsCatOpen) {
+      this.renderSettingsCategoryList();
+    }
+  },
+
+  toggleSettingsCategoryManager() {
+    this.isSettingsCatOpen = !this.isSettingsCatOpen;
+    const drawer = document.getElementById('settings-category-drawer');
+    const toggleText = document.getElementById('settings-cat-toggle-text');
+    const lang = I18n.getLanguage();
+
+    if (drawer) {
+      if (this.isSettingsCatOpen) {
+        drawer.classList.remove('hidden');
+        if (toggleText) toggleText.textContent = lang === 'en' ? 'Hide List' : 'ซ่อนหมวดหมู่';
+        this.renderSettingsCategoryList();
+      } else {
+        drawer.classList.add('hidden');
+        if (toggleText) toggleText.textContent = lang === 'en' ? 'View All' : 'ดูหมวดหมู่ทั้งหมด';
+      }
+    }
+  },
+
+  setSettingsCatType(type) {
+    this.settingsCatType = type;
+    const expBtn = document.getElementById('settings-cat-type-exp');
+    const incBtn = document.getElementById('settings-cat-type-inc');
+
+    if (type === 'expense') {
+      if (expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
+    } else {
+      if (expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs cursor-pointer';
+    }
+
+    this.renderSettingsCategoryList();
+  },
+
+  renderSettingsCategoryList() {
+    const container = document.getElementById('settings-categories-grid-container');
+    if (!container) return;
+
+    const allCategories = StorageManager.getCategories();
+    const categories = allCategories.filter(c => c.type === this.settingsCatType);
+    const lang = I18n.getLanguage();
+
+    if (categories.length === 0) {
+      container.innerHTML = `
+        <div class="col-span-full text-center py-6 text-slate-400 bg-white rounded-2xl border border-dashed border-slate-200">
+          <p class="text-xs font-semibold">${lang === 'en' ? 'No categories found' : 'ไม่พบหมวดหมู่ในกลุ่มนี้'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = categories.map(cat => {
+      const displayName = StorageManager.getCategoryDisplayName(cat);
+      const badgeText = cat.isDefault ? I18n.t('badge_default_cat') : I18n.t('badge_custom_cat');
+
+      return `
+        <div class="bg-white p-3 rounded-2xl border border-slate-200/80 flex items-center justify-between gap-2 shadow-2xs">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0" style="background-color: ${cat.color}18;">
+              ${cat.emoji}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1">
+                <span class="font-extrabold text-slate-900 text-xs truncate">${displayName}</span>
+                <span class="text-[8px] px-1 py-0.2 rounded font-bold ${cat.isDefault ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600'}">${badgeText}</span>
+              </div>
+              <span class="text-[10px] text-slate-400 truncate block">${cat.nameEn || cat.name}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button type="button" onclick="App.openEditCategoryModal('${cat.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer" title="${I18n.t('btn_edit_cat')}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+            </button>
+            <button type="button" onclick="App.openDeleteCategoryModal('${cat.id}')" class="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="${I18n.t('btn_delete_cat')}">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  renderSettingsStorageStats() {
+    const container = document.getElementById('settings-storage-stats-container');
+    if (!container) return;
+
+    const txs = StorageManager.getTransactions();
+    const cats = StorageManager.getCategories();
+    const recs = StorageManager.getRecurringItems();
+    const lang = I18n.getLanguage();
+
+    let storageSizeKb = 0;
+    try {
+      let totalLen = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('money_memo_')) {
+          totalLen += (localStorage.getItem(k) || '').length * 2; // UTF-16 approx
+        }
+      }
+      storageSizeKb = (totalLen / 1024).toFixed(1);
+    } catch(e) {}
+
+    container.innerHTML = `
+      <div class="flex items-center gap-1.5">
+        <span class="font-bold text-slate-800">📊 ${lang === 'en' ? 'Records:' : 'จำนวนรายการ:'}</span>
+        <span class="num-font font-extrabold text-indigo-600">${txs.length}</span>
+        <span class="text-slate-400">·</span>
+        <span class="font-bold text-slate-800">🏷️ ${lang === 'en' ? 'Categories:' : 'หมวดหมู่:'}</span>
+        <span class="num-font font-extrabold text-indigo-600">${cats.length}</span>
+        <span class="text-slate-400">·</span>
+        <span class="font-bold text-slate-800">📌 ${lang === 'en' ? 'Recurring:' : 'รายการประจำ:'}</span>
+        <span class="num-font font-extrabold text-indigo-600">${recs.length}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-slate-400">📦 Storage: <strong class="num-font text-slate-700 font-bold">${storageSizeKb} KB</strong></span>
+        <span class="text-emerald-600 font-bold">🟢 PWA Offline Ready</span>
+      </div>
+    `;
+  },
+
+  handleImportJsonFile(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const res = StorageManager.importFromJSON(event.target.result);
+      if (res.success) {
+        this.renderAll(true);
+        BudgetSimulator.init();
+        this.showToast(I18n.t('toast_restored'));
+      } else {
+        alert((I18n.getLanguage() === 'en' ? 'Error importing file: ' : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ') + res.message);
+      }
+      input.value = '';
+    };
+    reader.readAsText(file);
+  },
+
+  handleLoadSampleData() {
+    const lang = I18n.getLanguage();
+    const confirmMsg = lang === 'en' ? 'Load sample demo data for testing?' : 'ต้องการโหลดข้อมูลตัวอย่างสำหรับทดลองใช้งานใช่หรือไม่?';
+    if (confirm(confirmMsg)) {
+      StorageManager.loadSampleData();
+      this.renderAll(true);
+      BudgetSimulator.render();
+      this.showToast(I18n.t('toast_sample_loaded'));
+    }
+  },
+
+  handleClearAllData() {
+    const lang = I18n.getLanguage();
+    const confirm1 = lang === 'en' 
+      ? 'Are you sure you want to clear all local records and settings?' 
+      : 'คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลบันทึกและรายการทั้งหมดในเครื่องนี้?';
+    if (!confirm(confirm1)) return;
+
+    const confirm2 = lang === 'en'
+      ? 'Final confirmation: All local records will be deleted permanently.'
+      : 'ยืนยันครั้งสุดท้าย: ข้อมูลในเครื่องจะถูกลบทั้งหมด';
+    if (!confirm(confirm2)) return;
+
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('money_memo_') && !k.includes('language')) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      StorageManager.init();
+      this.renderAll(true);
+      BudgetSimulator.init();
+      this.showToast(lang === 'en' ? 'All local data cleared 🗑️' : 'ล้างข้อมูลในเครื่องทั้งหมดเรียบร้อยแล้ว 🗑️');
+    } catch(e) {
+      console.error(e);
+    }
   },
 
   showToast(message) {

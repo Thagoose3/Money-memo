@@ -18,12 +18,36 @@ const TRANSLATIONS = {
     // Navigation Tabs
     tab_home: 'หน้าหลัก',
     tab_history: 'ประวัติรายการ',
-    tab_transactions: 'หน้าหลัก & ภาพรวม',
+    tab_transactions: 'หน้าหลัก',
     tab_dashboard: 'สถิติ & แดชบอร์ด',
     tab_simulator: 'จำลองเงินกินใช้',
     tab_recurring: 'รายการประจำ & บิล',
     tab_categories: 'จัดการหมวดหมู่',
+    tab_settings: 'ตั้งค่า',
     quick_services_title: 'บริการด่วน',
+
+    // Tab 5: Settings Hub
+    settings_title: 'ศูนย์รวมการตั้งค่า & ข้อมูล',
+    settings_subtitle: 'จัดการรายการประจำ หมวดหมู่ ภาษา คลาวด์ และสำรองข้อมูล',
+    settings_account_title: 'บัญชี & การซิงค์คลาวด์ (Cloud Sync)',
+    settings_account_desc: 'ซิงค์ข้อมูลอัตโนมัติแบบเรียลไทม์ระหว่างมือถือและคอมพิวเตอร์ผ่าน Google Account',
+    settings_custom_title: 'ปรับแต่งระบบ & ข้อมูลพื้นฐาน',
+    settings_recurring_title: 'ปรับแต่งรายการประจำ & บิล',
+    settings_recurring_desc: 'กำหนดรายรับ-รายจ่ายที่ต้องจ่ายทุกเดือน และปุ่มลัดในหน้าบันทึก',
+    settings_categories_title: 'ปรับแต่งหมวดหมู่ & บิล',
+    settings_categories_desc: 'เพิ่ม ลบ หรือแก้ไขชื่อและไอคอนอิโมจิของหมวดหมู่',
+    settings_lang_title: 'ภาษาและการแสดงผล (Language)',
+    settings_lang_desc: 'เลือกภาษาที่ต้องการใช้งานในแอปพลิเคชัน',
+    settings_data_title: 'จัดการข้อมูล & สำรองไฟล์ (Data Hub)',
+    settings_data_desc: 'ส่งออกรายงาน Excel/CSV, สำรองไฟล์ JSON หรือโหลดข้อมูลตัวอย่าง',
+    settings_about_title: 'เกี่ยวกับ Money Memo',
+    settings_about_desc: 'เวอร์ชันแอปพลิเคชันและสถานะการทำงานแบบออฟไลน์',
+    btn_manage_recurring: '⚙️ จัดการรายการประจำ',
+    btn_manage_categories: '🏷️ จัดการหมวดหมู่',
+    btn_login_google: '🔑 เข้าสู่ระบบด้วย Google',
+    btn_logout: '🚪 ออกจากระบบ',
+    btn_clear_data: '🗑️ ล้างข้อมูลทั้งหมดในเครื่อง',
+    btn_clear_data_confirm: 'คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมดในเครื่อง? การกระทำนี้ไม่สามารถย้อนกลับได้',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'ดึงรายการประจำเดือนมาบันทึก',
@@ -263,12 +287,36 @@ const TRANSLATIONS = {
     // Navigation Tabs
     tab_home: 'Home',
     tab_history: 'History / Statement',
-    tab_transactions: 'Home & Overview',
+    tab_transactions: 'Home',
     tab_dashboard: 'Insights',
     tab_simulator: 'Budget Planner',
     tab_recurring: 'Bills & Recurring',
     tab_categories: 'Categories',
+    tab_settings: 'Settings',
     quick_services_title: 'Quick Services',
+
+    // Tab 5: Settings Hub
+    settings_title: 'Settings & Data Hub',
+    settings_subtitle: 'Manage recurring items, categories, language, cloud sync, and backups',
+    settings_account_title: 'Account & Cloud Sync',
+    settings_account_desc: 'Real-time automatic sync between PC and mobile via Google Account',
+    settings_custom_title: 'Customization & Master Data',
+    settings_recurring_title: 'Recurring Items & Monthly Bills',
+    settings_recurring_desc: 'Configure monthly recurring income, expenses, and quick chips',
+    settings_categories_title: 'Categories & Icons',
+    settings_categories_desc: 'Add, edit, or delete categories and emoji icons',
+    settings_lang_title: 'Language & Display',
+    settings_lang_desc: 'Select your preferred language for the application',
+    settings_data_title: 'Data Management & Backup',
+    settings_data_desc: 'Export Excel/CSV reports, backup/restore JSON, or load sample data',
+    settings_about_title: 'About Money Memo',
+    settings_about_desc: 'App version and offline PWA service worker status',
+    btn_manage_recurring: '⚙️ Manage Recurring',
+    btn_manage_categories: '🏷️ Manage Categories',
+    btn_login_google: '🔑 Sign in with Google',
+    btn_logout: '🚪 Sign out',
+    btn_clear_data: '🗑️ Clear Local Data',
+    btn_clear_data_confirm: 'Are you sure you want to clear all local data? This action cannot be undone.',
 
     // Tab 1: Transactions
     quick_rec_banner_title: 'Import Monthly Recurring Items',
@@ -540,16 +588,29 @@ const I18n = {
   },
 
   apply() {
-    // 1. Update Lang Switcher UI Buttons in Header
+    // 1. Update Lang Switcher UI Buttons in Header & Settings
     const thBtn = document.getElementById('lang-btn-th');
     const enBtn = document.getElementById('lang-btn-en');
+    const settingsThBtn = document.getElementById('settings-lang-th');
+    const settingsEnBtn = document.getElementById('settings-lang-en');
+
     if (thBtn && enBtn) {
       if (this.currentLang === 'th') {
-        thBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition-all cursor-pointer';
-        enBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-700 transition-all cursor-pointer';
+        thBtn.className = 'px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
+        enBtn.className = 'px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-400 hover:text-slate-700 transition-all cursor-pointer';
       } else {
-        thBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-700 transition-all cursor-pointer';
-        enBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-bold bg-white text-slate-900 shadow-xs transition-all cursor-pointer';
+        thBtn.className = 'px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-400 hover:text-slate-700 transition-all cursor-pointer';
+        enBtn.className = 'px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
+      }
+    }
+
+    if (settingsThBtn && settingsEnBtn) {
+      if (this.currentLang === 'th') {
+        settingsThBtn.className = 'flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold bg-white text-slate-900 shadow-xs border border-slate-200/80 transition-all cursor-pointer flex items-center justify-center gap-1.5';
+        settingsEnBtn.className = 'flex-1 py-2.5 px-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5';
+      } else {
+        settingsThBtn.className = 'flex-1 py-2.5 px-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5';
+        settingsEnBtn.className = 'flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold bg-white text-slate-900 shadow-xs border border-slate-200/80 transition-all cursor-pointer flex items-center justify-center gap-1.5';
       }
     }
 

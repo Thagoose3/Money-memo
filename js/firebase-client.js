@@ -265,6 +265,7 @@ const FirebaseManager = {
     try {
       // 1. Transactions Live Listener
       this._txUnsubscribe = userRef.collection('transactions').onSnapshot((snapshot) => {
+        if (snapshot.metadata && snapshot.metadata.hasPendingWrites) return;
         if (snapshot.empty && StorageManager.getTransactions().length === 0) return;
 
         const list = [];
@@ -288,6 +289,7 @@ const FirebaseManager = {
 
       // 2. Categories Live Listener
       this._catUnsubscribe = userRef.collection('categories').onSnapshot((snapshot) => {
+        if (snapshot.metadata && snapshot.metadata.hasPendingWrites) return;
         if (snapshot.empty) return;
         const list = [];
         snapshot.forEach(doc => list.push(doc.data()));
@@ -308,6 +310,7 @@ const FirebaseManager = {
 
       // 3. Recurring Items Live Listener
       this._recUnsubscribe = userRef.collection('recurring_items').onSnapshot((snapshot) => {
+        if (snapshot.metadata && snapshot.metadata.hasPendingWrites) return;
         const deletedRecIds = StorageManager.getDeletedRecurringIds();
         const list = [];
         snapshot.forEach(doc => {
@@ -327,14 +330,24 @@ const FirebaseManager = {
 
       // 4. Budget Simulator Live Listener
       this._simUnsubscribe = userRef.collection('settings').doc('budget_simulator').onSnapshot((doc) => {
+        if (doc.metadata && doc.metadata.hasPendingWrites) return;
         if (doc.exists) {
           const cloudSim = doc.data();
           const currentSim = StorageManager.getBudgetSimulator();
           if (cloudSim && JSON.stringify(cloudSim) !== JSON.stringify(currentSim)) {
-            StorageManager.saveBudgetSimulator(cloudSim);
-            if (typeof BudgetSimulator !== 'undefined') {
-              BudgetSimulator.data = cloudSim;
-              BudgetSimulator.render();
+            const activeEl = document.activeElement;
+            const isTyping = activeEl && (
+              activeEl.id === 'sim-monthly-income' ||
+              activeEl.id === 'sim-savings-goal' ||
+              activeEl.id === 'sim-days-in-month' ||
+              Boolean(activeEl.closest && activeEl.closest('#sim-fixed-expenses-list'))
+            );
+            if (!isTyping) {
+              StorageManager.saveBudgetSimulator(cloudSim);
+              if (typeof BudgetSimulator !== 'undefined') {
+                BudgetSimulator.data = cloudSim;
+                BudgetSimulator.render();
+              }
             }
           }
         }

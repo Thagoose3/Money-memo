@@ -81,6 +81,8 @@ const BudgetSimulator = {
     }
   },
 
+  _saveTimeout: null,
+
   addFixedExpenseRow(name = '', amount = 0) {
     const newId = 'sim_fe_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5);
     
@@ -89,22 +91,23 @@ const BudgetSimulator = {
       name: name,
       amount: amount
     });
-    this.saveAndRecalculate();
+    this.save(true);
     this.renderExpenseRows();
+    this.calculateAndRenderResults();
     
     setTimeout(() => {
       const input = document.querySelector(`[data-expense-id="${newId}"] input[type="text"]`);
       if (input) {
         input.focus();
-        input.select();
       }
     }, 50);
   },
 
   deleteFixedExpenseRow(id) {
     this.data.fixedExpenses = this.data.fixedExpenses.filter(e => e.id !== id);
-    this.saveAndRecalculate();
+    this.save(true);
     this.renderExpenseRows();
+    this.calculateAndRenderResults();
   },
 
   updateFixedExpenseRow(id, field, value) {
@@ -112,16 +115,25 @@ const BudgetSimulator = {
     if (item) {
       if (field === 'name') item.name = value;
       if (field === 'amount') item.amount = Math.max(0, parseFloat(value) || 0);
-      this.saveAndRecalculate();
+      this.save(false);
+      this.calculateAndRenderResults();
     }
   },
 
-  save() {
-    StorageManager.saveBudgetSimulator(this.data);
+  save(immediate = false) {
+    if (this._saveTimeout) clearTimeout(this._saveTimeout);
+
+    if (immediate) {
+      StorageManager.saveBudgetSimulator(this.data);
+    } else {
+      this._saveTimeout = setTimeout(() => {
+        StorageManager.saveBudgetSimulator(this.data);
+      }, 600);
+    }
   },
 
-  saveAndRecalculate() {
-    this.save();
+  saveAndRecalculate(immediate = false) {
+    this.save(immediate);
     this.calculateAndRenderResults();
   },
 
@@ -129,7 +141,7 @@ const BudgetSimulator = {
     this.data.daysInMonth = Math.max(1, Math.min(365, parseInt(days, 10) || 30));
     const daysInput = document.getElementById('sim-days-in-month');
     if (daysInput) daysInput.value = this.data.daysInMonth;
-    this.saveAndRecalculate();
+    this.saveAndRecalculate(true);
   },
 
   updateDaysChips() {
@@ -145,16 +157,26 @@ const BudgetSimulator = {
     });
   },
 
-  render() {
+  render(forceRows = false) {
+    const activeEl = document.activeElement;
+    const isTypingInsideSim = activeEl && (
+      activeEl.id === 'sim-monthly-income' ||
+      activeEl.id === 'sim-savings-goal' ||
+      activeEl.id === 'sim-days-in-month' ||
+      Boolean(activeEl.closest && activeEl.closest('#sim-fixed-expenses-list'))
+    );
+
     const incomeInput = document.getElementById('sim-monthly-income');
     const savingsInput = document.getElementById('sim-savings-goal');
     const daysInput = document.getElementById('sim-days-in-month');
 
-    if (incomeInput) incomeInput.value = this.data.monthlyIncome;
-    if (savingsInput) savingsInput.value = this.data.savingsGoal;
-    if (daysInput) daysInput.value = this.data.daysInMonth || 30;
+    if (incomeInput && activeEl !== incomeInput) incomeInput.value = this.data.monthlyIncome || '';
+    if (savingsInput && activeEl !== savingsInput) savingsInput.value = this.data.savingsGoal || '';
+    if (daysInput && activeEl !== daysInput) daysInput.value = this.data.daysInMonth || 30;
 
-    this.renderExpenseRows();
+    if (forceRows || !isTypingInsideSim) {
+      this.renderExpenseRows();
+    }
     this.calculateAndRenderResults();
   },
 

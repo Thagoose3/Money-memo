@@ -4,7 +4,23 @@
 
 ---
 
-## 📱 Version 3.9.2 (Current Version) — *Dynamic Rolling Daily Quota & Monthly Savings Target*
+## 📱 Version 3.9.3 (Current Version) — *Mobile Keyboard & Real-time Input Stability Patch*
+**วันที่อัปเดต:** กันยายน 2026
+
+### ⌨️ แก้ไขปัญหาแป้นพิมพ์เด้งลง & Input Focus Lost ในหน้าจำลองเงินใช้จ่าย
+- **1. Smart Input DOM Preservation Engine**:
+  - แก้ไขปัญหาการพิมพ์ตัวอักษร 1 ตัวแล้วคีย์บอร์ดบนมือถือเด้งหุบลง โดยยกเลิกการ Re-render DOM (`innerHTML`) ในขณะที่ผู้ใช้กำลังพิมพ์อยู่ในแถวรายการ
+  - ปรับให้ฟังก์ชัน `updateFixedExpenseRow` อัปเดตเฉพาะตัวแปรในหน่วยความจำและคำนวณผลลัพธ์เฉพาะจุด (Total KPIs & Health Badges) โดยคงสถานะ Focus ของช่อง Input และเคอร์เซอร์ไว้อย่างสมบูรณ์
+- **2. Debounced Cloud Save**:
+  - ปรับระบบบันทึกจำลองงบประมาณขึ้น Cloud (Firebase Firestore) เป็นแบบ Debounce (600ms) ป้องกันการส่ง Network Request ถี่เกินไปในทุกตัวอักษรที่พิมพ์
+- **3. Realtime Snapshot PendingWrites Filter**:
+  - ปรับแต่ง Firestore Snapshot Listeners ให้ข้ามการประมวลผล Local Echo (`hasPendingWrites: true`) เพื่อไม่ให้เกิดการ Render ซ้อนทับขณะที่ผู้ใช้กำลังกรอกข้อมูลบนอุปกรณ์เครื่องเดิม
+- **4. Global Input Stability Review**:
+  - ตรวจสอบฟอร์มและ Modal ทุกจุดทั่วทั้งแอป (Quick Entry, History Search, Category Manager, Recurring Batch) ให้มั่นใจว่าไม่มีจุดใดเกิดการเด้งหลุดของแป้นพิมพ์ขณะพิมพ์ 100%
+
+---
+
+## 📱 Version 3.9.2 — *Dynamic Rolling Daily Quota & Monthly Savings Target*
 **วันที่อัปเดต:** กันยายน 2026
 
 ### 🎯 ระบบโควตาเงินกินใช้วันนี้แบบ Dynamic Rolling (เชื่อมโยงประวัติจริง & วันที่เหลือ)

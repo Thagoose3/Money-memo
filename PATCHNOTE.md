@@ -4,7 +4,21 @@
 
 ---
 
-## 📱 Version 3.9.4 (Current Version) — *PromptPay Mini-QR & Bank Slip Scanner Engine*
+## 📱 Version 3.9.5 (Current Version) — *Clean Removal of Slip Scanner & Bundle Optimization*
+**วันที่อัปเดต:** กันยายน 2026
+
+### ⚡ ปรับโครงสร้างระบบ & คืนความเบา คล่องตัว และแม่นยำ 100%
+- **1. ถอดระบบ Slip Scanner และ Vendor Libraries ทั้งหมด**:
+  - ถอดระบบสแกนสลิปโอนเงิน (Mini-QR & OCR) ออกอย่างหมดจด เนื่องจากข้อจำกัดของโครงสร้าง Mini-QR จากบางธนาคารไทย (เช่น SCB, K PLUS ยุคใหม่) ที่ตัด Tag 04 (ยอดเงิน) ออกจาก QR Code
+  - ลบโมดูล `js/slip-scanner.js` และโฟลเดอร์ `js/vendor/` (`zxing.min.js`, `jsqr.min.js`, `tesseract.min.js`) ช่วยลดขนาดแอปลงกว่า 530 KB ทำให้แอปเบาและโหลดเร็วขึ้นทันที
+- **2. คืนรูปไอคอน Quick Services Hub แบบ 4 ปุ่มคลีน**:
+  - เมนูลัด 4 ไอคอนบนหน้าหลัก: 1. จำลองกินใช้, 2. บันทึกด่วน, 3. สเตทเมนต์, 4. ตั้งค่า & บิล
+- **3. อัปเดต Service Worker v3.9.5**:
+  - ล้าง Cache ไฟล์ Vendor เก่า และจัดการ Pre-cache โครงสร้างหลักให้ทำงานแบบ Offline ได้เต็มประสิทธิภาพและเสถียรที่สุด
+
+---
+
+## 📱 Version 3.9.4 — *Experimental PromptPay Mini-QR & Bank Slip Scanner*
 **วันที่อัปเดต:** กันยายน 2026
 
 ### 🧾 ระบบสแกนสลิปโอนเงินอัจฉริยะ (PromptPay Mini-QR Digital Parser)

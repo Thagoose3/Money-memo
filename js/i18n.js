@@ -25,6 +25,7 @@ const TRANSLATIONS = {
     tab_categories: 'จัดการหมวดหมู่',
     tab_settings: 'ตั้งค่า',
     quick_services_title: 'บริการด่วน',
+    quick_scan_slip: 'สแกนสลิป',
 
     // Tab 5: Settings Hub
     settings_title: 'ศูนย์รวมการตั้งค่า & ข้อมูล',
@@ -325,6 +326,7 @@ const TRANSLATIONS = {
     tab_categories: 'Categories',
     tab_settings: 'Settings',
     quick_services_title: 'Quick Services',
+    quick_scan_slip: 'Scan Slip',
 
     // Tab 5: Settings Hub
     settings_title: 'Settings & Data Hub',

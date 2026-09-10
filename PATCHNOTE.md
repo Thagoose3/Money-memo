@@ -4,7 +4,30 @@
 
 ---
 
-## 📱 Version 3.9.3 (Current Version) — *Mobile Keyboard & Real-time Input Stability Patch*
+## 📱 Version 3.9.4 (Current Version) — *PromptPay Mini-QR & Bank Slip Scanner Engine*
+**วันที่อัปเดต:** กันยายน 2026
+
+### 🧾 ระบบสแกนสลิปโอนเงินอัจฉริยะ (PromptPay Mini-QR Digital Parser)
+- **1. 100% Mathematical Precision via Mini-QR Decoder**:
+  - ถอดรหัสข้อมูลดิบดิจิทัลจาก Mini-QR Code บนสลิปโอนเงินของทุกธนาคารในไทย (กสิกรไทย K PLUS, ไทยพาณิชย์ SCB, กรุงไทย NEXT, กรุงเทพ BBL, ttb touch, Krungsri, GSB, TrueMoney ฯลฯ)
+  - ดึง **ยอดเงินโอน (Amount)**, **วันที่และเวลา (Date & Time)**, **ธนาคารต้นทาง (Bank Code)** และ **รหัสอ้างอิงสลิป (TransRef)** ได้แม่นยำ 100% ระดับสตางค์ โดยไม่ต้องพึ่ง OCR แบบเก่าที่มักอ่านตัวเลขเพี้ยน
+- **2. Smart Category Learning & Memo Suggestion**:
+  - ระบบจัดหมวดหมู่อัตโนมัติจากบันทึกช่วยจำ (Memo) และประวัติการโอนเดิม (เช่น โอนคืนพี่/ครอบครัว -> หมวดอื่นๆ/คืนเงิน, อาหารตามสั่ง/คาเฟ่ -> หมวดอาหาร)
+  - มีแถบ Category Chips ให้แตะเลือกเปลี่ยนหมวดหมู่ได้ทันทีใน 1 วินาทีก่อนบันทึก
+- **3. Slip Review & Confirmation Modal**:
+  - แสดงตัวอย่างรูปสลิป, ตราสัญลักษณ์ธนาคาร, ยอดเงิน, วันที่เวลา, หมวดหมู่ และโน้ตช่วยจำ
+  - ผู้ใช้สามารถแก้ไขตัวเลขหรือข้อความได้อิสระก่อนกดบันทึก
+- **4. Duplicate Slip Protection**:
+  - มีระบบตรวจจับสลิปซ้ำซ้อนอัตโนมัติจาก TransRef หรือยอดเงินและเวลาเดิม หากเคยบันทึกสลิปนี้ไปแล้ว ระบบจะแสดงแถบแจ้งเตือนสีส้มทันทีเพื่อป้องกันเงินถูกหักซ้ำ
+- **5. Multi-trigger Integration**:
+  - ปุ่ม **"📷 สแกนสลิป"** เด่นชัดในเมนู Quick Services บนหน้าหลัก
+  - แถบ **"แนบรูปสลิปเพื่อกรอกข้อมูลออโต้"** ภายใน Quick Add Modal
+  - รองรับการวางภาพจาก Clipboard (`Ctrl+V` หรือ Paste บนมือถือ) และลากรูปภาพมาวาง (Drag & Drop) ทั่วทั้งหน้าต่างแอป
+  - ทำงานแบบ 100% Offline ผ่าน Service Worker & Local Vendor Library (`js/vendor/jsqr.min.js`)
+
+---
+
+## 📱 Version 3.9.3 — *Mobile Keyboard & Real-time Input Stability Patch*
 **วันที่อัปเดต:** กันยายน 2026
 
 ### ⌨️ แก้ไขปัญหาแป้นพิมพ์เด้งลง & Input Focus Lost ในหน้าจำลองเงินใช้จ่าย

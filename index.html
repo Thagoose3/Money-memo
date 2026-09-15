@@ -191,7 +191,7 @@
       <div>
         <div class="flex items-center gap-1.5">
           <h1 data-i18n="app_title" class="text-sm sm:text-base font-extrabold text-slate-900 leading-none tracking-tight">Money Memo</h1>
-          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9.4</span>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9.6</span>
         </div>
         <p data-i18n="app_subtitle" class="text-[11px] text-slate-400 font-medium mt-0.5 hidden sm:block">ระบบบันทึกรายรับ-รายจ่าย & จัดการเงินออมอัจฉริยะ</p>
       </div>
@@ -199,33 +199,50 @@
 
     <!-- Actions & Google Auth Profile Container -->
     <div class="flex items-center gap-1.5 sm:gap-2">
+      <!-- Desktop Keyboard Shortcut Cheat Sheet Button -->
+      <button 
+        type="button" 
+        onclick="App.openKeyboardShortcutsModal()" 
+        class="hidden sm:inline-flex px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-all items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95 border border-slate-200/80"
+        title="รวมปุ่มลัดคีย์บอร์ดสำหรับคอมพิวเตอร์ (กด ?)"
+      >
+        <span>⌨️</span>
+        <span class="text-[11px]">คีย์ลัด</span>
+        <span class="kbd-badge font-bold">?</span>
+      </button>
+
       <!-- Google Auth Profile / Login Button Container -->
       <div id="auth-header-container"></div>
     </div>
   </header>
 
   <!-- Desktop Top Pill Tabs (Hidden on Mobile) -->
-  <div class="hidden sm:block max-w-5xl w-full mx-auto px-4 sm:px-6 pt-5">
+  <div class="hidden sm:block max-w-5xl w-full mx-auto px-4 sm:px-6 pt-5 no-print">
     <div class="bg-slate-200/50 p-1.5 rounded-3xl flex items-center gap-1.5 text-xs sm:text-sm font-medium border border-slate-200/60 shadow-2xs">
       <button data-tab-target="transactions" onclick="App.switchTab('transactions')" class="nav-tab-btn active flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>🏠</span>
         <span data-i18n="tab_home">หน้าหลัก</span>
+        <span class="kbd-badge hidden lg:inline-flex">1</span>
       </button>
       <button data-tab-target="history" onclick="App.switchTab('history')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📋</span>
         <span data-i18n="tab_history">ประวัติรายการ</span>
+        <span class="kbd-badge hidden lg:inline-flex">2</span>
       </button>
       <button data-tab-target="dashboard" onclick="App.switchTab('dashboard')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>📊</span>
         <span data-i18n="tab_dashboard">สถิติ & แดชบอร์ด</span>
+        <span class="kbd-badge hidden lg:inline-flex">3</span>
       </button>
       <button data-tab-target="simulator" onclick="App.switchTab('simulator')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>🧮</span>
         <span data-i18n="tab_simulator">จำลองเงินกินใช้</span>
+        <span class="kbd-badge hidden lg:inline-flex">4</span>
       </button>
       <button data-tab-target="settings" onclick="App.switchTab('settings')" class="nav-tab-btn flex-1 py-2.5 px-3 rounded-2xl flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
         <span>⚙️</span>
         <span data-i18n="tab_settings">ตั้งค่า</span>
+        <span class="kbd-badge hidden lg:inline-flex">5</span>
       </button>
     </div>
   </div>
@@ -233,100 +250,150 @@
   <!-- Main Content Area (with bottom padding for Mobile Navigation Bar) -->
   <main class="max-w-5xl w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-6 flex-1 pb-28 sm:pb-8">
 
+    <!-- Printable Header (Visible Only When Printing / Ctrl+P) -->
+    <div class="print-only-header text-slate-900 pb-3 mb-4 border-b-2 border-slate-900">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl font-black">Money Memo — รายงานทางการเงิน</h1>
+          <p class="text-xs text-slate-600 mt-0.5">Financial Statement & Budget Report</p>
+        </div>
+        <div class="text-right text-xs">
+          <p class="font-bold" id="print-report-date-stamp"></p>
+          <p class="text-slate-500 text-[10px]">เอกสารสรุปจากระบบ Money Memo</p>
+        </div>
+      </div>
+    </div>
+
     <!-- ========================================== -->
     <!-- TAB 1: 🏠 หน้าหลัก & ภาพรวมการเงิน (Fintech Home Hub) -->
     <!-- ========================================== -->
-    <section id="tab-pane-transactions" class="tab-content-pane space-y-3.5 sm:space-y-4">
+    <section id="tab-pane-transactions" class="tab-content-pane">
       
-      <!-- 1. บัตรภาพรวมการเงิน (Fintech Hero Card) -->
-      <div id="tab1-overview-hero"></div>
+      <!-- Responsive 2-Column Desktop Grid Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 lg:gap-5 items-start">
+        
+        <!-- Left Column: Overview Hero + Daily Budget + Quick Services + Cloud Sync -->
+        <div class="lg:col-span-7 xl:col-span-8 space-y-3.5 sm:space-y-4">
+          <!-- 1. บัตรภาพรวมการเงิน (Fintech Hero Card) -->
+          <div id="tab1-overview-hero"></div>
 
-      <!-- 2. กล่องโควตาเงินกินใช้วันนี้ (Daily Budget Tracker Widget) -->
-      <div id="tab1-daily-budget-card"></div>
+          <!-- 2. กล่องโควตาเงินกินใช้วันนี้ (Daily Budget Tracker Widget) -->
+          <div id="tab1-daily-budget-card"></div>
 
-      <!-- 3. เมนูบริการด่วน (Quick Services Hub - 4 Icon Grid กะทัดรัด) -->
-      <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80">
-        <div class="flex items-center justify-between mb-3 px-1">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <span>⚡</span>
-            <span data-i18n="quick_services_title">บริการด่วน</span>
-          </h3>
-          <span class="text-[10px] text-slate-400 font-semibold">Quick Menu</span>
-        </div>
-
-        <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center">
-          <!-- 1. จำลองเงินกินใช้ -->
-          <button 
-            type="button" 
-            onclick="App.switchTab('simulator')" 
-            class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
-            title="จำลองเงินกินใช้ & วางแผนออมเงิน"
-          >
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
-              🔮
+          <!-- 3. เมนูบริการด่วน (Quick Services Hub - 4 Icon Grid กะทัดรัด) -->
+          <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80">
+            <div class="flex items-center justify-between mb-3 px-1">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>⚡</span>
+                <span data-i18n="quick_services_title">บริการด่วน</span>
+              </h3>
+              <span class="text-[10px] text-slate-400 font-semibold">Quick Menu</span>
             </div>
-            <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">จำลองกินใช้</span>
-            <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">วางแผนงบ</span>
-          </button>
 
-          <!-- 2. บันทึกด่วน -->
-          <button 
-            type="button" 
-            onclick="App.openQuickEntryModal()" 
-            class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
-            title="บันทึกรายรับ-รายจ่ายด่วน"
-          >
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
-              ➕
+            <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center">
+              <!-- 1. จำลองเงินกินใช้ -->
+              <button 
+                type="button" 
+                onclick="App.switchTab('simulator')" 
+                class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
+                title="จำลองเงินกินใช้ & วางแผนออมเงิน (คีย์ลัด: 4)"
+              >
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
+                  🔮
+                </div>
+                <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">จำลองกินใช้</span>
+                <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">วางแผนงบ</span>
+              </button>
+
+              <!-- 2. บันทึกด่วน -->
+              <button 
+                type="button" 
+                onclick="App.openQuickEntryModal()" 
+                class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-200 transition-all cursor-pointer group active:scale-95 shadow-2xs relative"
+                title="บันทึกรายรับ-รายจ่ายด่วน (คีย์ลัด: N)"
+              >
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
+                  ➕
+                </div>
+                <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block flex items-center justify-center gap-1">
+                  <span>บันทึกด่วน</span>
+                  <span class="kbd-badge hidden sm:inline-flex text-[9px] px-1 py-0">N</span>
+                </span>
+                <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">รับ / จ่าย</span>
+              </button>
+
+              <!-- 3. สเตทเมนต์ / ประวัติ -->
+              <button 
+                type="button" 
+                onclick="App.switchTab('history')" 
+                class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
+                title="ดูสเตทเมนต์และประวัติย้อนหลัง (คีย์ลัด: 2)"
+              >
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
+                  📋
+                </div>
+                <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">สเตทเมนต์</span>
+                <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">ดูประวัติ</span>
+              </button>
+
+              <!-- 4. ตั้งค่า & บิลประจำ -->
+              <button 
+                type="button" 
+                onclick="App.switchTab('settings')" 
+                class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-amber-50 border border-slate-200/80 hover:border-amber-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
+                title="ตั้งค่าระบบ จัดการบิลและหมวดหมู่ (คีย์ลัด: 5)"
+              >
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
+                  ⚙️
+                </div>
+                <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">ตั้งค่า & บิล</span>
+                <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">จัดการระบบ</span>
+              </button>
             </div>
-            <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">บันทึกด่วน</span>
-            <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">รับ / จ่าย</span>
-          </button>
-
-          <!-- 3. สเตทเมนต์ / ประวัติ -->
-          <button 
-            type="button" 
-            onclick="App.switchTab('history')" 
-            class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
-            title="ดูสเตทเมนต์และประวัติย้อนหลัง"
-          >
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
-              📋
-            </div>
-            <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">สเตทเมนต์</span>
-            <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">ดูประวัติ</span>
-          </button>
-
-          <!-- 4. ตั้งค่า & บิลประจำ -->
-          <button 
-            type="button" 
-            onclick="App.switchTab('settings')" 
-            class="flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl bg-slate-50 hover:bg-amber-50 border border-slate-200/80 hover:border-amber-200 transition-all cursor-pointer group active:scale-95 shadow-2xs"
-            title="ตั้งค่าระบบ จัดการบิลและหมวดหมู่"
-          >
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg sm:text-xl mb-1.5 group-hover:scale-110 transition-transform shadow-2xs">
-              ⚙️
-            </div>
-            <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 leading-tight block">ตั้งค่า & บิล</span>
-            <span class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5 hidden sm:block">จัดการระบบ</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Cloud Sync Banner (ถ้ายังไม่ล็อกอิน) -->
-      <div id="cloud-sync-status-banner" class="pastel-card p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50/60 to-rose-50/40 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-modal">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-2xl bg-amber-400/20 text-amber-800 flex items-center justify-center text-base shrink-0">
-            ☁️
           </div>
-          <div>
-            <h4 class="text-xs sm:text-sm font-bold text-slate-800">ซิงค์ข้อมูลข้ามอุปกรณ์ (คอมพิวเตอร์ & มือถือ)</h4>
-            <p class="text-[11px] text-slate-500 mt-0.5">เข้าสู่ระบบด้วย Google บัญชีเดียวกัน เพื่อดึงประวัติและรายการทั้งหมดมายังอุปกรณ์นี้อัตโนมัติ</p>
+
+          <!-- Cloud Sync Banner (ถ้ายังไม่ล็อกอิน) -->
+          <div id="cloud-sync-status-banner" class="pastel-card p-3.5 sm:p-4 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50/60 to-rose-50/40 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-modal">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-2xl bg-amber-400/20 text-amber-800 flex items-center justify-center text-base shrink-0">
+                ☁️
+              </div>
+              <div>
+                <h4 class="text-xs sm:text-sm font-bold text-slate-800">ซิงค์ข้อมูลข้ามอุปกรณ์ (คอมพิวเตอร์ & มือถือ)</h4>
+                <p class="text-[11px] text-slate-500 mt-0.5">เข้าสู่ระบบด้วย Google บัญชีเดียวกัน เพื่อดึงประวัติและรายการทั้งหมดมายังอุปกรณ์นี้อัตโนมัติ</p>
+              </div>
+            </div>
+            <button type="button" onclick="FirebaseManager.signInWithGoogle()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
+              <span>🔑 เข้าสู่ระบบด้วย Google</span>
+            </button>
           </div>
         </div>
-        <button type="button" onclick="FirebaseManager.signInWithGoogle()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-2xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
-          <span>🔑 เข้าสู่ระบบด้วย Google</span>
-        </button>
+
+        <!-- Right Column (Desktop Companion Panel): Recent Activity on PC -->
+        <div class="hidden lg:block lg:col-span-5 xl:col-span-4 space-y-4">
+          <div class="pastel-card p-4 rounded-3xl space-y-3.5 border border-slate-200/80 shadow-2xs sticky top-20">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🕒</span>
+                <span>รายการล่าสุด (Live Activity)</span>
+              </h3>
+              <button 
+                type="button" 
+                onclick="App.switchTab('history')" 
+                class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer flex items-center gap-0.5"
+              >
+                <span>ดูทั้งหมด</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <!-- Recent list container rendered by JS -->
+            <div id="desktop-recent-transactions-list" class="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+              <!-- JS Populates Recent Transactions -->
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </section>
@@ -359,6 +426,15 @@
           </div>
 
           <div class="flex items-center gap-1.5">
+            <button 
+              type="button" 
+              onclick="App.printStatementReport()" 
+              class="hidden sm:inline-flex px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-all items-center gap-1 cursor-pointer active:scale-95 shadow-2xs"
+              title="พิมพ์รายงานหรือบันทึกเป็น PDF"
+            >
+              <span>🖨️</span>
+              <span>พิมพ์ / PDF</span>
+            </button>
             <button 
               type="button" 
               onclick="App.switchTab('transactions')" 
@@ -421,63 +497,111 @@
         </div>
       </div>
 
-      <!-- Search Bar & Filter Chips -->
-      <div class="pastel-card p-3 sm:p-4 rounded-3xl space-y-2.5 shadow-2xs border border-slate-200/80">
+      <!-- Search Bar, Filter Chips & Desktop Layout Switcher -->
+      <div class="pastel-card p-3 sm:p-4 rounded-3xl space-y-2.5 shadow-2xs border border-slate-200/80 no-print">
         <!-- Search Input -->
         <div class="relative">
           <input 
             type="text" 
             id="history-search-input" 
             oninput="App.onHistorySearch(this.value)" 
-            placeholder="🔍 ค้นหาชื่อโน้ต, หมวดหมู่, วิธีจ่าย, ยอดเงิน..." 
-            class="w-full pl-9 pr-4 py-2.5 text-xs bg-slate-50/90 focus:bg-white border border-slate-200 focus:border-slate-800 rounded-2xl transition-all shadow-2xs font-semibold text-slate-800"
+            placeholder="🔍 ค้นหาชื่อโน้ต, หมวดหมู่, วิธีจ่าย, ยอดเงิน... (กด / เพื่อค้นหา)" 
+            class="w-full pl-9 pr-12 py-2.5 text-xs bg-slate-50/90 focus:bg-white border border-slate-200 focus:border-slate-800 rounded-2xl transition-all shadow-2xs font-semibold text-slate-800"
           />
           <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <span class="absolute right-3 top-1/2 -translate-y-1/2 kbd-badge hidden sm:inline-flex">/</span>
         </div>
 
-        <!-- Filter Chips + Category Select -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          <button 
-            type="button" 
-            id="history-filter-btn-all" 
-            onclick="App.setHistoryTypeFilter('all')" 
-            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-xs transition-all cursor-pointer shrink-0"
-          >
-            ทั้งหมด
-          </button>
-          <button 
-            type="button" 
-            id="history-filter-btn-expense" 
-            onclick="App.setHistoryTypeFilter('expense')" 
-            class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
-          >
-            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 🔴 รายจ่าย
-          </button>
-          <button 
-            type="button" 
-            id="history-filter-btn-income" 
-            onclick="App.setHistoryTypeFilter('income')" 
-            class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
-          >
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 🟢 รายรับ
-          </button>
-
-          <!-- Category Dropdown Filter -->
-          <div class="shrink-0 relative">
-            <select 
-              id="history-category-filter" 
-              onchange="App.setHistoryCategoryFilter(this.value)" 
-              class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all cursor-pointer focus:outline-none focus:border-slate-800"
+        <!-- Filter Chips + Category Select + Desktop View Switcher -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <!-- Left: Filter Chips -->
+          <div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            <button 
+              type="button" 
+              id="history-filter-btn-all" 
+              onclick="App.setHistoryTypeFilter('all')" 
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-xs transition-all cursor-pointer shrink-0"
             >
-              <option value="all">🏷️ ทุกหมวดหมู่</option>
-            </select>
+              ทั้งหมด
+            </button>
+            <button 
+              type="button" 
+              id="history-filter-btn-expense" 
+              onclick="App.setHistoryTypeFilter('expense')" 
+              class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span> 🔴 รายจ่าย
+            </button>
+            <button 
+              type="button" 
+              id="history-filter-btn-income" 
+              onclick="App.setHistoryTypeFilter('income')" 
+              class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 🟢 รายรับ
+            </button>
+
+            <!-- Category Dropdown Filter -->
+            <div class="shrink-0 relative">
+              <select 
+                id="history-category-filter" 
+                onchange="App.setHistoryCategoryFilter(this.value)" 
+                class="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all cursor-pointer focus:outline-none focus:border-slate-800"
+              >
+                <option value="all">🏷️ ทุกหมวดหมู่</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Right: Desktop Layout View Switcher (Cards vs Compact Table) -->
+          <div class="hidden sm:inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs shrink-0 self-end sm:self-center">
+            <button 
+              type="button" 
+              id="history-view-cards-btn" 
+              onclick="App.setHistoryDesktopView('cards')" 
+              class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer"
+              title="มุมมองการ์ดรายวัน"
+            >
+              🗂️ การ์ดรายวัน
+            </button>
+            <button 
+              type="button" 
+              id="history-view-table-btn" 
+              onclick="App.setHistoryDesktopView('table')" 
+              class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer"
+              title="มุมมองตารางสเตทเมนต์แบบกะทัดรัด"
+            >
+              📊 ตารางสเตทเมนต์
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Statement Daily Grouped Feed -->
+      <!-- Statement Daily Grouped Feed (Card View) -->
       <div id="history-daily-feed" class="space-y-3.5">
         <!-- Rendered via JS -->
+      </div>
+
+      <!-- Statement Desktop Compact Table View (Hidden by default, toggled via JS) -->
+      <div id="history-table-container" class="hidden pastel-card p-4 sm:p-5 rounded-3xl space-y-3 border border-slate-200/80 shadow-2xs">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="border-b border-slate-200/80 text-slate-400 font-bold uppercase text-[10px]">
+                <th class="py-2.5 px-3">วันที่ & เวลา</th>
+                <th class="py-2.5 px-3">ประเภท</th>
+                <th class="py-2.5 px-3">หมวดหมู่</th>
+                <th class="py-2.5 px-3">บันทึกช่วยจำ</th>
+                <th class="py-2.5 px-3">วิธีจ่าย</th>
+                <th class="py-2.5 px-3 text-right">จำนวนเงิน (บาท)</th>
+                <th class="py-2.5 px-3 text-center no-print">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-tbody" class="divide-y divide-slate-100">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </section>
@@ -518,10 +642,16 @@
             </div>
           </div>
 
-          <button id="current-month-btn" onclick="App.goToCurrentMonth()" class="w-full sm:w-auto px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs flex items-center justify-center gap-1">
-            <span>⚡</span>
-            <span data-i18n="btn_this_month">เดือนนี้</span>
-          </button>
+          <div class="flex items-center gap-1.5 w-full sm:w-auto">
+            <button id="current-month-btn" onclick="App.goToCurrentMonth()" class="w-full sm:w-auto px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs flex items-center justify-center gap-1">
+              <span>⚡</span>
+              <span data-i18n="btn_this_month">เดือนนี้</span>
+            </button>
+            <button type="button" onclick="App.printDashboardReport()" class="hidden sm:inline-flex px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer shrink-0 active:scale-95 shadow-2xs items-center justify-center gap-1" title="พิมพ์รายงานสถิติหรือบันทึก PDF">
+              <span>🖨️</span>
+              <span>พิมพ์รายงาน</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -944,7 +1074,7 @@
     <section id="tab-pane-settings" class="tab-content-pane hidden space-y-4 sm:space-y-5">
       
       <!-- 1. Header Banner -->
-      <div class="pastel-card p-3.5 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md flex items-center justify-between gap-3">
+      <div class="pastel-card p-3.5 sm:p-5 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-md flex items-center justify-between gap-3 no-print">
         <div class="flex items-center gap-2.5 sm:gap-3">
           <button 
             type="button" 
@@ -971,428 +1101,443 @@
             <span>🏠</span>
             <span class="hidden sm:inline">หน้าหลัก</span>
           </button>
-          <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9</span>
+          <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9.6</span>
         </div>
       </div>
 
-      <!-- 2. Section: ☁️ บัญชี & การซิงค์คลาวด์ (Cloud Sync & Google Account) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <span>☁️</span>
-            <span data-i18n="settings_account_title">บัญชี & การซิงค์คลาวด์ (Cloud Sync)</span>
-          </h3>
-          <span id="settings-sync-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Local Only</span>
-        </div>
-        <p data-i18n="settings_account_desc" class="text-[11px] text-slate-400">ซิงค์ข้อมูลอัตโนมัติแบบเรียลไทม์ระหว่างมือถือและคอมพิวเตอร์ผ่าน Google Account</p>
+      <!-- Responsive 2-Column Bento Grid for Settings on Desktop -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-start">
         
-        <!-- Google Account Profile / Status Card -->
-        <div id="settings-google-account-card" class="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <!-- Dynamically populated via JS -->
-        </div>
-      </div>
-
-      <!-- 3. Section: 🗓️ รอบบัญชี & วันเงินเดือนออก (Payday / Cut-off Cycle) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <span>🗓️</span>
-            <span data-i18n="settings_paycycle_title">รอบบัญชี & วันเงินเดือนออก (Payday Cycle)</span>
-          </h3>
-          <span id="settings-paycycle-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">
-            เดือนปฏิทิน
-          </span>
-        </div>
-        <p data-i18n="settings_paycycle_desc" class="text-[11px] text-slate-400">
-          กำหนดวันตัดรอบเงินเดือนเพื่อคำนวณรายรับ-รายจ่าย และยอดเงินคงเหลือในหน้าหลัก สเตทเมนต์ และสถิติให้ตรงกับชีวิตจริง
-        </p>
-
-        <!-- Pay Cycle Options Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="settings-paycycle-options">
-          <!-- 1. วันสิ้นเดือน (End of Month) -->
-          <button 
-            type="button" 
-            onclick="App.handleSetPayCycleType('end_of_month')" 
-            id="paycycle-opt-end_of_month"
-            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
-          >
-            <span class="text-xl mt-0.5 shrink-0">💼</span>
-            <div class="flex-1 min-w-0">
-              <span class="text-xs font-bold text-slate-900 block leading-tight">วันสิ้นเดือน (เช่น 31 ส.ค. - 30 ก.ย.)</span>
-              <span class="text-[10px] text-slate-400 block mt-0.5">สำหรับผู้ที่เงินเดือนออกทุกวันสุดท้ายของเดือน</span>
+        <!-- Left Column: Cloud Account, Payday Cycle, Savings Goal, Language -->
+        <div class="space-y-4 sm:space-y-5">
+          
+          <!-- 2. Section: ☁️ บัญชี & การซิงค์คลาวด์ (Cloud Sync & Google Account) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>☁️</span>
+                <span data-i18n="settings_account_title">บัญชี & การซิงค์คลาวด์ (Cloud Sync)</span>
+              </h3>
+              <span id="settings-sync-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Local Only</span>
             </div>
-          </button>
-
-          <!-- 2. เดือนปฏิทิน (Calendar 1-30) -->
-          <button 
-            type="button" 
-            onclick="App.handleSetPayCycleType('calendar')" 
-            id="paycycle-opt-calendar"
-            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
-          >
-            <span class="text-xl mt-0.5 shrink-0">📆</span>
-            <div class="flex-1 min-w-0">
-              <span class="text-xs font-bold text-slate-900 block leading-tight">เดือนปฏิทิน (วันที่ 1 - สิ้นเดือน)</span>
-              <span class="text-[10px] text-slate-400 block mt-0.5">ค่าเริ่มต้นทั่วไป (1 ก.ย. - 30 ก.ย.)</span>
+            <p data-i18n="settings_account_desc" class="text-[11px] text-slate-400">ซิงค์ข้อมูลอัตโนมัติแบบเรียลไทม์ระหว่างมือถือและคอมพิวเตอร์ผ่าน Google Account</p>
+            
+            <!-- Google Account Profile / Status Card -->
+            <div id="settings-google-account-card" class="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <!-- Dynamically populated via JS -->
             </div>
-          </button>
-
-          <!-- 3. วันที่ 25 -->
-          <button 
-            type="button" 
-            onclick="App.handleSetPayCycleType('day_25')" 
-            id="paycycle-opt-day_25"
-            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
-          >
-            <span class="text-xl mt-0.5 shrink-0">💳</span>
-            <div class="flex-1 min-w-0">
-              <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 25 (25 ส.ค. - 24 ก.ย.)</span>
-              <span class="text-[10px] text-slate-400 block mt-0.5">สำหรับพนักงานที่เงินเดือนออกวันที่ 25</span>
-            </div>
-          </button>
-
-          <!-- 4. วันที่ 28 -->
-          <button 
-            type="button" 
-            onclick="App.handleSetPayCycleType('day_28')" 
-            id="paycycle-opt-day_28"
-            class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
-          >
-            <span class="text-xl mt-0.5 shrink-0">🏦</span>
-            <div class="flex-1 min-w-0">
-              <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 28 (28 ส.ค. - 27 ก.ย.)</span>
-              <span class="text-[10px] text-slate-400 block mt-0.5">สำหรับพนักงานที่เงินเดือนออกวันที่ 28</span>
-            </div>
-          </button>
-        </div>
-
-        <!-- Custom Day Input row -->
-        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-          <div class="flex items-center gap-1.5">
-            <span>⚙️</span>
-            <span class="font-semibold text-slate-700">หรือกำหนดวันที่ตัดรอบเอง:</span>
           </div>
-          <div class="flex items-center gap-1.5 self-end sm:self-center">
-            <span class="text-slate-400 text-[11px]">วันที่</span>
-            <input 
-              type="number" 
-              id="settings-custom-cycle-day" 
-              min="1" 
-              max="31" 
-              class="w-14 px-2 py-1 bg-white border border-slate-200 rounded-xl text-xs font-bold text-center text-slate-800 num-font"
-              placeholder="1"
-              onchange="App.handleSetPayCycleCustomDay(this.value)"
-            />
-            <span class="text-slate-400 text-[11px]">ของทุกเดือน</span>
-          </div>
-        </div>
 
-        <!-- Live Cycle Preview Box -->
-        <div id="settings-paycycle-preview" class="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-xs text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-          <!-- Dynamically updated via JS -->
-        </div>
-      </div>
+          <!-- 3. Section: 🗓️ รอบบัญชี & วันเงินเดือนออก (Payday / Cut-off Cycle) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🗓️</span>
+                <span data-i18n="settings_paycycle_title">รอบบัญชี & วันเงินเดือนออก (Payday Cycle)</span>
+              </h3>
+              <span id="settings-paycycle-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">
+                เดือนปฏิทิน
+              </span>
+            </div>
+            <p data-i18n="settings_paycycle_desc" class="text-[11px] text-slate-400">
+              กำหนดวันตัดรอบเงินเดือนเพื่อคำนวณรายรับ-รายจ่าย และยอดเงินคงเหลือในหน้าหลัก สเตทเมนต์ และสถิติให้ตรงกับชีวิตจริง
+            </p>
 
-      <!-- 3.5 Section: 🎯 เป้าหมายเงินออมรายเดือน (Monthly Savings Target) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <span>🎯</span>
-            <span data-i18n="settings_savings_goal_title">เป้าหมายเงินออมรายเดือน (Monthly Savings Target)</span>
-          </h3>
-          <span id="settings-savings-goal-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 num-font">
-            ฿5,000 / เดือน
-          </span>
-        </div>
-        <p data-i18n="settings_savings_goal_desc" class="text-[11px] text-slate-400">
-          กำหนดจำนวนเงินที่ตั้งใจจะเก็บในแต่ละเดือน เพื่อนำไปคำนวณโควต้าเงินกินใช้รายวันแบบ Dynamic Rolling บนหน้าหลัก
-        </p>
-
-        <div class="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <label for="settings-savings-goal-input" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <span>💰</span>
-              <span data-i18n="savings_goal_label">เป้าหมายเงินออมเดือนนี้:</span>
-            </label>
-            <div class="flex items-center gap-2">
-              <div class="relative w-36">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
-                <input 
-                  type="number" 
-                  id="settings-savings-goal-input" 
-                  min="0" 
-                  step="500" 
-                  class="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-xs text-right font-extrabold text-slate-900 num-font focus:outline-none"
-                  placeholder="5000"
-                  onchange="App.handleSaveSettingsSavingsGoal(this.value)"
-                />
-              </div>
+            <!-- Pay Cycle Options Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="settings-paycycle-options">
+              <!-- 1. วันสิ้นเดือน (End of Month) -->
               <button 
                 type="button" 
-                onclick="App.handleSaveSettingsSavingsGoal(document.getElementById('settings-savings-goal-input').value)" 
-                class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer"
+                onclick="App.handleSetPayCycleType('end_of_month')" 
+                id="paycycle-opt-end_of_month"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
               >
-                บันทึก
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick Goal Preset Chips -->
-          <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
-            <span class="text-[10px] text-slate-400 font-medium">ตัวเลือกด่วน:</span>
-            <button type="button" onclick="App.handleSetSavingsGoalPreset(1000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿1,000</button>
-            <button type="button" onclick="App.handleSetSavingsGoalPreset(3000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿3,000</button>
-            <button type="button" onclick="App.handleSetSavingsGoalPreset(5000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿5,000</button>
-            <button type="button" onclick="App.handleSetSavingsGoalPreset(10000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿10,000</button>
-            <button type="button" onclick="App.handleSetSavingsGoalPreset(0)" class="px-2.5 py-1 bg-white hover:bg-rose-50 hover:text-rose-700 text-slate-400 text-[11px] font-medium rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">ไม่ตั้งเป้า (฿0)</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Section: 🛠️ ปรับแต่งระบบ & ข้อมูลพื้นฐาน (Customization & Master Data) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
-        <div>
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <span>🛠️</span>
-            <span data-i18n="settings_custom_title">ปรับแต่งระบบ & ข้อมูลพื้นฐาน</span>
-          </h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">จัดการรายการประจำและหมวดหมู่รายรับ-รายจ่ายที่ใช้ในระบบ</p>
-        </div>
-
-        <div class="space-y-3">
-          <!-- Row 1: ปรับแต่งรายการประจำ & บิล -->
-          <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
-            <div class="flex items-start gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0 mt-0.5">
-                📌
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h4 data-i18n="settings_recurring_title" class="text-xs sm:text-sm font-extrabold text-slate-900">ปรับแต่งรายการประจำ & บิล</h4>
-                  <span id="settings-rec-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 num-font">0 รายการ</span>
+                <span class="text-xl mt-0.5 shrink-0">💼</span>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-slate-900 block leading-tight">วันสิ้นเดือน</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">เช่น 31 ส.ค. - 30 ก.ย.</span>
                 </div>
-                <p data-i18n="settings_recurring_desc" class="text-[11px] text-slate-500 mt-0.5">กำหนดรายรับ-รายจ่ายที่ต้องจ่ายทุกเดือน และปุ่มลัดในหน้าบันทึก</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-              <button type="button" onclick="App.toggleSettingsRecurringManager()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
-                <span>📋</span>
-                <span id="settings-rec-toggle-text">ดูรายการทั้งหมด</span>
               </button>
-              <button type="button" onclick="App.openAddRecurringModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
-                <span>➕</span>
-                <span>เพิ่มรายการ</span>
-              </button>
-            </div>
-          </div>
 
-          <!-- Inline Recurring Manager Drawer (Collapsible) -->
-          <div id="settings-recurring-drawer" class="hidden p-4 rounded-2xl bg-slate-100/60 border border-slate-200/80 space-y-3.5 animate-modal">
-            <div class="flex items-center justify-between">
-              <h5 class="text-xs font-bold text-slate-700 uppercase">จัดการรายการประจำเดือน</h5>
-              <div class="flex items-center gap-1">
-                <button type="button" id="settings-rec-filter-all" onclick="App.setSettingsRecFilter('all')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs cursor-pointer">ทั้งหมด</button>
-                <button type="button" id="settings-rec-filter-exp" onclick="App.setSettingsRecFilter('expense')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer">🔴 รายจ่าย</button>
-                <button type="button" id="settings-rec-filter-inc" onclick="App.setSettingsRecFilter('income')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer">🟢 รายรับ</button>
-              </div>
-            </div>
-            <div id="settings-recurring-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <!-- Dynamically populated via JS -->
-            </div>
-          </div>
-
-          <!-- Row 2: ปรับแต่งหมวดหมู่ & บิล -->
-          <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
-            <div class="flex items-start gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl shrink-0 mt-0.5">
-                🏷️
-              </div>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h4 data-i18n="settings_categories_title" class="text-xs sm:text-sm font-extrabold text-slate-900">ปรับแต่งหมวดหมู่ & บิล</h4>
-                  <span id="settings-cat-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200/60 num-font">0 หมวดหมู่</span>
+              <!-- 2. เดือนปฏิทิน (Calendar 1-30) -->
+              <button 
+                type="button" 
+                onclick="App.handleSetPayCycleType('calendar')" 
+                id="paycycle-opt-calendar"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+              >
+                <span class="text-xl mt-0.5 shrink-0">📆</span>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-slate-900 block leading-tight">เดือนปฏิทิน (วันที่ 1 - สิ้นเดือน)</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">ค่าเริ่มต้นทั่วไป</span>
                 </div>
-                <p data-i18n="settings_categories_desc" class="text-[11px] text-slate-500 mt-0.5">เพิ่ม ลบ หรือแก้ไขชื่อและไอคอนอิโมจิของหมวดหมู่</p>
+              </button>
+
+              <!-- 3. วันที่ 25 -->
+              <button 
+                type="button" 
+                onclick="App.handleSetPayCycleType('day_25')" 
+                id="paycycle-opt-day_25"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+              >
+                <span class="text-xl mt-0.5 shrink-0">💳</span>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 25</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">25 ส.ค. - 24 ก.ย.</span>
+                </div>
+              </button>
+
+              <!-- 4. วันที่ 28 -->
+              <button 
+                type="button" 
+                onclick="App.handleSetPayCycleType('day_28')" 
+                id="paycycle-opt-day_28"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+              >
+                <span class="text-xl mt-0.5 shrink-0">🏦</span>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 28</span>
+                  <span class="text-[10px] text-slate-400 block mt-0.5">28 ส.ค. - 27 ก.ย.</span>
+                </div>
+              </button>
+            </div>
+
+            <!-- Custom Day Input row -->
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span>⚙️</span>
+                <span class="font-semibold text-slate-700">หรือกำหนดวันที่ตัดรอบเอง:</span>
+              </div>
+              <div class="flex items-center gap-1.5 self-end sm:self-center">
+                <span class="text-slate-400 text-[11px]">วันที่</span>
+                <input 
+                  type="number" 
+                  id="settings-custom-cycle-day" 
+                  min="1" 
+                  max="31" 
+                  class="w-14 px-2 py-1 bg-white border border-slate-200 rounded-xl text-xs font-bold text-center text-slate-800 num-font" 
+                  placeholder="1"
+                  onchange="App.handleSetPayCycleCustomDay(this.value)"
+                />
+                <span class="text-slate-400 text-[11px]">ของทุกเดือน</span>
               </div>
             </div>
-            <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
-              <button type="button" onclick="App.toggleSettingsCategoryManager()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
-                <span>🏷️</span>
-                <span id="settings-cat-toggle-text">ดูหมวดหมู่ทั้งหมด</span>
-              </button>
-              <button type="button" onclick="App.openAddCategoryModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
-                <span>➕</span>
-                <span>เพิ่มหมวด</span>
-              </button>
+
+            <!-- Live Cycle Preview Box -->
+            <div id="settings-paycycle-preview" class="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-xs text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <!-- Dynamically updated via JS -->
             </div>
           </div>
 
-          <!-- Inline Category Manager Drawer (Collapsible) -->
-          <div id="settings-category-drawer" class="hidden p-4 rounded-2xl bg-slate-100/60 border border-slate-200/80 space-y-3.5 animate-modal">
+          <!-- 3.5 Section: 🎯 เป้าหมายเงินออมรายเดือน (Monthly Savings Target) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
             <div class="flex items-center justify-between">
-              <div class="flex items-center gap-1">
-                <button type="button" id="settings-cat-type-exp" onclick="App.setSettingsCatType('expense')" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer">🔴 หมวดหมู่รายจ่าย</button>
-                <button type="button" id="settings-cat-type-inc" onclick="App.setSettingsCatType('income')" class="px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer">🟢 หมวดหมู่รายรับ</button>
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🎯</span>
+                <span data-i18n="settings_savings_goal_title">เป้าหมายเงินออมรายเดือน (Monthly Savings Target)</span>
+              </h3>
+              <span id="settings-savings-goal-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 num-font">
+                ฿5,000 / เดือน
+              </span>
+            </div>
+            <p data-i18n="settings_savings_goal_desc" class="text-[11px] text-slate-400">
+              กำหนดจำนวนเงินที่ตั้งใจจะเก็บในแต่ละเดือน เพื่อนำไปคำนวณโควต้าเงินกินใช้รายวันแบบ Dynamic Rolling บนหน้าหลัก
+            </p>
+
+            <div class="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <label for="settings-savings-goal-input" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>💰</span>
+                  <span data-i18n="savings_goal_label">เป้าหมายเงินออมเดือนนี้:</span>
+                </label>
+                <div class="flex items-center gap-2">
+                  <div class="relative w-36">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">฿</span>
+                    <input 
+                      type="number" 
+                      id="settings-savings-goal-input" 
+                      min="0" 
+                      step="500" 
+                      class="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-xs text-right font-extrabold text-slate-900 num-font focus:outline-none"
+                      placeholder="5000"
+                      onchange="App.handleSaveSettingsSavingsGoal(this.value)"
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    onclick="App.handleSaveSettingsSavingsGoal(document.getElementById('settings-savings-goal-input').value)" 
+                    class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer"
+                  >
+                    บันทึก
+                  </button>
+                </div>
               </div>
-              <button type="button" onclick="App.handleRestoreDefaultCategories()" class="text-[11px] text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">🔄 คืนค่าเริ่มต้น</button>
+
+              <!-- Quick Goal Preset Chips -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60">
+                <span class="text-[10px] text-slate-400 font-medium">ตัวเลือกด่วน:</span>
+                <button type="button" onclick="App.handleSetSavingsGoalPreset(1000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿1,000</button>
+                <button type="button" onclick="App.handleSetSavingsGoalPreset(3000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿3,000</button>
+                <button type="button" onclick="App.handleSetSavingsGoalPreset(5000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿5,000</button>
+                <button type="button" onclick="App.handleSetSavingsGoalPreset(10000)" class="px-2.5 py-1 bg-white hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-bold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">฿10,000</button>
+                <button type="button" onclick="App.handleSetSavingsGoalPreset(0)" class="px-2.5 py-1 bg-white hover:bg-rose-50 hover:text-rose-700 text-slate-400 text-[11px] font-medium rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer">ไม่ตั้งเป้า (฿0)</button>
+              </div>
             </div>
-            <div id="settings-categories-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-              <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- 4. Section: 🌐 ภาษาและการแสดงผล (Language & Preferences) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🌐</span>
+                  <span data-i18n="settings_lang_title">ภาษาและการแสดงผล (Language)</span>
+                </h3>
+                <p data-i18n="settings_lang_desc" class="text-[11px] text-slate-400 mt-0.5">เลือกภาษาที่ต้องการใช้งานในแอปพลิเคชัน</p>
+              </div>
+            </div>
+
+            <div class="bg-slate-100 p-1.5 rounded-2xl flex items-center gap-2 border border-slate-200/60 max-w-md">
+              <button 
+                type="button" 
+                id="settings-lang-th" 
+                onclick="I18n.setLanguage('th')" 
+                class="flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold bg-white text-slate-900 shadow-xs border border-slate-200/80 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>🇹🇭</span>
+                <span>ภาษาไทย (TH)</span>
+              </button>
+              <button 
+                type="button" 
+                id="settings-lang-en" 
+                onclick="I18n.setLanguage('en')" 
+                class="flex-1 py-2.5 px-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>🇬🇧</span>
+                <span>English (EN)</span>
+              </button>
             </div>
           </div>
 
         </div>
-      </div>
 
-      <!-- 4. Section: 🌐 ภาษาและการแสดงผล (Language & Preferences) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span>🌐</span>
-              <span data-i18n="settings_lang_title">ภาษาและการแสดงผล (Language)</span>
-            </h3>
-            <p data-i18n="settings_lang_desc" class="text-[11px] text-slate-400 mt-0.5">เลือกภาษาที่ต้องการใช้งานในแอปพลิเคชัน</p>
-          </div>
-        </div>
-
-        <div class="bg-slate-100 p-1.5 rounded-2xl flex items-center gap-2 border border-slate-200/60 max-w-md">
-          <button 
-            type="button" 
-            id="settings-lang-th" 
-            onclick="I18n.setLanguage('th')" 
-            class="flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold bg-white text-slate-900 shadow-xs border border-slate-200/80 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <span>🇹🇭</span>
-            <span>ภาษาไทย (TH)</span>
-          </button>
-          <button 
-            type="button" 
-            id="settings-lang-en" 
-            onclick="I18n.setLanguage('en')" 
-            class="flex-1 py-2.5 px-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <span>🇬🇧</span>
-            <span>English (EN)</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 5. Section: 💾 จัดการข้อมูล & สำรองไฟล์ (Data Management & Backup) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
-        <div>
-          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-            <span>💾</span>
-            <span data-i18n="settings_data_title">จัดการข้อมูล & สำรองไฟล์ (Data Hub)</span>
-          </h3>
-          <p data-i18n="settings_data_desc" class="text-[11px] text-slate-400 mt-0.5">ส่งออกรายงาน Excel/CSV, สำรองไฟล์ JSON หรือโหลดข้อมูลตัวอย่าง</p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Right Column: Customization, Data Management & Backup, About -->
+        <div class="space-y-4 sm:space-y-5">
           
-          <!-- 1. Export CSV / Excel -->
-          <button 
-            type="button" 
-            onclick="App.openExportModal()" 
-            class="p-3.5 rounded-2xl bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
-                📊
-              </div>
-              <div>
-                <span class="text-xs sm:text-sm font-extrabold text-emerald-900 block leading-tight">ส่งออก CSV / Excel</span>
-                <span class="text-[11px] text-emerald-700/80">กรองช่วงเวลา หมวดหมู่ หรือช่องทางจ่าย</span>
-              </div>
-            </div>
-            <svg class="w-4 h-4 text-emerald-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </button>
-
-          <!-- 2. Backup JSON -->
-          <button 
-            type="button" 
-            onclick="StorageManager.exportToJSON()" 
-            class="p-3.5 rounded-2xl bg-indigo-50/60 hover:bg-indigo-100/70 border border-indigo-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
-                📤
-              </div>
-              <div>
-                <span class="text-xs sm:text-sm font-extrabold text-indigo-900 block leading-tight">สำรองข้อมูล JSON (Backup)</span>
-                <span class="text-[11px] text-indigo-700/80">ดาวน์โหลดไฟล์สำรองเก็บไว้ในเครื่อง</span>
-              </div>
-            </div>
-            <svg class="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </button>
-
-          <!-- 3. Restore JSON -->
-          <label class="p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
-                📥
-              </div>
-              <div>
-                <span class="text-xs sm:text-sm font-extrabold text-slate-900 block leading-tight">นำเข้าข้อมูล JSON (Restore)</span>
-                <span class="text-[11px] text-slate-500">กู้คืนข้อมูลจากไฟล์ JSON ที่เคยสำรองไว้</span>
-              </div>
-            </div>
-            <input type="file" id="settings-import-json-file" accept=".json" class="hidden" onchange="App.handleImportJsonFile(this)" />
-            <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </label>
-
-          <!-- 4. Load Sample Data -->
-          <button 
-            type="button" 
-            onclick="App.handleLoadSampleData()" 
-            class="p-3.5 rounded-2xl bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
-                ✨
-              </div>
-              <div>
-                <span class="text-xs sm:text-sm font-extrabold text-amber-900 block leading-tight">โหลดข้อมูลตัวอย่าง (Sample)</span>
-                <span class="text-[11px] text-amber-700/80">เติมรายการตัวอย่างเพื่อทดลองระบบ</span>
-              </div>
-            </div>
-            <svg class="w-4 h-4 text-amber-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </button>
-
-        </div>
-
-        <!-- Danger Zone: Reset Data -->
-        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-          <span class="text-[11px] text-slate-400 font-medium">ล้างข้อมูลเฉพาะในเครื่องนี้</span>
-          <button 
-            type="button" 
-            onclick="App.handleClearAllData()" 
-            class="px-3 py-1.5 rounded-xl text-[11px] font-bold text-rose-600 hover:bg-rose-50 border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1 active:scale-95"
-          >
-            <span>🗑️</span>
-            <span data-i18n="btn_clear_data">ล้างข้อมูลทั้งหมดในเครื่อง</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 6. Section: ℹ️ เกี่ยวกับแอปพลิเคชัน (About App & System Info) -->
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm font-bold shadow-2xs">
-              🪙
-            </div>
+          <!-- 4. Section: 🛠️ ปรับแต่งระบบ & ข้อมูลพื้นฐาน (Customization & Master Data) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
             <div>
-              <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Money Memo</h4>
-              <p class="text-[10px] text-slate-400">Offline-First Fintech Edition</p>
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🛠️</span>
+                <span data-i18n="settings_custom_title">ปรับแต่งระบบ & ข้อมูลพื้นฐาน</span>
+              </h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">จัดการรายการประจำและหมวดหมู่รายรับ-รายจ่ายที่ใช้ในระบบ</p>
+            </div>
+
+            <div class="space-y-3">
+              <!-- Row 1: ปรับแต่งรายการประจำ & บิล -->
+              <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0 mt-0.5">
+                    📌
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 data-i18n="settings_recurring_title" class="text-xs sm:text-sm font-extrabold text-slate-900">ปรับแต่งรายการประจำ & บิล</h4>
+                      <span id="settings-rec-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 num-font">0 รายการ</span>
+                    </div>
+                    <p data-i18n="settings_recurring_desc" class="text-[11px] text-slate-500 mt-0.5">กำหนดรายรับ-รายจ่ายที่ต้องจ่ายทุกเดือน และปุ่มลัดในหน้าบันทึก</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <button type="button" onclick="App.toggleSettingsRecurringManager()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                    <span>📋</span>
+                    <span id="settings-rec-toggle-text">ดูรายการทั้งหมด</span>
+                  </button>
+                  <button type="button" onclick="App.openAddRecurringModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                    <span>➕</span>
+                    <span>เพิ่มรายการ</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline Recurring Manager Drawer (Collapsible) -->
+              <div id="settings-recurring-drawer" class="hidden p-4 rounded-2xl bg-slate-100/60 border border-slate-200/80 space-y-3.5 animate-modal">
+                <div class="flex items-center justify-between">
+                  <h5 class="text-xs font-bold text-slate-700 uppercase">จัดการรายการประจำเดือน</h5>
+                  <div class="flex items-center gap-1">
+                    <button type="button" id="settings-rec-filter-all" onclick="App.setSettingsRecFilter('all')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs cursor-pointer">ทั้งหมด</button>
+                    <button type="button" id="settings-rec-filter-exp" onclick="App.setSettingsRecFilter('expense')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer">🔴 รายจ่าย</button>
+                    <button type="button" id="settings-rec-filter-inc" onclick="App.setSettingsRecFilter('income')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 cursor-pointer">🟢 รายรับ</button>
+                  </div>
+                </div>
+                <div id="settings-recurring-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <!-- Dynamically populated via JS -->
+                </div>
+              </div>
+
+              <!-- Row 2: ปรับแต่งหมวดหมู่ & บิล -->
+              <div class="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all">
+                <div class="flex items-start gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl shrink-0 mt-0.5">
+                    🏷️
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 data-i18n="settings_categories_title" class="text-xs sm:text-sm font-extrabold text-slate-900">ปรับแต่งหมวดหมู่ & บิล</h4>
+                      <span id="settings-cat-count-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200/60 num-font">0 หมวดหมู่</span>
+                    </div>
+                    <p data-i18n="settings_categories_desc" class="text-[11px] text-slate-500 mt-0.5">เพิ่ม ลบ หรือแก้ไขชื่อและไอคอนอิโมจิของหมวดหมู่</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                  <button type="button" onclick="App.toggleSettingsCategoryManager()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                    <span>🏷️</span>
+                    <span id="settings-cat-toggle-text">ดูหมวดหมู่ทั้งหมด</span>
+                  </button>
+                  <button type="button" onclick="App.openAddCategoryModal()" class="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
+                    <span>➕</span>
+                    <span>เพิ่มหมวด</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Inline Category Manager Drawer (Collapsible) -->
+              <div id="settings-category-drawer" class="hidden p-4 rounded-2xl bg-slate-100/60 border border-slate-200/80 space-y-3.5 animate-modal">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1">
+                    <button type="button" id="settings-cat-type-exp" onclick="App.setSettingsCatType('expense')" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer">🔴 หมวดหมู่รายจ่าย</button>
+                    <button type="button" id="settings-cat-type-inc" onclick="App.setSettingsCatType('income')" class="px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer">🟢 หมวดหมู่รายรับ</button>
+                  </div>
+                  <button type="button" onclick="App.handleRestoreDefaultCategories()" class="text-[11px] text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">🔄 คืนค่าเริ่มต้น</button>
+                </div>
+                <div id="settings-categories-grid-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  <!-- Dynamically populated via JS -->
+                </div>
+              </div>
+
             </div>
           </div>
-          <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200/70 num-font">v3.9</span>
+
+          <!-- 5. Section: 💾 จัดการข้อมูล & สำรองไฟล์ (Data Management & Backup) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3.5">
+            <div>
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span>💾</span>
+                <span data-i18n="settings_data_title">จัดการข้อมูล & สำรองไฟล์ (Data Hub)</span>
+              </h3>
+              <p data-i18n="settings_data_desc" class="text-[11px] text-slate-400 mt-0.5">ส่งออกรายงาน Excel/CSV, สำรองไฟล์ JSON หรือลากไฟล์มาปล่อยเพื่อกู้คืนได้ทันที</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              
+              <!-- 1. Export CSV / Excel -->
+              <button 
+                type="button" 
+                onclick="App.openExportModal()" 
+                class="p-3.5 rounded-2xl bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                    📊
+                  </div>
+                  <div>
+                    <span class="text-xs sm:text-sm font-extrabold text-emerald-900 block leading-tight">ส่งออก CSV / Excel</span>
+                    <span class="text-[11px] text-emerald-700/80">กรองช่วงเวลา หมวดหมู่ หรือช่องทางจ่าย</span>
+                  </div>
+                </div>
+                <svg class="w-4 h-4 text-emerald-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+              <!-- 2. Backup JSON -->
+              <button 
+                type="button" 
+                onclick="StorageManager.exportToJSON()" 
+                class="p-3.5 rounded-2xl bg-indigo-50/60 hover:bg-indigo-100/70 border border-indigo-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                    📤
+                  </div>
+                  <div>
+                    <span class="text-xs sm:text-sm font-extrabold text-indigo-900 block leading-tight">สำรองข้อมูล JSON (Backup)</span>
+                    <span class="text-[11px] text-indigo-700/80">ดาวน์โหลดไฟล์สำรองเก็บไว้ในเครื่อง</span>
+                  </div>
+                </div>
+                <svg class="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+              <!-- 3. Restore JSON -->
+              <label class="p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-slate-800 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                    📥
+                  </div>
+                  <div>
+                    <span class="text-xs sm:text-sm font-extrabold text-slate-900 block leading-tight">นำเข้าข้อมูล JSON (Restore)</span>
+                    <span class="text-[11px] text-slate-500">เลือกไฟล์หรือลากไฟล์ .json มาปล่อย</span>
+                  </div>
+                </div>
+                <input type="file" id="settings-import-json-file" accept=".json" class="hidden" onchange="App.handleImportJsonFile(this)" />
+                <svg class="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              </label>
+
+              <!-- 4. Load Sample Data -->
+              <button 
+                type="button" 
+                onclick="App.handleLoadSampleData()" 
+                class="p-3.5 rounded-2xl bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200/80 transition-all text-left flex items-center justify-between gap-3 cursor-pointer group active:scale-98 shadow-2xs"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shadow-2xs group-hover:scale-105 transition-transform">
+                    ✨
+                  </div>
+                  <div>
+                    <span class="text-xs sm:text-sm font-extrabold text-amber-900 block leading-tight">โหลดข้อมูลตัวอย่าง (Sample)</span>
+                    <span class="text-[11px] text-amber-700/80">เติมรายการตัวอย่างเพื่อทดลองระบบ</span>
+                  </div>
+                </div>
+                <svg class="w-4 h-4 text-amber-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+              </button>
+
+            </div>
+
+            <!-- Danger Zone: Reset Data -->
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-[11px] text-slate-400 font-medium">ล้างข้อมูลเฉพาะในเครื่องนี้</span>
+              <button 
+                type="button" 
+                onclick="App.handleClearAllData()" 
+                class="px-3 py-1.5 rounded-xl text-[11px] font-bold text-rose-600 hover:bg-rose-50 border border-rose-200/80 transition-all cursor-pointer flex items-center gap-1 active:scale-95"
+              >
+                <span>🗑️</span>
+                <span data-i18n="btn_clear_data">ล้างข้อมูลทั้งหมดในเครื่อง</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 6. Section: ℹ️ เกี่ยวกับแอปพลิเคชัน (About App & System Info) -->
+          <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm font-bold shadow-2xs">
+                  🪙
+                </div>
+                <div>
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Money Memo</h4>
+                  <p class="text-[10px] text-slate-400">Offline-First Fintech & Desktop Edition</p>
+                </div>
+              </div>
+              <span class="text-xs font-black px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200/70 num-font">v3.9.6</span>
+            </div>
+
+            <div id="settings-storage-stats-container" class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
+              <!-- Dynamically populated via JS -->
+            </div>
+          </div>
+
         </div>
 
-        <div id="settings-storage-stats-container" class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-[11px] text-slate-600 flex flex-wrap items-center justify-between gap-2">
-          <!-- Dynamically populated via JS -->
-        </div>
       </div>
 
     </section>
@@ -2310,16 +2455,126 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- MODAL: ⌨️ รวมปุ่มลัดสำหรับคอมพิวเตอร์ (Keyboard Shortcuts Cheat Sheet) -->
+  <!-- ========================================== -->
+  <div id="keyboard-shortcuts-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-base shadow-xs">
+            ⌨️
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">คีย์ลัดสำหรับคอมพิวเตอร์ (Keyboard Shortcuts)</h3>
+            <p class="text-[11px] text-slate-400 font-medium mt-0.5">ควบคุมและบันทึกข้อมูลอย่างรวดเร็วโดยไม่ต้องจับเมาส์</p>
+          </div>
+        </div>
+        <button type="button" onclick="App.closeKeyboardShortcutsModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm cursor-pointer transition-colors">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <!-- Group 1: General Navigation -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2">
+          <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">📌 การสลับหน้า & การนำทาง</h4>
+          <div class="grid grid-cols-2 gap-2 text-slate-700">
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <span class="font-semibold">🏠 หน้าหลัก</span>
+              <span class="kbd-badge font-bold">1</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <span class="font-semibold">📋 ประวัติ</span>
+              <span class="kbd-badge font-bold">2</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <span class="font-semibold">📊 สถิติ</span>
+              <span class="kbd-badge font-bold">3</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <span class="font-semibold">🧮 จำลองงบ</span>
+              <span class="kbd-badge font-bold">4</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <span class="font-semibold">⚙️ ตั้งค่า</span>
+              <span class="kbd-badge font-bold">5</span>
+            </div>
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <span class="font-semibold">🔍 ค้นหา</span>
+              <span class="kbd-badge font-bold">/</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Group 2: Quick Actions & Forms -->
+        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2">
+          <h4 class="font-bold text-slate-700 uppercase tracking-wider text-[10px]">⚡ การบันทึก & จัดการหน้าต่าง</h4>
+          <div class="space-y-1.5 text-slate-700">
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <div>
+                <span class="font-bold block">บันทึกรายการใหม่ (Quick Entry)</span>
+                <span class="text-[10px] text-slate-400">เปิดหน้าต่างบันทึกทันทีจากทุกหน้า</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="kbd-badge font-bold">N</span>
+                <span class="text-slate-400 text-[10px]">หรือ</span>
+                <span class="kbd-badge font-bold">Ctrl+N</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <div>
+                <span class="font-bold block">บันทึกฟอร์มทันที (Submit Form)</span>
+                <span class="text-[10px] text-slate-400">ยืนยันข้อมูลโดยไม่ต้องเลื่อนเมาส์ไปกดปุ่ม</span>
+              </div>
+              <span class="kbd-badge font-bold">Ctrl + Enter</span>
+            </div>
+
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <div>
+                <span class="font-bold block">ปิดหน้าต่าง Pop-up (Close Modal)</span>
+                <span class="text-[10px] text-slate-400">ยกเลิกหรือปิดหน้าต่างที่กำลังเปิดอยู่</span>
+              </div>
+              <span class="kbd-badge font-bold">Esc</span>
+            </div>
+
+            <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100">
+              <div>
+                <span class="font-bold block">เปิดดูหน้าต่างคีย์ลัดนี้</span>
+                <span class="text-[10px] text-slate-400">ดูวิธีใช้งานคีย์ลัดทั้งหมด</span>
+              </div>
+              <span class="kbd-badge font-bold">?</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end pt-2 border-t border-slate-100">
+        <button type="button" onclick="App.closeKeyboardShortcutsModal()" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-2xl shadow-xs transition-all cursor-pointer">
+          เข้าใจแล้ว (ปิดหน้าต่าง)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drag and Drop Overlay for Backup Restore -->
+  <div id="drag-drop-overlay" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-white text-center opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="w-20 h-20 rounded-3xl bg-indigo-600/30 border-2 border-dashed border-indigo-400 flex items-center justify-center text-4xl mb-4 animate-bounce">
+      📥
+    </div>
+    <h3 class="text-xl font-extrabold">ปล่อยไฟล์ JSON สำรองที่นี่</h3>
+    <p class="text-sm text-slate-300 mt-1 max-w-sm">ระบบจะทำการกู้คืนข้อมูลบัญชีและประวัติทั้งหมดจากไฟล์สำรองโดยอัตโนมัติ</p>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast-notification" class="fixed bottom-20 sm:bottom-5 right-5 z-50 bg-slate-900/90 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-medium transition-all duration-300 opacity-0 translate-y-3 pointer-events-none flex items-center gap-2 border border-white/10">
     บันทึกเรียบร้อย
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=3.9.5" defer></script>
-  <script src="js/storage.js?v=3.9.5" defer></script>
-  <script src="js/firebase-client.js?v=3.9.5" defer></script>
-  <script src="js/budget-simulator.js?v=3.9.5" defer></script>
-  <script src="js/app.js?v=3.9.5" defer></script>
+  <script src="js/i18n.js?v=3.9.6" defer></script>
+  <script src="js/storage.js?v=3.9.6" defer></script>
+  <script src="js/firebase-client.js?v=3.9.6" defer></script>
+  <script src="js/budget-simulator.js?v=3.9.6" defer></script>
+  <script src="js/app.js?v=3.9.6" defer></script>
 </body>
 </html>

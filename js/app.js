@@ -16,6 +16,7 @@ const App = {
   historyTypeFilter: 'all', // 'all', 'expense', 'income'
   historyCategoryFilter: 'all', // 'all' or categoryId
   historySearchQuery: '',
+  historyDesktopView: 'cards', // 'cards' (daily cards) or 'table' (compact desktop table)
   
   // Recurring & Category state
   inlineRecurringType: 'expense', // 'expense' or 'income'
@@ -72,6 +73,9 @@ const App = {
     this.initCustomDateInputs();
     this.initCategoryGrid('form-category-grid', this.currentEntryType);
     this.bindEvents();
+    this.initKeyboardShortcuts();
+    this.initDragAndDropRestore();
+    this.initHistoryDesktopView();
 
     try {
       const savedMode = localStorage.getItem('money_memo_dash_view_mode');
@@ -95,6 +99,203 @@ const App = {
         });
       });
     }
+  },
+
+  // ==========================================
+  // DESKTOP & POWER-USER SHORTCUTS / MODALS
+  // ==========================================
+  initKeyboardShortcuts() {
+    window.addEventListener('keydown', (e) => {
+      // 1. Esc: Close all modals unconditionally
+      if (e.key === 'Escape') {
+        this.closeAllModals();
+        return;
+      }
+
+      // 2. Ctrl+Enter or Cmd+Enter: Submit active modal form or main quick form
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const activeModal = document.querySelector('.modal.show, .modal.active, #quick-entry-modal.show, #quick-entry-modal.active, #keyboard-shortcuts-modal:not(.hidden)');
+        if (activeModal) {
+          const form = activeModal.querySelector('form');
+          if (form) {
+            e.preventDefault();
+            if (typeof form.requestSubmit === 'function') {
+              form.requestSubmit();
+            } else {
+              form.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+            return;
+          }
+        } else if (this.currentTab === 'transactions') {
+          const mainForm = document.getElementById('transaction-form');
+          if (mainForm) {
+            e.preventDefault();
+            if (typeof mainForm.requestSubmit === 'function') {
+              mainForm.requestSubmit();
+            } else {
+              mainForm.dispatchEvent(new Event('submit', { cancelable: true }));
+            }
+            return;
+          }
+        }
+      }
+
+      // 3. Ignore single-key shortcuts if user is currently typing in an input element
+      const activeEl = document.activeElement;
+      const isInputActive = activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.tagName === 'SELECT' ||
+        activeEl.isContentEditable
+      );
+
+      if (isInputActive) return;
+
+      // 4. Ctrl+N or N: Open Quick Entry Modal
+      if ((e.ctrlKey && (e.key === 'n' || e.key === 'N')) || (!e.ctrlKey && !e.altKey && !e.metaKey && (e.key === 'n' || e.key === 'N'))) {
+        e.preventDefault();
+        this.openQuickEntryModal();
+        return;
+      }
+
+      // 5. Number keys 1-5: Switch Tabs
+      if (!e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (e.key === '1') { e.preventDefault(); this.switchTab('transactions'); return; }
+        if (e.key === '2') { e.preventDefault(); this.switchTab('history'); return; }
+        if (e.key === '3') { e.preventDefault(); this.switchTab('dashboard'); return; }
+        if (e.key === '4') { e.preventDefault(); this.switchTab('simulator'); return; }
+        if (e.key === '5') { e.preventDefault(); this.switchTab('settings'); return; }
+
+        // 6. '/' Slash: Focus Search in Statement / History
+        if (e.key === '/') {
+          e.preventDefault();
+          if (this.currentTab !== 'history') {
+            this.switchTab('history');
+          }
+          setTimeout(() => {
+            const searchInput = document.getElementById('history-search-input') || document.getElementById('tx-search-input');
+            if (searchInput) {
+              searchInput.focus();
+              searchInput.select();
+            }
+          }, 50);
+          return;
+        }
+
+        // 7. '?' Question mark: Toggle Keyboard Shortcuts Modal
+        if (e.key === '?') {
+          e.preventDefault();
+          this.toggleKeyboardShortcutsModal();
+          return;
+        }
+      }
+    });
+  },
+
+  openKeyboardShortcutsModal() {
+    const modal = document.getElementById('keyboard-shortcuts-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+  },
+
+  closeKeyboardShortcutsModal() {
+    const modal = document.getElementById('keyboard-shortcuts-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+  },
+
+  toggleKeyboardShortcutsModal() {
+    const modal = document.getElementById('keyboard-shortcuts-modal');
+    if (modal) {
+      if (modal.classList.contains('hidden')) {
+        this.openKeyboardShortcutsModal();
+      } else {
+        this.closeKeyboardShortcutsModal();
+      }
+    }
+  },
+
+  closeAllModals() {
+    this.closeKeyboardShortcutsModal();
+    this.closeQuickEntryModal();
+    this.closeTransactionDetailModal();
+    this.closeEditModal();
+    this.closeDeleteModal();
+    this.closeAddCategoryModal();
+    this.closeDeleteCategoryModal();
+    this.closeRecurringModal();
+    this.closeQuickFixedModal();
+    this.closeExportModal();
+    if (typeof this.closeSavingsGoalModal === 'function') this.closeSavingsGoalModal();
+    
+    // Generic modal class removal
+    document.querySelectorAll('.modal.show, .modal.active').forEach(m => m.classList.remove('show', 'active'));
+    document.body.style.overflow = '';
+  },
+
+  initDragAndDropRestore() {
+    const overlay = document.getElementById('drag-drop-overlay');
+    if (!overlay) return;
+
+    let dragCounter = 0;
+
+    window.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+      }
+    });
+
+    window.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+      }
+    });
+
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      overlay.classList.remove('opacity-100');
+      overlay.classList.add('opacity-0', 'pointer-events-none');
+
+      const files = e.dataTransfer ? e.dataTransfer.files : null;
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+      if (!file.name.toLowerCase().endsWith('.json')) {
+        alert(I18n.getLanguage() === 'en' ? 'Please drop a valid .json backup file.' : 'กรุณาวางไฟล์สำรองข้อมูลนามสกุล .json เท่านั้น');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const res = StorageManager.importFromJSON(event.target.result);
+        if (res.success) {
+          this.renderAll(true);
+          if (typeof BudgetSimulator !== 'undefined') BudgetSimulator.init();
+          this.showToast(I18n.t('toast_restored'));
+        } else {
+          alert((I18n.getLanguage() === 'en' ? 'Error importing file: ' : 'เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ') + res.message);
+        }
+      };
+      reader.readAsText(file);
+    });
   },
 
   initTimeDropdowns() {
@@ -2450,6 +2651,48 @@ const App = {
     this.renderHistoryTab();
   },
 
+  initHistoryDesktopView() {
+    try {
+      const saved = localStorage.getItem('money_memo_history_desktop_view');
+      if (saved === 'cards' || saved === 'table') {
+        this.historyDesktopView = saved;
+      }
+    } catch(e) {}
+    this.setHistoryDesktopView(this.historyDesktopView || 'cards', false);
+  },
+
+  setHistoryDesktopView(mode, render = true) {
+    this.historyDesktopView = mode;
+    try {
+      localStorage.setItem('money_memo_history_desktop_view', mode);
+    } catch(e) {}
+
+    const btnCards = document.getElementById('history-view-cards-btn');
+    const btnTable = document.getElementById('history-view-table-btn');
+    const feedContainer = document.getElementById('history-daily-feed');
+    const tableContainer = document.getElementById('history-table-container');
+
+    const activePill = 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-slate-900 shadow-2xs transition-all cursor-pointer';
+    const inactivePill = 'px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-900 transition-all cursor-pointer';
+
+    if (btnCards) btnCards.className = (mode === 'cards') ? activePill : inactivePill;
+    if (btnTable) btnTable.className = (mode === 'table') ? activePill : inactivePill;
+
+    if (feedContainer && tableContainer) {
+      if (mode === 'table') {
+        feedContainer.classList.add('hidden');
+        tableContainer.classList.remove('hidden');
+      } else {
+        feedContainer.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+      }
+    }
+
+    if (render) {
+      this.renderHistoryTab();
+    }
+  },
+
   openQuickEntryModal() {
     const modal = document.getElementById('quick-entry-modal');
     if (!modal) return;
@@ -2678,6 +2921,17 @@ const App = {
           ${jumpButtonHtml}
         </div>
       `;
+
+      const tableTbody = document.getElementById('history-table-tbody');
+      if (tableTbody) {
+        tableTbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-10 text-slate-400">
+              ${lang === 'en' ? 'No transactions found for this period' : 'ไม่พบรายการบันทึกในงวดนี้'}
+            </td>
+          </tr>
+        `;
+      }
       return;
     }
 
@@ -2804,6 +3058,160 @@ const App = {
         </div>
       `;
     }).join('');
+
+    // 7. Populate Compact Desktop Table View
+    const tableTbody = document.getElementById('history-table-tbody');
+    if (tableTbody) {
+      const sortedTxs = [...filteredTxs].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      tableTbody.innerHTML = sortedTxs.map(t => {
+        const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
+        const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
+        const isExp = t.type === 'expense';
+        const amountNum = Number(t.amount) || 0;
+        const dStr = this.normalizeDateString(t.date);
+        const timeStr = (t.date && t.date.length >= 16) ? t.date.slice(11, 16) : '';
+        const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+
+        return `
+          <tr class="hover-action-trigger hover:bg-slate-50/80 transition-colors cursor-pointer" onclick="App.openTransactionDetailModal('${t.id}')">
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <span class="font-bold text-slate-800">${dStr}</span>
+              ${timeStr ? `<span class="text-slate-400 ml-1 font-normal">${timeStr} น.</span>` : ''}
+            </td>
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-200/60' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'}">
+                ${typeBadge}
+              </span>
+            </td>
+            <td class="py-2.5 px-3 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1 font-bold text-slate-800">
+                <span>${cat.emoji || '📦'}</span>
+                <span>${catName}</span>
+              </span>
+            </td>
+            <td class="py-2.5 px-3 max-w-[200px] truncate text-slate-600">
+              ${t.note || '-'}
+            </td>
+            <td class="py-2.5 px-3 whitespace-nowrap text-slate-500">
+              ${t.paymentMethod || '-'}
+            </td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+              ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </td>
+            <td class="py-2.5 px-3 text-center whitespace-nowrap no-print" onclick="event.stopPropagation()">
+              <div class="desktop-row-actions inline-flex items-center gap-1 justify-center">
+                <button onclick="App.openTransactionDetailModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-all cursor-pointer" title="ดูรายละเอียด">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                </button>
+                <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-all cursor-pointer" title="${I18n.t('btn_edit')}">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                </button>
+                <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer" title="${I18n.t('btn_delete')}">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  },
+
+  renderDesktopRecentTransactions() {
+    const container = document.getElementById('desktop-recent-transactions-list');
+    if (!container) return;
+
+    const allTxs = StorageManager.getTransactions();
+    const sorted = [...allTxs].sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 10);
+    const lang = I18n.getLanguage();
+
+    if (sorted.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl p-4 space-y-1 bg-slate-50/50">
+          <span class="text-2xl block mb-1">📝</span>
+          <p class="text-xs font-bold text-slate-600">${lang === 'en' ? 'No transactions yet' : 'ยังไม่มีรายการบันทึก'}</p>
+          <p class="text-[10px] text-slate-400">${lang === 'en' ? 'New entries will show up here live' : 'รายการที่บันทึกจะแสดงที่นี่แบบสดๆ'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = sorted.map(t => {
+      const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
+      const catName = StorageManager.getCategoryDisplayName(cat);
+      const isExp = t.type === 'expense';
+      const amountNum = Number(t.amount) || 0;
+      const dateStr = this.normalizeDateString(t.date);
+      const timeStr = (t.date && t.date.length >= 16) ? t.date.slice(11, 16) : '';
+
+      return `
+        <div 
+          onclick="App.openTransactionDetailModal('${t.id}')"
+          class="hover-action-trigger flex items-center justify-between p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 transition-all cursor-pointer group shadow-2xs"
+        >
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+              ${cat.emoji || '📦'}
+            </div>
+            <div class="min-w-0 flex-1 pr-1">
+              <div class="flex items-center gap-1 truncate">
+                <span class="font-bold text-slate-800 text-xs truncate">${catName}</span>
+                ${t.note ? `<span class="text-[11px] text-slate-400 truncate">(${t.note})</span>` : ''}
+              </div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                <span>${dateStr || '-'}</span>
+                ${timeStr ? `<span>${timeStr} น.</span>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="text-xs font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+              ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            </span>
+
+            <div class="desktop-row-actions flex items-center ml-1" onclick="event.stopPropagation()">
+              <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-all cursor-pointer" title="${I18n.t('btn_edit')}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              </button>
+              <button onclick="App.openDeleteModal('${t.id}')" class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer" title="${I18n.t('btn_delete')}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  updatePrintReportHeader() {
+    const stamp = document.getElementById('print-report-date-stamp');
+    if (stamp) {
+      const now = new Date();
+      const dStr = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+      const tStr = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      stamp.textContent = `พิมพ์เมื่อ ${dStr} เวลา ${tStr} น.`;
+    }
+  },
+
+  printStatementReport() {
+    if (this.currentTab !== 'history') {
+      this.switchTab('history');
+    }
+    this.updatePrintReportHeader();
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  },
+
+  printDashboardReport() {
+    if (this.currentTab !== 'dashboard') {
+      this.switchTab('dashboard');
+    }
+    this.updatePrintReportHeader();
+    setTimeout(() => {
+      window.print();
+    }, 100);
   },
 
   renderTransactionList() {
@@ -3216,6 +3624,7 @@ const App = {
       if (this.currentTab !== 'transactions') {
         this.renderTab1OverviewHero();
         this.renderTab1DailyBudgetCard();
+        this.renderDesktopRecentTransactions();
       }
       if (this.currentTab !== 'history') this.renderHistoryTab();
       if (this.currentTab !== 'dashboard') this.renderDashboard();
@@ -3230,6 +3639,7 @@ const App = {
     if (this.currentTab === 'transactions') {
       this.renderTab1OverviewHero();
       this.renderTab1DailyBudgetCard();
+      this.renderDesktopRecentTransactions();
     } else if (this.currentTab === 'history') {
       this.renderHistoryTab();
     } else if (this.currentTab === 'dashboard') {

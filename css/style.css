@@ -138,3 +138,132 @@ input:focus, select:focus {
   border-color: #0f172a !important;
   box-shadow: 0 0 0 1.5px rgba(15, 23, 42, 0.15) !important;
 }
+
+/* Keyboard Shortcut Badges */
+.kbd-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background-color: rgba(241, 245, 249, 0.9);
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  line-height: 1.2;
+}
+
+/* Desktop Row Hover Actions */
+.hover-action-trigger {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.desktop-row-actions {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform: translateX(4px);
+}
+@media (hover: hover) and (pointer: fine) {
+  .hover-action-trigger:hover .desktop-row-actions {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+}
+
+/* Drag and Drop Zone Overlay */
+#drag-drop-overlay {
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ========================================================= */
+/* PRINT STYLESHEET (@media print) */
+/* ========================================================= */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* Hide Navigation, Header Actions, Bottom Dock, Modals, Overlays, and Filter Bars */
+  header, 
+  nav, 
+  .sm\:hidden,
+  .modal-overlay,
+  #drag-drop-overlay,
+  #auth-header-container,
+  #toast-notification,
+  .no-print,
+  button,
+  .kbd-badge,
+  input,
+  select {
+    display: none !important;
+  }
+
+  /* Main Container Full Width for Clean Paper Margins */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Unhide printable active tab container */
+  .tab-content-pane:not(.hidden) {
+    display: block !important;
+  }
+
+  /* Cards converted to high-contrast clean borders */
+  .pastel-card, .minimal-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+    page-break-inside: avoid;
+    margin-bottom: 12pt !important;
+  }
+
+  /* Dark gradient banners converted to clean bordered boxes with dark text */
+  .bg-gradient-to-r, .bg-gradient-to-br, .bg-slate-900 {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #94a3b8 !important;
+    box-shadow: none !important;
+  }
+  .bg-gradient-to-r *, .bg-gradient-to-br *, .bg-slate-900 * {
+    color: #0f172a !important;
+  }
+
+  /* Tables */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  th, td {
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 6pt 8pt !important;
+  }
+
+  /* Print Header Stamp */
+  .print-only-header {
+    display: block !important;
+    margin-bottom: 16pt;
+    padding-bottom: 8pt;
+    border-bottom: 2px solid #0f172a;
+  }
+}
+@media screen {
+  .print-only-header {
+    display: none !important;
+  }
+}

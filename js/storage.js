@@ -9,7 +9,8 @@ const STORAGE_KEYS = {
   RECURRING_ITEMS: 'smart_expense_recurring_list_v2',
   DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1',
   PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1',
-  SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1'
+  SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1',
+  SURPLUS_SETTLEMENT: 'smart_expense_surplus_settlement_v1'
 };
 
 const DEFAULT_SAVINGS_GOAL = 5000;
@@ -654,43 +655,127 @@ const StorageManager = {
     }
   },
 
+  // --- การจัดการเงินเหลือสิ้นสุดรอบ (Month-End Surplus Settlement & Rollover) ---
+  getSurplusSettlements() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.SURPLUS_SETTLEMENT);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      return {};
+    }
+  },
+
+  getSurplusSettlement(cycleStartDate) {
+    if (!cycleStartDate) return null;
+    const all = this.getSurplusSettlements();
+    return all[cycleStartDate] || null;
+  },
+
+  saveSurplusSettlement(cycleStartDate, settlement) {
+    if (!cycleStartDate) return;
+    try {
+      const all = this.getSurplusSettlements();
+      all[cycleStartDate] = {
+        ...settlement,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(all));
+    } catch (e) {
+      console.error('Error saving surplus settlement:', e);
+    }
+  },
+
+  removeSurplusSettlement(cycleStartDate) {
+    if (!cycleStartDate) return;
+    try {
+      const all = this.getSurplusSettlements();
+      delete all[cycleStartDate];
+      localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(all));
+    } catch (e) {
+      console.error('Error removing surplus settlement:', e);
+    }
+  },
+
+  getPreviousCycleSurplus(referenceDate = new Date(), payCycleSetting = null) {
+    const setting = payCycleSetting || this.getPayCycleSetting();
+    const currentCycle = this.getCycleDateRange(referenceDate, setting);
+    
+    // Find the immediately preceding cycle (1 day before currentCycle starts)
+    const prevDate = new Date(currentCycle.sDate.getTime() - 86400000);
+    const prevCycle = this.getCycleDateRange(prevDate, setting);
+
+    const allTxs = this.getTransactions();
+    const prevTxs = allTxs.filter(t => {
+      const d = this.normalizeDateString(t.date);
+      return d >= prevCycle.startDate && d <= prevCycle.endDate;
+    });
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    prevTxs.forEach(t => {
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') totalIncome += amt;
+      else totalExpense += amt;
+    });
+
+    const netSurplus = totalIncome - totalExpense;
+    const settlement = this.getSurplusSettlement(currentCycle.startDate);
+
+    return {
+      currentCycle,
+      prevCycle,
+      totalIncome,
+      totalExpense,
+      netSurplus,
+      hasSurplus: netSurplus > 0,
+      settlement
+    };
+  },
+
   getCycleDateRange(referenceDate = new Date(), payCycleSetting = null) {
     const setting = payCycleSetting || this.getPayCycleSetting();
     const ref = new Date(referenceDate);
     const Y = ref.getFullYear();
     const M = ref.getMonth(); // 0 to 11
+    const day = ref.getDate();
     const pad = (n) => String(n).padStart(2, '0');
 
     let sDate, eDate;
 
-    if (setting.type === 'end_of_month' || setting.type === 'last_day') {
-      // Last day of previous month to last day of current month (e.g. 31 Aug to 30 Sep)
-      sDate = new Date(Y, M, 0); // Last day of month M-1
-      eDate = new Date(Y, M + 1, 0); // Last day of month M
+    let startDay = 1;
+    if (setting.type === 'calendar') {
+      startDay = 1;
     } else if (setting.type === 'day_25') {
-      sDate = new Date(Y, M - 1, 25);
-      eDate = new Date(Y, M, 24);
+      startDay = 25;
     } else if (setting.type === 'day_28') {
-      sDate = new Date(Y, M - 1, 28);
-      eDate = new Date(Y, M, 27);
+      startDay = 28;
+    } else if (setting.type === 'end_of_month' || setting.type === 'last_day') {
+      startDay = 31;
     } else if (setting.type === 'custom') {
-      const customDay = Math.max(1, Math.min(31, parseInt(setting.customDay, 10) || 1));
-      if (customDay === 1) {
-        sDate = new Date(Y, M, 1);
-        eDate = new Date(Y, M + 1, 0);
-      } else {
-        const prevMonthMax = new Date(Y, M, 0).getDate();
-        const actualStartDay = Math.min(customDay, prevMonthMax);
-        sDate = new Date(Y, M - 1, actualStartDay);
+      startDay = Math.max(1, Math.min(31, parseInt(setting.customDay, 10) || 1));
+    }
 
-        const curMonthMax = new Date(Y, M + 1, 0).getDate();
-        const actualEndDay = Math.min(customDay - 1, curMonthMax);
-        eDate = new Date(Y, M, actualEndDay);
-      }
-    } else {
-      // 'calendar' (1st of current month to last day of current month)
+    if (startDay === 1) {
       sDate = new Date(Y, M, 1);
       eDate = new Date(Y, M + 1, 0);
+    } else {
+      const curMonthLastDay = new Date(Y, M + 1, 0).getDate();
+      const effectiveStartDayThisMonth = Math.min(startDay, curMonthLastDay);
+
+      if (day >= effectiveStartDayThisMonth) {
+        // Reference date is on or after cycle start day this month -> cycle starts this month
+        sDate = new Date(Y, M, effectiveStartDayThisMonth);
+        const nextMonthLastDay = new Date(Y, M + 2, 0).getDate();
+        const effectiveEndDayNextMonth = Math.min(startDay - 1, nextMonthLastDay);
+        eDate = new Date(Y, M + 1, effectiveEndDayNextMonth);
+      } else {
+        // Reference date is before cycle start day this month -> cycle started last month
+        const prevMonthLastDay = new Date(Y, M, 0).getDate();
+        const effectiveStartDayPrevMonth = Math.min(startDay, prevMonthLastDay);
+        sDate = new Date(Y, M - 1, effectiveStartDayPrevMonth);
+        const effectiveEndDayThisMonth = Math.min(startDay - 1, curMonthLastDay);
+        eDate = new Date(Y, M, effectiveEndDayThisMonth);
+      }
     }
 
     const startDateStr = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;

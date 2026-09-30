@@ -233,6 +233,7 @@ const App = {
     this.closeQuickFixedModal();
     this.closeExportModal();
     if (typeof this.closeSavingsGoalModal === 'function') this.closeSavingsGoalModal();
+    if (typeof this.closeSurplusSettlementModal === 'function') this.closeSurplusSettlementModal();
     
     // Generic modal class removal
     document.querySelectorAll('.modal.show, .modal.active').forEach(m => m.classList.remove('show', 'active'));
@@ -461,12 +462,14 @@ const App = {
   },
 
   shiftCustomDateRange(direction) {
-    // Shifting month always uses safe 1st-of-month math to avoid 31st overflow:
-    const curYear = this.selectedDate.getFullYear();
-    const curMonth = this.selectedDate.getMonth();
-    this.selectedDate = new Date(curYear, curMonth + direction, 1);
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycle = StorageManager.getCycleDateRange(this.selectedDate, payCycleSetting);
+    if (direction < 0) {
+      this.selectedDate = new Date(cycle.sDate.getTime() - 86400000);
+    } else {
+      this.selectedDate = new Date(cycle.eDate.getTime() + 86400000);
+    }
     this.updateCustomDateRangeFromSelectedDate();
-
     this.renderMonthSelector();
     this.renderDashboard();
   },
@@ -2602,9 +2605,18 @@ const App = {
   // ==========================================
   navigateHistoryMonth(direction) {
     if (!this.historyDate) this.historyDate = new Date();
-    const curY = this.historyDate.getFullYear();
-    const curM = this.historyDate.getMonth();
-    this.historyDate = new Date(curY, curM + direction, 1);
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const isCalendarView = (this.historyCycleMode === 'calendar');
+    const effectiveCycleSetting = isCalendarView 
+      ? { type: 'calendar', customDay: 1 } 
+      : ((payCycleSetting.type === 'calendar') ? { type: 'end_of_month', customDay: 31 } : payCycleSetting);
+
+    const cycle = StorageManager.getCycleDateRange(this.historyDate, effectiveCycleSetting);
+    if (direction < 0) {
+      this.historyDate = new Date(cycle.sDate.getTime() - 86400000);
+    } else {
+      this.historyDate = new Date(cycle.eDate.getTime() + 86400000);
+    }
     this.renderHistoryTab();
   },
 
@@ -3793,8 +3805,113 @@ const App = {
       if (recIncome > 0) effectiveIncome = recIncome;
     }
 
-    // Dynamic available amount for the rest of the cycle (including today)
-    const availableForLiving = Math.max(0, effectiveIncome - pastExpenseInCycle - savingsGoal);
+    // Check Previous Cycle Surplus & Settlement Choice
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    let rolloverSurplus = 0;
+    let settlementBannerHtml = '';
+    let surplusBadgeHtml = '';
+
+    if (prevSurplusData.hasSurplus) {
+      const settlement = prevSurplusData.settlement;
+      if (!settlement) {
+        // Show Prompt Banner on Tab 1
+        settlementBannerHtml = `
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-teal-500/10 border border-indigo-200/80 space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🎉</span>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-800">
+                    ${lang === 'en' ? 'Previous Cycle Surplus: ' : 'สิ้นสุดรอบก่อน คุณมีเงินเหลือ '} 
+                    <span class="text-emerald-600 font-extrabold num-font">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                  </h4>
+                  <p class="text-[11px] text-slate-500 font-medium">
+                    ${lang === 'en' ? 'Choose how to allocate this surplus for the new cycle:' : 'ต้องการจัดการเงินเหลือส่วนนี้อย่างไรสำหรับรอบใหม่?'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-0.5">
+              <button 
+                type="button" 
+                onclick="App.handleApplySurplusSettlement('rollover', ${prevSurplusData.netSurplus}, 0)" 
+                class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+              >
+                <span>📥</span>
+                <span>${lang === 'en' ? `Rollover (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH')})` : `ยกยอดมากินใช้ (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH')})`}</span>
+              </button>
+              <button 
+                type="button" 
+                onclick="App.handleApplySurplusSettlement('savings', 0, ${prevSurplusData.netSurplus})" 
+                class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+              >
+                <span>🏦</span>
+                <span>${lang === 'en' ? 'Keep in Savings' : 'เก็บเข้าเงินออมทั้งหมด'}</span>
+              </button>
+              <button 
+                type="button" 
+                onclick="App.openSurplusSettlementModal()" 
+                class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
+              >
+                <span>✂️</span>
+                <span>${lang === 'en' ? 'Custom Split' : 'แบ่งออม / ยกยอดเอง'}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        if (settlement.action === 'rollover') {
+          rolloverSurplus = Number(settlement.rolloverAmount) || prevSurplusData.netSurplus;
+          surplusBadgeHtml = `
+            <div class="flex items-center justify-between text-[11px] bg-emerald-50 border border-emerald-200/60 text-emerald-800 px-2.5 py-1 rounded-xl">
+              <span class="flex items-center gap-1 font-semibold">
+                <span>📥</span> 
+                <span>${lang === 'en' ? 'Rolled over from previous cycle: ' : 'มียอดยกมาจากรอบก่อน: '}</span>
+                <strong class="font-extrabold num-font">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong>
+              </span>
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer">
+                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+              </button>
+            </div>
+          `;
+        } else if (settlement.action === 'split') {
+          rolloverSurplus = Number(settlement.rolloverAmount) || 0;
+          const savAmt = Number(settlement.savingsAmount) || 0;
+          surplusBadgeHtml = `
+            <div class="flex items-center justify-between text-[11px] bg-indigo-50 border border-indigo-200/60 text-indigo-800 px-2.5 py-1 rounded-xl">
+              <span class="flex items-center gap-1 font-semibold">
+                <span>✂️</span> 
+                <span>${lang === 'en' ? 'Rollover: ' : 'ยกยอดใช้: '}</span>
+                <strong class="font-extrabold num-font text-emerald-700">+฿${rolloverSurplus.toLocaleString('th-TH')}</strong>
+                <span class="text-slate-400">|</span>
+                <span>${lang === 'en' ? 'Savings: ' : 'เงินออม: '}</span>
+                <strong class="font-extrabold num-font text-indigo-700">฿${savAmt.toLocaleString('th-TH')}</strong>
+              </span>
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-700 font-bold hover:underline cursor-pointer">
+                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+              </button>
+            </div>
+          `;
+        } else if (settlement.action === 'savings') {
+          const savAmt = Number(settlement.savingsAmount) || prevSurplusData.netSurplus;
+          surplusBadgeHtml = `
+            <div class="flex items-center justify-between text-[11px] bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-xl">
+              <span class="flex items-center gap-1 font-semibold">
+                <span>🏦</span> 
+                <span>${lang === 'en' ? 'Surplus kept in savings: ' : 'ปิดยอดเข้าเงินออมเรียบร้อย: '}</span>
+                <strong class="font-extrabold num-font text-slate-900">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong>
+              </span>
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 font-bold hover:underline cursor-pointer">
+                ${lang === 'en' ? 'Change' : 'เปลี่ยน'}
+              </button>
+            </div>
+          `;
+        }
+      }
+    }
+
+    // Dynamic available amount for the rest of the cycle (including today & rollover)
+    const availableForLiving = Math.max(0, (effectiveIncome + rolloverSurplus) - pastExpenseInCycle - savingsGoal);
     const dailyQuotaToday = daysRemaining > 0 ? (availableForLiving / daysRemaining) : 0;
     const remainingToday = Math.max(0, dailyQuotaToday - todayExpense);
     const isExceeded = (todayExpense > dailyQuotaToday && dailyQuotaToday > 0) || (dailyQuotaToday === 0 && todayExpense > 0);
@@ -3812,6 +3929,8 @@ const App = {
       : `เหลืออีก ${daysRemaining} วันในรอบ`;
 
     container.innerHTML = `
+      ${settlementBannerHtml}
+
       <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-indigo-50/20 to-slate-50">
         <!-- Header -->
         <div class="flex items-center justify-between">
@@ -3832,6 +3951,8 @@ const App = {
             <span>${lang === 'en' ? 'Adjust Goal' : 'ปรับเป้าเงินออม'}</span>
           </button>
         </div>
+
+        ${surplusBadgeHtml}
 
         <!-- Balance + Limit -->
         <div class="flex items-baseline justify-between pt-0.5">
@@ -3863,7 +3984,7 @@ const App = {
 
         <!-- Sub Context Stats (Income & Past Expenses) -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-          <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${effectiveIncome.toLocaleString('th-TH')}</strong></span>
+          <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${(effectiveIncome + rolloverSurplus).toLocaleString('th-TH')}</strong></span>
           <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH')}</strong></span>
         </div>
       </div>
@@ -3924,6 +4045,130 @@ const App = {
     this.renderSettingsSavingsGoalSection();
     const lang = I18n.getLanguage();
     this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 ปรับเป้าหมายเงินออมเป็น ฿${val.toLocaleString()} แล้ว`);
+  },
+
+  // --- Surplus Settlement Modal & Actions ---
+  openSurplusSettlementModal() {
+    const modal = document.getElementById('surplus-settlement-modal');
+    if (!modal) return;
+
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+
+    const totalSurplus = Math.max(0, prevSurplusData.netSurplus);
+    const totalEl = document.getElementById('settlement-modal-total-surplus');
+    const labelEl = document.getElementById('settlement-modal-cycle-label');
+    const rollInput = document.getElementById('settlement-input-rollover');
+    const savInput = document.getElementById('settlement-input-savings');
+    const lang = I18n.getLanguage();
+
+    if (totalEl) totalEl.textContent = `฿${totalSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+    if (labelEl) labelEl.textContent = (lang === 'en') ? prevSurplusData.prevCycle.labelEn : prevSurplusData.prevCycle.labelTh;
+
+    const settlement = prevSurplusData.settlement;
+    if (settlement) {
+      if (rollInput) rollInput.value = settlement.rolloverAmount || 0;
+      if (savInput) savInput.value = settlement.savingsAmount || 0;
+    } else {
+      if (rollInput) rollInput.value = totalSurplus;
+      if (savInput) savInput.value = 0;
+    }
+
+    modal.classList.add('show');
+  },
+
+  closeSurplusSettlementModal() {
+    const modal = document.getElementById('surplus-settlement-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  setSettlementModalMode(mode) {
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    const totalSurplus = Math.max(0, prevSurplusData.netSurplus);
+
+    const rollInput = document.getElementById('settlement-input-rollover');
+    const savInput = document.getElementById('settlement-input-savings');
+
+    if (mode === 'all_rollover') {
+      if (rollInput) rollInput.value = totalSurplus;
+      if (savInput) savInput.value = 0;
+    } else if (mode === 'all_savings') {
+      if (rollInput) rollInput.value = 0;
+      if (savInput) savInput.value = totalSurplus;
+    }
+  },
+
+  onSettlementInputChange(changedField) {
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    const totalSurplus = Math.max(0, prevSurplusData.netSurplus);
+
+    const rollInput = document.getElementById('settlement-input-rollover');
+    const savInput = document.getElementById('settlement-input-savings');
+
+    if (changedField === 'rollover' && rollInput && savInput) {
+      const rollVal = Math.max(0, Math.min(totalSurplus, parseFloat(rollInput.value) || 0));
+      savInput.value = Math.max(0, totalSurplus - rollVal);
+    } else if (changedField === 'savings' && rollInput && savInput) {
+      const savVal = Math.max(0, Math.min(totalSurplus, parseFloat(savInput.value) || 0));
+      rollInput.value = Math.max(0, totalSurplus - savVal);
+    }
+  },
+
+  handleApplySurplusSettlement(action, rolloverAmt, savingsAmt) {
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const currentCycle = StorageManager.getCycleDateRange(now, payCycleSetting);
+
+    StorageManager.saveSurplusSettlement(currentCycle.startDate, {
+      action,
+      rolloverAmount: Number(rolloverAmt) || 0,
+      savingsAmount: Number(savingsAmt) || 0
+    });
+
+    this.renderTab1DailyBudgetCard();
+    this.renderTab1OverviewHero();
+
+    const lang = I18n.getLanguage();
+    if (action === 'rollover') {
+      this.showToast(lang === 'en' ? `📥 Rolled over ฿${Number(rolloverAmt).toLocaleString()} to daily budget!` : `📥 ยกยอด ฿${Number(rolloverAmt).toLocaleString()} เข้าโควตากินใช้แล้ว!`);
+    } else if (action === 'savings') {
+      this.showToast(lang === 'en' ? `🏦 Saved ฿${Number(savingsAmt).toLocaleString()} as net savings!` : `🏦 บันทึกเงิน ฿${Number(savingsAmt).toLocaleString()} เข้าเงินออมเรียบร้อย!`);
+    } else {
+      this.showToast(lang === 'en' ? '✨ Surplus allocation saved!' : '✨ บันทึกการจัดสรรเงินเหลือแล้ว!');
+    }
+  },
+
+  handleSaveSurplusSettlementFromModal() {
+    const rollInput = document.getElementById('settlement-input-rollover');
+    const savInput = document.getElementById('settlement-input-savings');
+    const rollAmt = Math.max(0, parseFloat(rollInput?.value) || 0);
+    const savAmt = Math.max(0, parseFloat(savInput?.value) || 0);
+
+    let action = 'split';
+    if (rollAmt > 0 && savAmt === 0) action = 'rollover';
+    else if (rollAmt === 0 && savAmt > 0) action = 'savings';
+
+    this.handleApplySurplusSettlement(action, rollAmt, savAmt);
+    this.closeSurplusSettlementModal();
+  },
+
+  handleResetSurplusSettlement() {
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const currentCycle = StorageManager.getCycleDateRange(now, payCycleSetting);
+
+    StorageManager.removeSurplusSettlement(currentCycle.startDate);
+    this.closeSurplusSettlementModal();
+    this.renderTab1DailyBudgetCard();
+    this.renderTab1OverviewHero();
+
+    const lang = I18n.getLanguage();
+    this.showToast(lang === 'en' ? '🔄 Surplus settlement reset' : '🔄 รีเซ็ตการจัดการเงินเหลือแล้ว');
   },
 
   // ==========================================

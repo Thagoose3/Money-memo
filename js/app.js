@@ -3636,6 +3636,7 @@ const App = {
       if (this.currentTab !== 'transactions') {
         this.renderTab1OverviewHero();
         this.renderTab1DailyBudgetCard();
+        this.renderTab1SavingsCard();
         this.renderDesktopRecentTransactions();
       }
       if (this.currentTab !== 'history') this.renderHistoryTab();
@@ -3651,6 +3652,7 @@ const App = {
     if (this.currentTab === 'transactions') {
       this.renderTab1OverviewHero();
       this.renderTab1DailyBudgetCard();
+      this.renderTab1SavingsCard();
       this.renderDesktopRecentTransactions();
     } else if (this.currentTab === 'history') {
       this.renderHistoryTab();
@@ -3823,7 +3825,7 @@ const App = {
                 <div>
                   <h4 class="text-xs font-bold text-slate-800">
                     ${lang === 'en' ? 'Previous Cycle Surplus: ' : 'สิ้นสุดรอบก่อน คุณมีเงินเหลือ '} 
-                    <span class="text-emerald-600 font-extrabold num-font">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
+                    <span class="text-emerald-600 font-extrabold num-font">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </h4>
                   <p class="text-[11px] text-slate-500 font-medium">
                     ${lang === 'en' ? 'Choose how to allocate this surplus for the new cycle:' : 'ต้องการจัดการเงินเหลือส่วนนี้อย่างไรสำหรับรอบใหม่?'}
@@ -3838,7 +3840,7 @@ const App = {
                 class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
               >
                 <span>📥</span>
-                <span>${lang === 'en' ? `Rollover (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH')})` : `ยกยอดมากินใช้ (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH')})`}</span>
+                <span>${lang === 'en' ? `Rollover (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : `ยกยอดมากินใช้ (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}</span>
               </button>
               <button 
                 type="button" 
@@ -3864,12 +3866,12 @@ const App = {
           rolloverSurplus = Number(settlement.rolloverAmount) || prevSurplusData.netSurplus;
           surplusBadgeHtml = `
             <div class="flex items-center justify-between text-[11px] bg-emerald-50 border border-emerald-200/60 text-emerald-800 px-2.5 py-1 rounded-xl">
-              <span class="flex items-center gap-1 font-semibold">
+              <span class="flex items-center gap-1 font-semibold truncate mr-1">
                 <span>📥</span> 
                 <span>${lang === 'en' ? 'Rolled over from previous cycle: ' : 'มียอดยกมาจากรอบก่อน: '}</span>
-                <strong class="font-extrabold num-font">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong>
+                <strong class="font-extrabold num-font">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </span>
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer">
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer shrink-0">
                 ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
               </button>
             </div>
@@ -3879,15 +3881,15 @@ const App = {
           const savAmt = Number(settlement.savingsAmount) || 0;
           surplusBadgeHtml = `
             <div class="flex items-center justify-between text-[11px] bg-indigo-50 border border-indigo-200/60 text-indigo-800 px-2.5 py-1 rounded-xl">
-              <span class="flex items-center gap-1 font-semibold">
+              <span class="flex items-center gap-1 font-semibold truncate mr-1">
                 <span>✂️</span> 
                 <span>${lang === 'en' ? 'Rollover: ' : 'ยกยอดใช้: '}</span>
-                <strong class="font-extrabold num-font text-emerald-700">+฿${rolloverSurplus.toLocaleString('th-TH')}</strong>
+                <strong class="font-extrabold num-font text-emerald-700">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 <span class="text-slate-400">|</span>
                 <span>${lang === 'en' ? 'Savings: ' : 'เงินออม: '}</span>
-                <strong class="font-extrabold num-font text-indigo-700">฿${savAmt.toLocaleString('th-TH')}</strong>
+                <strong class="font-extrabold num-font text-indigo-700">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </span>
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-700 font-bold hover:underline cursor-pointer">
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-700 font-bold hover:underline cursor-pointer shrink-0">
                 ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
               </button>
             </div>
@@ -3896,12 +3898,12 @@ const App = {
           const savAmt = Number(settlement.savingsAmount) || prevSurplusData.netSurplus;
           surplusBadgeHtml = `
             <div class="flex items-center justify-between text-[11px] bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-xl">
-              <span class="flex items-center gap-1 font-semibold">
+              <span class="flex items-center gap-1 font-semibold truncate mr-1">
                 <span>🏦</span> 
                 <span>${lang === 'en' ? 'Surplus kept in savings: ' : 'ปิดยอดเข้าเงินออมเรียบร้อย: '}</span>
-                <strong class="font-extrabold num-font text-slate-900">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</strong>
+                <strong class="font-extrabold num-font text-slate-900">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
               </span>
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 font-bold hover:underline cursor-pointer">
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 font-bold hover:underline cursor-pointer shrink-0">
                 ${lang === 'en' ? 'Change' : 'เปลี่ยน'}
               </button>
             </div>
@@ -3977,15 +3979,171 @@ const App = {
             <div class="bg-gradient-to-r ${barColor} h-full rounded-full transition-all duration-500" style="width: ${usedPct}%"></div>
           </div>
           <div class="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-            <span>${lang === 'en' ? 'Spent today: ฿' : 'ใช้ไปแล้ววันนี้: ฿'}${todayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })} (${usedPct.toFixed(0)}%)</span>
-            <span>${lang === 'en' ? 'Savings Target: ฿' : 'เป้าหมายเงินออม: ฿'}${savingsGoal.toLocaleString('th-TH')}</span>
+            <span>${lang === 'en' ? 'Spent today: ฿' : 'ใช้ไปแล้ววันนี้: ฿'}${todayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${usedPct.toFixed(0)}%)</span>
+            <span>${lang === 'en' ? 'Savings Target: ฿' : 'เป้าหมายเงินออม: ฿'}${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
 
         <!-- Sub Context Stats (Income & Past Expenses) -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-          <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${(effectiveIncome + rolloverSurplus).toLocaleString('th-TH')}</strong></span>
-          <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH')}</strong></span>
+          <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${(effectiveIncome + rolloverSurplus).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+        </div>
+      </div>
+    `;
+  },
+
+  // --- กล่องเงินออมสะสม & แผนการออม (Accumulated Savings & Portfolio Card) ---
+  renderTab1SavingsCard() {
+    const container = document.getElementById('tab1-savings-card');
+    if (!container) return;
+
+    const lang = I18n.getLanguage();
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    const savingsGoal = StorageManager.getMonthlySavingsGoal();
+    const accumulatedData = StorageManager.getTotalAccumulatedSavings();
+
+    const settlement = prevSurplusData.settlement;
+    const settledSavingsAmount = settlement ? (Number(settlement.savingsAmount) || 0) : 0;
+    const currentCycleSavingsTotal = Math.round((savingsGoal + settledSavingsAmount + Number.EPSILON) * 100) / 100;
+
+    let surplusStatusBadge = '';
+    if (settlement) {
+      if (settlement.action === 'savings') {
+        surplusStatusBadge = `
+          <div class="flex items-center justify-between text-[11px] bg-emerald-50 border border-emerald-200/80 text-emerald-800 px-3 py-1.5 rounded-xl">
+            <span class="flex items-center gap-1.5 font-semibold truncate mr-1">
+              <span>🏦</span>
+              <span>${lang === 'en' ? 'Surplus saved from last cycle: ' : 'เก็บเงินเหลือจากรอบก่อนเข้าพอร์ตออม: '}</span>
+              <strong class="font-extrabold num-font text-emerald-700">+฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </span>
+            <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold underline cursor-pointer shrink-0">
+              ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+            </button>
+          </div>
+        `;
+      } else if (settlement.action === 'split') {
+        const rollAmt = Number(settlement.rolloverAmount) || 0;
+        surplusStatusBadge = `
+          <div class="flex items-center justify-between text-[11px] bg-indigo-50 border border-indigo-200/80 text-indigo-800 px-3 py-1.5 rounded-xl">
+            <span class="flex items-center gap-1.5 font-semibold truncate mr-1">
+              <span>✂️</span>
+              <span>${lang === 'en' ? 'Saved: ' : 'แบ่งออม: '}</span>
+              <strong class="font-extrabold num-font text-indigo-700">฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+              <span class="text-slate-400">·</span>
+              <span>${lang === 'en' ? 'Rolled: ' : 'ยกยอดใช้: '}</span>
+              <strong class="font-extrabold num-font text-emerald-700">฿${rollAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </span>
+            <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold underline cursor-pointer shrink-0">
+              ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+            </button>
+          </div>
+        `;
+      } else if (settlement.action === 'rollover') {
+        const rollAmt = Number(settlement.rolloverAmount) || 0;
+        surplusStatusBadge = `
+          <div class="flex items-center justify-between text-[11px] bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl">
+            <span class="flex items-center gap-1.5 font-semibold truncate mr-1">
+              <span>📥</span>
+              <span>${lang === 'en' ? 'All surplus rolled to daily spending: ' : 'ยกยอดเงินเหลือรอบก่อนไปกินใช้ทั้งหมด: '}</span>
+              <strong class="font-extrabold num-font text-slate-900">฿${rollAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </span>
+            <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold underline cursor-pointer shrink-0">
+              ${lang === 'en' ? 'Change' : 'เปลี่ยน'}
+            </button>
+          </div>
+        `;
+      }
+    } else if (prevSurplusData.hasSurplus) {
+      surplusStatusBadge = `
+        <div class="flex items-center justify-between text-[11px] bg-amber-50 border border-amber-200/80 text-amber-800 px-3 py-1.5 rounded-xl">
+          <span class="flex items-center gap-1.5 font-semibold truncate mr-1">
+            <span>⚡</span>
+            <span>${lang === 'en' ? 'Surplus pending settlement: ' : 'มีเงินเหลือรอบก่อนรอกำหนด: '}</span>
+            <strong class="font-extrabold num-font text-amber-900">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+          </span>
+          <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-amber-900 hover:underline font-bold cursor-pointer shrink-0">
+            ${lang === 'en' ? 'Allocate Now' : 'จัดสรรเงิน'}
+          </button>
+        </div>
+      `;
+    }
+
+    container.innerHTML = `
+      <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-emerald-50/20 to-slate-50">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="text-base">💰</span>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 tracking-tight">
+              ${lang === 'en' ? 'Accumulated Savings & Portfolio' : 'เงินออมสะสม & แผนการออม'}
+            </h3>
+            <span class="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/50">Savings Hub</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button 
+              type="button" 
+              onclick="App.openSurplusSettlementModal()" 
+              class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200/80 shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+              title="${lang === 'en' ? 'Manage/Adjust Last Cycle Surplus' : 'ปรับเปลี่ยน/จัดการเงินเหลือรอบก่อน'}"
+            >
+              <span>🔄</span>
+              <span>${lang === 'en' ? 'Surplus' : 'จัดการยอดยก'}</span>
+            </button>
+            <button 
+              type="button" 
+              onclick="App.openSavingsGoalModal()" 
+              class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200/80 shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+              title="${lang === 'en' ? 'Adjust Monthly Savings Target' : 'ปรับเป้าหมายเงินออมรายเดือน'}"
+            >
+              <span>🎯</span>
+              <span>${lang === 'en' ? 'Goal' : 'เป้าออม'}</span>
+            </button>
+          </div>
+        </div>
+
+        ${surplusStatusBadge}
+
+        <!-- 2 Bento Cards -->
+        <div class="grid grid-cols-2 gap-2 pt-0.5">
+          <!-- Left: Current Cycle Total Savings Plan -->
+          <div class="bg-white/85 p-2.5 rounded-2xl border border-slate-100 shadow-2xs">
+            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Savings This Cycle' : 'เงินออมรวมรอบนี้'}</span>
+            <p class="text-base sm:text-xl font-black num-font text-emerald-600 mt-0.5">
+              ฿${currentCycleSavingsTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <span class="text-[9px] text-slate-400 block mt-0.5 truncate">
+              ${lang === 'en' ? `Goal: ฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} + Surplus: ฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `เป้า ฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} + ยกออม ฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
+            </span>
+          </div>
+
+          <!-- Right: All-time Total Accumulated Savings -->
+          <div class="bg-white/85 p-2.5 rounded-2xl border border-slate-100 shadow-2xs">
+            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Total Saved (All Cycles)' : 'ยอดเงินออมสะสมรวม'}</span>
+            <p class="text-base sm:text-xl font-black num-font text-indigo-600 mt-0.5">
+              ฿${accumulatedData.totalAccumulated.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <span class="text-[9px] text-slate-400 block mt-0.5 truncate">
+              ${lang === 'en' ? `Surplus saved: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `ออมสะสมจากเงินเหลือ: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
+            </span>
+          </div>
+        </div>
+
+        <!-- Footnote / Quick Switcher Trigger -->
+        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+          <span class="flex items-center gap-1 truncate mr-2">
+            <span>💡</span>
+            <span>${lang === 'en' ? 'Surplus saved is locked into your savings balance.' : 'เงินเหลือที่เก็บเข้าเงินออมจะถูกสะสมเป็นเงินเก็บถาวร'}</span>
+          </span>
+          <button 
+            type="button" 
+            onclick="App.openSurplusSettlementModal()" 
+            class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer shrink-0 ml-2"
+          >
+            ${lang === 'en' ? 'Adjust / Reset' : 'ปรับสัดส่วน/รีเซ็ต'}
+          </button>
         </div>
       </div>
     `;
@@ -3999,7 +4157,7 @@ const App = {
     const lang = I18n.getLanguage();
 
     if (badgeEl) {
-      badgeEl.textContent = `฿${goal.toLocaleString('th-TH')} ${lang === 'en' ? '/ month' : '/ เดือน'}`;
+      badgeEl.textContent = `฿${goal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${lang === 'en' ? '/ month' : '/ เดือน'}`;
     }
     if (inputEl) {
       inputEl.value = goal;
@@ -4007,12 +4165,13 @@ const App = {
   },
 
   handleSaveSettingsSavingsGoal(amount) {
-    const val = Math.max(0, parseFloat(amount) || 0);
+    const val = Math.max(0, Math.round(((parseFloat(amount) || 0) + Number.EPSILON) * 100) / 100);
     StorageManager.saveMonthlySavingsGoal(val);
     this.renderSettingsSavingsGoalSection();
     this.renderTab1DailyBudgetCard();
+    this.renderTab1SavingsCard();
     const lang = I18n.getLanguage();
-    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 บันทึกเป้าหมายเงินออม ฿${val.toLocaleString()} แล้ว`);
+    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `🎯 บันทึกเป้าหมายเงินออม ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} แล้ว`);
   },
 
   handleSetSavingsGoalPreset(amount) {
@@ -4038,13 +4197,14 @@ const App = {
 
   handleSaveSavingsGoalFromModal() {
     const input = document.getElementById('modal-savings-goal-input');
-    const val = Math.max(0, parseFloat(input?.value) || 0);
+    const val = Math.max(0, Math.round(((parseFloat(input?.value) || 0) + Number.EPSILON) * 100) / 100);
     StorageManager.saveMonthlySavingsGoal(val);
     this.closeSavingsGoalModal();
     this.renderTab1DailyBudgetCard();
+    this.renderTab1SavingsCard();
     this.renderSettingsSavingsGoalSection();
     const lang = I18n.getLanguage();
-    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 ปรับเป้าหมายเงินออมเป็น ฿${val.toLocaleString()} แล้ว`);
+    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `🎯 ปรับเป้าหมายเงินออมเป็น ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} แล้ว`);
   },
 
   // --- Surplus Settlement Modal & Actions ---
@@ -4063,13 +4223,13 @@ const App = {
     const savInput = document.getElementById('settlement-input-savings');
     const lang = I18n.getLanguage();
 
-    if (totalEl) totalEl.textContent = `฿${totalSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+    if (totalEl) totalEl.textContent = `฿${totalSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (labelEl) labelEl.textContent = (lang === 'en') ? prevSurplusData.prevCycle.labelEn : prevSurplusData.prevCycle.labelTh;
 
     const settlement = prevSurplusData.settlement;
     if (settlement) {
-      if (rollInput) rollInput.value = settlement.rolloverAmount || 0;
-      if (savInput) savInput.value = settlement.savingsAmount || 0;
+      if (rollInput) rollInput.value = settlement.rolloverAmount !== undefined ? settlement.rolloverAmount : 0;
+      if (savInput) savInput.value = settlement.savingsAmount !== undefined ? settlement.savingsAmount : 0;
     } else {
       if (rollInput) rollInput.value = totalSurplus;
       if (savInput) savInput.value = 0;
@@ -4087,7 +4247,7 @@ const App = {
     const now = new Date();
     const payCycleSetting = StorageManager.getPayCycleSetting();
     const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    const totalSurplus = Math.max(0, prevSurplusData.netSurplus);
+    const totalSurplus = Math.max(0, Math.round((prevSurplusData.netSurplus + Number.EPSILON) * 100) / 100);
 
     const rollInput = document.getElementById('settlement-input-rollover');
     const savInput = document.getElementById('settlement-input-savings');
@@ -4105,17 +4265,19 @@ const App = {
     const now = new Date();
     const payCycleSetting = StorageManager.getPayCycleSetting();
     const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    const totalSurplus = Math.max(0, prevSurplusData.netSurplus);
+    const totalSurplus = Math.max(0, Math.round((prevSurplusData.netSurplus + Number.EPSILON) * 100) / 100);
 
     const rollInput = document.getElementById('settlement-input-rollover');
     const savInput = document.getElementById('settlement-input-savings');
 
     if (changedField === 'rollover' && rollInput && savInput) {
       const rollVal = Math.max(0, Math.min(totalSurplus, parseFloat(rollInput.value) || 0));
-      savInput.value = Math.max(0, totalSurplus - rollVal);
+      const remainingSav = Math.max(0, Math.round((totalSurplus - rollVal + Number.EPSILON) * 100) / 100);
+      savInput.value = remainingSav;
     } else if (changedField === 'savings' && rollInput && savInput) {
       const savVal = Math.max(0, Math.min(totalSurplus, parseFloat(savInput.value) || 0));
-      rollInput.value = Math.max(0, totalSurplus - savVal);
+      const remainingRoll = Math.max(0, Math.round((totalSurplus - savVal + Number.EPSILON) * 100) / 100);
+      rollInput.value = remainingRoll;
     }
   },
 
@@ -4124,20 +4286,25 @@ const App = {
     const payCycleSetting = StorageManager.getPayCycleSetting();
     const currentCycle = StorageManager.getCycleDateRange(now, payCycleSetting);
 
+    const rAmt = Math.max(0, Math.round(((parseFloat(rolloverAmt) || 0) + Number.EPSILON) * 100) / 100);
+    const sAmt = Math.max(0, Math.round(((parseFloat(savingsAmt) || 0) + Number.EPSILON) * 100) / 100);
+
     StorageManager.saveSurplusSettlement(currentCycle.startDate, {
       action,
-      rolloverAmount: Number(rolloverAmt) || 0,
-      savingsAmount: Number(savingsAmt) || 0
+      rolloverAmount: rAmt,
+      savingsAmount: sAmt
     });
 
     this.renderTab1DailyBudgetCard();
+    this.renderTab1SavingsCard();
     this.renderTab1OverviewHero();
+    this.renderSettingsSurplusSection();
 
     const lang = I18n.getLanguage();
     if (action === 'rollover') {
-      this.showToast(lang === 'en' ? `📥 Rolled over ฿${Number(rolloverAmt).toLocaleString()} to daily budget!` : `📥 ยกยอด ฿${Number(rolloverAmt).toLocaleString()} เข้าโควตากินใช้แล้ว!`);
+      this.showToast(lang === 'en' ? `📥 Rolled over ฿${rAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to daily budget!` : `📥 ยกยอด ฿${rAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} เข้าโควตากินใช้แล้ว!`);
     } else if (action === 'savings') {
-      this.showToast(lang === 'en' ? `🏦 Saved ฿${Number(savingsAmt).toLocaleString()} as net savings!` : `🏦 บันทึกเงิน ฿${Number(savingsAmt).toLocaleString()} เข้าเงินออมเรียบร้อย!`);
+      this.showToast(lang === 'en' ? `🏦 Saved ฿${sAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} as net savings!` : `🏦 บันทึกเงิน ฿${sAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} เข้าเงินออมเรียบร้อย!`);
     } else {
       this.showToast(lang === 'en' ? '✨ Surplus allocation saved!' : '✨ บันทึกการจัดสรรเงินเหลือแล้ว!');
     }
@@ -4146,8 +4313,8 @@ const App = {
   handleSaveSurplusSettlementFromModal() {
     const rollInput = document.getElementById('settlement-input-rollover');
     const savInput = document.getElementById('settlement-input-savings');
-    const rollAmt = Math.max(0, parseFloat(rollInput?.value) || 0);
-    const savAmt = Math.max(0, parseFloat(savInput?.value) || 0);
+    const rollAmt = Math.max(0, Math.round(((parseFloat(rollInput?.value) || 0) + Number.EPSILON) * 100) / 100);
+    const savAmt = Math.max(0, Math.round(((parseFloat(savInput?.value) || 0) + Number.EPSILON) * 100) / 100);
 
     let action = 'split';
     if (rollAmt > 0 && savAmt === 0) action = 'rollover';
@@ -4165,7 +4332,9 @@ const App = {
     StorageManager.removeSurplusSettlement(currentCycle.startDate);
     this.closeSurplusSettlementModal();
     this.renderTab1DailyBudgetCard();
+    this.renderTab1SavingsCard();
     this.renderTab1OverviewHero();
+    this.renderSettingsSurplusSection();
 
     const lang = I18n.getLanguage();
     this.showToast(lang === 'en' ? '🔄 Surplus settlement reset' : '🔄 รีเซ็ตการจัดการเงินเหลือแล้ว');
@@ -4178,9 +4347,122 @@ const App = {
     this.renderSettingsGoogleAccount();
     this.renderSettingsPayCycleSection();
     this.renderSettingsSavingsGoalSection();
+    this.renderSettingsSurplusSection();
     this.renderSettingsRecurringSummary();
     this.renderSettingsCategorySummary();
     this.renderSettingsStorageStats();
+  },
+
+  renderSettingsSurplusSection() {
+    const badgeEl = document.getElementById('settings-surplus-badge');
+    const contentEl = document.getElementById('settings-surplus-content-card');
+    if (!contentEl) return;
+
+    const lang = I18n.getLanguage();
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    const settlement = prevSurplusData.settlement;
+
+    if (settlement) {
+      if (settlement.action === 'savings') {
+        const savAmt = Number(settlement.savingsAmount) || 0;
+        if (badgeEl) {
+          badgeEl.textContent = lang === 'en' ? '🏦 Kept in Savings' : '🏦 เก็บเข้าเงินออม';
+          badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 num-font';
+        }
+        contentEl.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div>
+              <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Allocated as Savings' : 'สถานะ: เก็บเข้าเงินออมทั้งหมด'}</span>
+              <span class="text-[11px] text-slate-500">${lang === 'en' ? 'Saved from previous cycle: ' : 'เงินเหลือรอบก่อน: '}<strong class="text-emerald-700 num-font font-bold">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 self-end sm:self-center">
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer">
+                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+              </button>
+              <button type="button" onclick="App.handleResetSurplusSettlement()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer">
+                ${lang === 'en' ? 'Reset' : 'รีเซ็ต'}
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (settlement.action === 'rollover') {
+        const rollAmt = Number(settlement.rolloverAmount) || 0;
+        if (badgeEl) {
+          badgeEl.textContent = lang === 'en' ? '📥 Rolled Over' : '📥 ยกยอดกินใช้';
+          badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+        }
+        contentEl.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div>
+              <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Rolled Over to Daily Budget' : 'สถานะ: ยกยอดไปทบเป็นงบกินใช้'}</span>
+              <span class="text-[11px] text-slate-500">${lang === 'en' ? 'Rollover amount: ' : 'จำนวนเงินที่ยกยอด: '}<strong class="text-emerald-700 num-font font-bold">+฿${rollAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 self-end sm:self-center">
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer">
+                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+              </button>
+              <button type="button" onclick="App.handleResetSurplusSettlement()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer">
+                ${lang === 'en' ? 'Reset' : 'รีเซ็ต'}
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        const rollAmt = Number(settlement.rolloverAmount) || 0;
+        const savAmt = Number(settlement.savingsAmount) || 0;
+        if (badgeEl) {
+          badgeEl.textContent = lang === 'en' ? '✂️ Custom Split' : '✂️ แบ่งสัดส่วน';
+          badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 num-font';
+        }
+        contentEl.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div>
+              <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Split between Rollover & Savings' : 'สถานะ: แบ่งยกยอดกินใช้ & เก็บเข้าเงินออม'}</span>
+              <span class="text-[11px] text-slate-500">ยกยอด: <strong class="text-emerald-700 num-font font-bold">฿${rollAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> | ออม: <strong class="text-indigo-700 num-font font-bold">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+            </div>
+            <div class="flex items-center gap-1.5 self-end sm:self-center">
+              <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer">
+                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
+              </button>
+              <button type="button" onclick="App.handleResetSurplusSettlement()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer">
+                ${lang === 'en' ? 'Reset' : 'รีเซ็ต'}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    } else if (prevSurplusData.hasSurplus) {
+      if (badgeEl) {
+        badgeEl.textContent = lang === 'en' ? '⚡ Pending' : '⚡ รอดำเนินการ';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 num-font';
+      }
+      contentEl.innerHTML = `
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+          <div>
+            <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Surplus Available for Allocation' : 'มียอดเงินเหลือจากรอบก่อนหน้าที่ยังไม่ได้จัดสรร'}</span>
+            <span class="text-[11px] text-slate-500">${lang === 'en' ? 'Amount: ' : 'ยอดเงินคงเหลือ: '}<strong class="text-emerald-600 num-font font-bold">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          </div>
+          <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer self-end sm:self-center">
+            ${lang === 'en' ? 'Allocate Now' : 'จัดสรรเงินเหลือ'}
+          </button>
+        </div>
+      `;
+    } else {
+      if (badgeEl) {
+        badgeEl.textContent = lang === 'en' ? 'No Surplus' : 'ไม่มียอดยก';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 num-font';
+      }
+      contentEl.innerHTML = `
+        <div class="flex items-center justify-between text-xs text-slate-500">
+          <span>${lang === 'en' ? 'No surplus recorded from the previous cycle, or it was balanced.' : 'รอบก่อนหน้าไม่มีเงินเหลือ หรือถูกจัดสรรสมดุลเรียบร้อยแล้ว'}</span>
+          <button type="button" onclick="App.openSurplusSettlementModal()" class="text-xs text-indigo-600 font-bold hover:underline cursor-pointer shrink-0 ml-2">
+            ${lang === 'en' ? 'Custom Input' : 'กำหนดยอดเอง'}
+          </button>
+        </div>
+      `;
+    }
   },
 
   renderSettingsPayCycleSection() {

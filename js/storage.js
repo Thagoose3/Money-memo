@@ -718,17 +718,40 @@ const StorageManager = {
       else totalExpense += amt;
     });
 
-    const netSurplus = totalIncome - totalExpense;
+    let netSurplus = Math.round((totalIncome - totalExpense + Number.EPSILON) * 100) / 100;
     const settlement = this.getSurplusSettlement(currentCycle.startDate);
+
+    if (settlement && (settlement.rolloverAmount > 0 || settlement.savingsAmount > 0)) {
+      const settledTotal = (Number(settlement.rolloverAmount) || 0) + (Number(settlement.savingsAmount) || 0);
+      if (netSurplus <= 0 && settledTotal > 0) {
+        netSurplus = Math.round((settledTotal + Number.EPSILON) * 100) / 100;
+      }
+    }
 
     return {
       currentCycle,
       prevCycle,
-      totalIncome,
-      totalExpense,
+      totalIncome: Math.round((totalIncome + Number.EPSILON) * 100) / 100,
+      totalExpense: Math.round((totalExpense + Number.EPSILON) * 100) / 100,
       netSurplus,
-      hasSurplus: netSurplus > 0,
+      hasSurplus: netSurplus > 0 || (settlement !== null),
       settlement
+    };
+  },
+
+  getTotalAccumulatedSavings() {
+    const settlements = this.getSurplusSettlements();
+    let totalSurplusSavings = 0;
+    Object.values(settlements).forEach(s => {
+      totalSurplusSavings += Number(s.savingsAmount) || 0;
+    });
+
+    const currentGoal = this.getMonthlySavingsGoal();
+
+    return {
+      totalSurplusSavings: Math.round((totalSurplusSavings + Number.EPSILON) * 100) / 100,
+      currentGoal: Math.round((currentGoal + Number.EPSILON) * 100) / 100,
+      totalAccumulated: Math.round((totalSurplusSavings + currentGoal + Number.EPSILON) * 100) / 100
     };
   },
 

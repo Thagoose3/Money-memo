@@ -16,7 +16,7 @@ const STORAGE_KEYS = {
 const DEFAULT_SAVINGS_GOAL = 5000;
 
 const DEFAULT_PAY_CYCLE = {
-  type: 'calendar', // 'calendar' | 'end_of_month' | 'day_25' | 'day_28' | 'custom'
+  type: 'calendar', // 'calendar' | 'end_of_month' | 'custom'
   customDay: 1
 };
 
@@ -598,9 +598,9 @@ const StorageManager = {
         // Migration support from legacy pay_cycle_preset key
         const legacyPreset = localStorage.getItem('money_memo_pay_cycle_preset');
         if (legacyPreset === '25') {
-          this._payCycleSetting = { type: 'day_25', customDay: 25 };
+          this._payCycleSetting = { type: 'custom', customDay: 25 };
         } else if (legacyPreset === '28') {
-          this._payCycleSetting = { type: 'day_28', customDay: 28 };
+          this._payCycleSetting = { type: 'custom', customDay: 28 };
         } else if (legacyPreset === 'end_of_month' || legacyPreset === 'last_day') {
           this._payCycleSetting = { type: 'end_of_month', customDay: 31 };
         } else {
@@ -608,7 +608,22 @@ const StorageManager = {
         }
         return this._payCycleSetting;
       }
-      this._payCycleSetting = JSON.parse(data);
+      let parsed = JSON.parse(data);
+      let needsSave = false;
+      if (parsed.type === 'day_25') {
+        parsed = { type: 'custom', customDay: 25 };
+        needsSave = true;
+      } else if (parsed.type === 'day_28') {
+        parsed = { type: 'custom', customDay: 28 };
+        needsSave = true;
+      } else if (parsed.type === 'custom' && !parsed.customDay) {
+        parsed.customDay = 15;
+        needsSave = true;
+      }
+      this._payCycleSetting = parsed;
+      if (needsSave) {
+        this.savePayCycleSetting(parsed);
+      }
       return this._payCycleSetting;
     } catch (e) {
       this._payCycleSetting = JSON.parse(JSON.stringify(DEFAULT_PAY_CYCLE));

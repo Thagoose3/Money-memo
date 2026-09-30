@@ -191,7 +191,7 @@
       <div>
         <div class="flex items-center gap-1.5">
           <h1 data-i18n="app_title" class="text-sm sm:text-base font-extrabold text-slate-900 leading-none tracking-tight">Money Memo</h1>
-          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9.8</span>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font">v3.9.9</span>
         </div>
         <p data-i18n="app_subtitle" class="text-[11px] text-slate-400 font-medium mt-0.5 hidden sm:block">ระบบบันทึกรายรับ-รายจ่าย & จัดการเงินออมอัจฉริยะ</p>
       </div>
@@ -1104,7 +1104,7 @@
             <span>🏠</span>
             <span class="hidden sm:inline">หน้าหลัก</span>
           </button>
-          <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9.8</span>
+          <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 num-font hidden sm:inline-block">v3.9.9</span>
         </div>
       </div>
 
@@ -1146,20 +1146,20 @@
               กำหนดวันตัดรอบเงินเดือนเพื่อคำนวณรายรับ-รายจ่าย และยอดเงินคงเหลือในหน้าหลัก สเตทเมนต์ และสถิติให้ตรงกับชีวิตจริง
             </p>
 
-            <!-- Pay Cycle Options Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5" id="settings-paycycle-options">
+            <!-- Pay Cycle Options Grid (3 options: End of Month, Calendar Month, Custom Cut-off) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5" id="settings-paycycle-options">
               <!-- 1. วันสิ้นเดือน (End of Month) -->
               <button 
                 type="button" 
                 onclick="App.handleSetPayCycleType('end_of_month')" 
                 id="paycycle-opt-end_of_month"
-                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 shadow-2xs"
               >
-                <span class="text-xl mt-0.5 shrink-0">💼</span>
-                <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xl shrink-0">💼</span>
                   <span class="text-xs font-bold text-slate-900 block leading-tight">วันสิ้นเดือน</span>
-                  <span class="text-[10px] text-slate-400 block mt-0.5">เช่น 31 ส.ค. - 30 ก.ย.</span>
                 </div>
+                <span class="text-[10px] text-slate-400 block">ตัดรอบวันสุดท้ายของเดือน (เช่น 31 ส.ค. - 30 ก.ย.)</span>
               </button>
 
               <!-- 2. เดือนปฏิทิน (Calendar 1-30) -->
@@ -1167,62 +1167,64 @@
                 type="button" 
                 onclick="App.handleSetPayCycleType('calendar')" 
                 id="paycycle-opt-calendar"
-                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 shadow-2xs"
               >
-                <span class="text-xl mt-0.5 shrink-0">📆</span>
-                <div class="flex-1 min-w-0">
-                  <span class="text-xs font-bold text-slate-900 block leading-tight">เดือนปฏิทิน (วันที่ 1 - สิ้นเดือน)</span>
-                  <span class="text-[10px] text-slate-400 block mt-0.5">ค่าเริ่มต้นทั่วไป</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xl shrink-0">📆</span>
+                  <span class="text-xs font-bold text-slate-900 block leading-tight">เดือนปฏิทิน</span>
                 </div>
+                <span class="text-[10px] text-slate-400 block">วันที่ 1 ถึงวันสิ้นเดือน (เช่น 1 ก.ย. - 30 ก.ย.)</span>
               </button>
 
-              <!-- 3. วันที่ 25 -->
+              <!-- 3. กำหนดวันตัดรอบเอง (Custom Cut-off) -->
               <button 
                 type="button" 
-                onclick="App.handleSetPayCycleType('day_25')" 
-                id="paycycle-opt-day_25"
-                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
+                onclick="App.handleSetPayCycleType('custom')" 
+                id="paycycle-opt-custom"
+                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 shadow-2xs"
               >
-                <span class="text-xl mt-0.5 shrink-0">💳</span>
-                <div class="flex-1 min-w-0">
-                  <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 25</span>
-                  <span class="text-[10px] text-slate-400 block mt-0.5">25 ส.ค. - 24 ก.ย.</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-xl shrink-0">⚙️</span>
+                  <span class="text-xs font-bold text-slate-900 block leading-tight">กำหนดวันตัดรอบเอง</span>
                 </div>
-              </button>
-
-              <!-- 4. วันที่ 28 -->
-              <button 
-                type="button" 
-                onclick="App.handleSetPayCycleType('day_28')" 
-                id="paycycle-opt-day_28"
-                class="paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs"
-              >
-                <span class="text-xl mt-0.5 shrink-0">🏦</span>
-                <div class="flex-1 min-w-0">
-                  <span class="text-xs font-bold text-slate-900 block leading-tight">วันที่ 28</span>
-                  <span class="text-[10px] text-slate-400 block mt-0.5">28 ส.ค. - 27 ก.ย.</span>
-                </div>
+                <span class="text-[10px] text-slate-400 block">ระบุวันที่ตัดรอบอิสระ (เช่น วันที่ 10, 15, 20)</span>
               </button>
             </div>
 
-            <!-- Custom Day Input row -->
-            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <div class="flex items-center gap-1.5">
-                <span>⚙️</span>
-                <span class="font-semibold text-slate-700">หรือกำหนดวันที่ตัดรอบเอง:</span>
+            <!-- Custom Day Input Box & Quick Chips -->
+            <div id="settings-custom-day-container" class="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-2.5 text-xs">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                  <span>📅</span>
+                  <span class="font-bold text-slate-800">ระบุวันที่ตัดรอบประจำเดือน (1-31):</span>
+                </div>
+                <div class="flex items-center gap-2 self-end sm:self-center">
+                  <span class="text-slate-500 text-[11px] font-medium">ตัดรอบทุกวันที่</span>
+                  <div class="relative w-16">
+                    <input 
+                      type="number" 
+                      id="settings-custom-cycle-day" 
+                      min="1" 
+                      max="31" 
+                      class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-center text-slate-900 num-font focus:outline-none" 
+                      placeholder="15"
+                      onchange="App.handleSetPayCycleCustomDay(this.value)"
+                    />
+                  </div>
+                  <span class="text-slate-500 text-[11px] font-medium">ของเดือน</span>
+                </div>
               </div>
-              <div class="flex items-center gap-1.5 self-end sm:self-center">
-                <span class="text-slate-400 text-[11px]">วันที่</span>
-                <input 
-                  type="number" 
-                  id="settings-custom-cycle-day" 
-                  min="1" 
-                  max="31" 
-                  class="w-14 px-2 py-1 bg-white border border-slate-200 rounded-xl text-xs font-bold text-center text-slate-800 num-font" 
-                  placeholder="1"
-                  onchange="App.handleSetPayCycleCustomDay(this.value)"
-                />
-                <span class="text-slate-400 text-[11px]">ของทุกเดือน</span>
+
+              <!-- Quick Custom Day Preset Chips -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-1.5 border-t border-slate-200/60">
+                <span class="text-[10px] text-slate-400 font-medium">วันที่ตัดรอบยอดนิยม:</span>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(1)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 1</button>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(5)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 5</button>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(10)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 10</button>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(15)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 15</button>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(20)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 20</button>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(25)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 25</button>
+                <button type="button" onclick="App.handleSetPayCycleCustomDay(28)" class="px-2 py-0.5 bg-white hover:bg-indigo-50 hover:text-indigo-700 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer">วันที่ 28</button>
               </div>
             </div>
 
@@ -2706,10 +2708,10 @@
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=3.9.8" defer></script>
-  <script src="js/storage.js?v=3.9.8" defer></script>
-  <script src="js/firebase-client.js?v=3.9.8" defer></script>
-  <script src="js/budget-simulator.js?v=3.9.8" defer></script>
-  <script src="js/app.js?v=3.9.8" defer></script>
+  <script src="js/i18n.js?v=3.9.9" defer></script>
+  <script src="js/storage.js?v=3.9.9" defer></script>
+  <script src="js/firebase-client.js?v=3.9.9" defer></script>
+  <script src="js/budget-simulator.js?v=3.9.9" defer></script>
+  <script src="js/app.js?v=3.9.9" defer></script>
 </body>
 </html>

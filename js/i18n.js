@@ -91,6 +91,7 @@ const TRANSLATIONS = {
     offline_auto_save: 'บันทึกอัตโนมัติ (Offline)',
     type_expense: '🔴 รายจ่าย (Expense)',
     type_income: '🟢 รายรับ (Income)',
+    type_savings: '💰 เงินออม (Savings)',
     
     quick_chips_expense_title: 'ปุ่มลัดรายจ่ายประจำ:',
     quick_chips_income_title: 'ปุ่มลัดรายรับประจำ:',
@@ -110,12 +111,14 @@ const TRANSLATIONS = {
     placeholder_note: 'เช่น ข้าวกะเพรา, ค่าห้องประจำเดือน, เงินเดือน...',
     btn_save_expense: '➕ บันทึกรายจ่าย',
     btn_save_income: '➕ บันทึกรายรับ',
+    btn_save_savings: '➕ บันทึกเงินออม',
 
     history_title: 'ประวัติรายการบันทึก',
     placeholder_search: 'ค้นหาโน้ต...',
     filter_all: 'ทั้งหมด',
     filter_expense: 'รายจ่าย',
     filter_income: 'รายรับ',
+    filter_savings: 'เงินออม',
     history_empty_title: 'ยังไม่มีรายการบันทึก',
     history_empty_desc: 'กดบันทึกรายการ หรือคลิก "โหลดตัวอย่าง" ด้านบน',
 
@@ -392,6 +395,7 @@ const TRANSLATIONS = {
     offline_auto_save: 'Offline Auto-save',
     type_expense: '🔴 Expense',
     type_income: '🟢 Income',
+    type_savings: '💰 Savings',
     
     quick_chips_expense_title: 'Recurring Expense Shortcuts:',
     quick_chips_income_title: 'Recurring Income Shortcuts:',
@@ -411,12 +415,14 @@ const TRANSLATIONS = {
     placeholder_note: 'e.g., Lunch, Coffee, Apartment Rent, Salary...',
     btn_save_expense: '➕ Save Expense',
     btn_save_income: '➕ Save Income',
+    btn_save_savings: '➕ Save to Savings',
 
     history_title: 'Transaction History',
     placeholder_search: 'Search notes...',
     filter_all: 'All',
     filter_expense: 'Expense',
     filter_income: 'Income',
+    filter_savings: 'Savings',
     history_empty_title: 'No transactions recorded yet',
     history_empty_desc: 'Add a new entry or click "Load Sample" above.',
 

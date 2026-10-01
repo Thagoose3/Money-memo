@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   RECURRING_ITEMS: 'smart_expense_recurring_list_v2',
   DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1',
   PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1',
+  CUSTOM_CYCLE: 'smart_expense_custom_cycle_range_v1',
   SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1'
 };
 
@@ -37,7 +38,13 @@ const DEFAULT_CATEGORIES = [
   { id: 'inc_bonus', name: 'โบนัส & คอมมิชชั่น', nameEn: 'Bonus & Commission', emoji: '🎁', color: '#14b8a6', type: 'income', isDefault: true },
   { id: 'inc_business', name: 'ธุรกิจ & ค้าขาย', nameEn: 'Business & Sales', emoji: '🛒', color: '#059669', type: 'income', isDefault: true },
   { id: 'inc_invest', name: 'เงินปันผล & ดอกเบี้ย', nameEn: 'Dividends & Interest', emoji: '📈', color: '#6366f1', type: 'income', isDefault: true },
-  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
+  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true },
+
+  // เงินออม (Savings)
+  { id: 'sav_general', name: 'เงินออมทั่วไป', nameEn: 'General Savings', emoji: '💰', color: '#6366f1', type: 'savings', isDefault: true },
+  { id: 'sav_emergency', name: 'เงินสำรองฉุกเฉิน', nameEn: 'Emergency Fund', emoji: '🛡️', color: '#3b82f6', type: 'savings', isDefault: true },
+  { id: 'sav_invest', name: 'การลงทุน & พอร์ตหุ้น', nameEn: 'Investment', emoji: '📈', color: '#10b981', type: 'savings', isDefault: true },
+  { id: 'sav_goal', name: 'เป้าหมายระยะยาว', nameEn: 'Long-term Goal', emoji: '🎯', color: '#8b5cf6', type: 'savings', isDefault: true }
 ];
 
 // รายการประจำเริ่มต้น
@@ -127,6 +134,12 @@ const StorageManager = {
             }
           }
         });
+        DEFAULT_CATEGORIES.forEach(def => {
+          if (!parsed.some(c => c.id === def.id)) {
+            parsed.push(JSON.parse(JSON.stringify(def)));
+            needsSave = true;
+          }
+        });
         this._categories = parsed;
         this._updateCatMap();
         if (needsSave) {
@@ -177,16 +190,18 @@ const StorageManager = {
 
   addCategory(category) {
     const categories = this.getCategories();
-    const type = category.type === 'income' ? 'income' : 'expense';
-    const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : 'รายจ่ายใหม่');
+    const type = category.type === 'income' ? 'income' : (category.type === 'savings' ? 'savings' : 'expense');
+    const defaultName = type === 'income' ? 'รายรับใหม่' : (type === 'savings' ? 'เงินออมใหม่' : 'รายจ่ายใหม่');
+    const name = (category.name || '').trim() || defaultName;
     const nameEn = (category.nameEn || '').trim() || name;
     
+    const prefix = type === 'income' ? 'inc_' : (type === 'savings' ? 'sav_' : 'exp_');
     const newCat = {
-      id: 'cat_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'cat_' + prefix + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       name: name,
       nameEn: nameEn,
-      emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
-      color: category.color || (type === 'income' ? '#34d399' : '#f87171'),
+      emoji: category.emoji || (type === 'income' ? '💰' : (type === 'savings' ? '🏦' : '📦')),
+      color: category.color || (type === 'income' ? '#34d399' : (type === 'savings' ? '#6366f1' : '#f87171')),
       type: type,
       isDefault: false
     };
@@ -294,6 +309,13 @@ const StorageManager = {
       if (/ขายของ|ธุรกิจ|ร้าน|ช้อป|freelance|ฟรีแลนซ์|side/.test(lower)) return 'inc_business';
       if (/ปันผล|ดอกเบี้ย|หุ้น|กองทุน|คริปโต|dividend|interest|crypto/.test(lower)) return 'inc_invest';
       return 'inc_other';
+    }
+
+    if (type === 'savings') {
+      if (/ฉุกเฉิน|สำรอง|emergency/.test(lower)) return 'sav_emergency';
+      if (/หุ้น|กองทุน|คริปโต|ลงทุน|invest|stock|fund/.test(lower)) return 'sav_invest';
+      if (/เป้าหมาย|บ้าน|รถ|แต่งงาน|เที่ยว|goal/.test(lower)) return 'sav_goal';
+      return 'sav_general';
     }
 
     if (/หมา|แมว|สัตว์|เพ็ท|pet|dog|cat/.test(lower)) return 'exp_pets';
@@ -482,13 +504,15 @@ const StorageManager = {
 
   addTransaction(tx) {
     const transactions = this.getTransactions();
+    const txType = (tx.type === 'income') ? 'income' : ((tx.type === 'savings') ? 'savings' : 'expense');
+    const defaultCat = (txType === 'income') ? 'inc_other' : ((txType === 'savings') ? 'sav_general' : 'exp_other');
     const newTx = {
       id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      type: tx.type === 'income' ? 'income' : 'expense',
+      type: txType,
       amount: Math.abs(parseFloat(tx.amount)) || 0,
-      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
+      categoryId: tx.categoryId || defaultCat,
       date: tx.date || new Date().toISOString().slice(0, 16),
-      paymentMethod: tx.paymentMethod || 'เงินสด (Cash)',
+      paymentMethod: tx.paymentMethod || (txType === 'savings' ? 'บัญชีเงินออม / ธนาคาร' : 'เงินสด (Cash)'),
       note: (tx.note || '').trim(),
       createdAt: Date.now()
     };
@@ -502,16 +526,20 @@ const StorageManager = {
   addTransactionsBatch(txList) {
     if (!Array.isArray(txList) || txList.length === 0) return 0;
     const transactions = this.getTransactions();
-    const newItems = txList.map((tx, idx) => ({
-      id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
-      type: tx.type === 'income' ? 'income' : 'expense',
-      amount: Math.abs(parseFloat(tx.amount)) || 0,
-      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
-      date: tx.date || new Date().toISOString().slice(0, 16),
-      paymentMethod: tx.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
-      note: (tx.note || '').trim(),
-      createdAt: Date.now() + idx
-    }));
+    const newItems = txList.map((tx, idx) => {
+      const txType = (tx.type === 'income') ? 'income' : ((tx.type === 'savings') ? 'savings' : 'expense');
+      const defaultCat = (txType === 'income') ? 'inc_other' : ((txType === 'savings') ? 'sav_general' : 'exp_other');
+      return {
+        id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
+        type: txType,
+        amount: Math.abs(parseFloat(tx.amount)) || 0,
+        categoryId: tx.categoryId || defaultCat,
+        date: tx.date || new Date().toISOString().slice(0, 16),
+        paymentMethod: tx.paymentMethod || (txType === 'savings' ? 'บัญชีเงินออม / ธนาคาร' : 'โอนเงิน / บัญชีธนาคาร'),
+        note: (tx.note || '').trim(),
+        createdAt: Date.now() + idx
+      };
+    });
     const merged = [...newItems, ...transactions];
     this.saveTransactions(merged);
 
@@ -525,9 +553,11 @@ const StorageManager = {
     const index = transactions.findIndex(t => t.id === id);
     if (index === -1) return { success: false, message: 'ไม่พบรายการที่ต้องการแก้ไข' };
 
+    const txType = (updatedData.type === 'income') ? 'income' : ((updatedData.type === 'savings') ? 'savings' : 'expense');
+
     transactions[index] = {
       ...transactions[index],
-      type: updatedData.type === 'income' ? 'income' : 'expense',
+      type: txType,
       amount: Math.abs(parseFloat(updatedData.amount)) || 0,
       categoryId: updatedData.categoryId || transactions[index].categoryId,
       date: updatedData.date || transactions[index].date,
@@ -588,6 +618,51 @@ const StorageManager = {
 
   // --- รอบบัญชี & วันเงินเดือนออก (Payday / Cut-off Cycle) ---
   _payCycleSetting: null,
+
+  // --- รอบวันที่กำหนดเอง (Custom Cycle Range Override) ---
+  _customCycleRange: null,
+
+  getCustomCycleRange() {
+    if (this._customCycleRange !== null) {
+      return this._customCycleRange === false ? null : this._customCycleRange;
+    }
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.CUSTOM_CYCLE);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed && parsed.startDate && parsed.endDate) {
+          this._customCycleRange = parsed;
+          return this._customCycleRange;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading custom cycle range:', e);
+    }
+    this._customCycleRange = false;
+    return null;
+  },
+
+  saveCustomCycleRange(range) {
+    if (!range || !range.startDate || !range.endDate) return;
+    this._customCycleRange = {
+      startDate: range.startDate,
+      endDate: range.endDate
+    };
+    try {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_CYCLE, JSON.stringify(this._customCycleRange));
+    } catch (e) {
+      console.error('Error saving custom cycle range:', e);
+    }
+  },
+
+  clearCustomCycleRange() {
+    this._customCycleRange = false;
+    try {
+      localStorage.removeItem(STORAGE_KEYS.CUSTOM_CYCLE);
+    } catch (e) {
+      console.error('Error clearing custom cycle range:', e);
+    }
+  },
 
   getPayCycleSetting() {
     if (this._payCycleSetting) return this._payCycleSetting;
@@ -672,11 +747,47 @@ const StorageManager = {
   },
 
   getCycleDateRange(referenceDate = new Date(), payCycleSetting = null) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const thShortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const enShortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const thFullMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    const enFullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    // If no explicit payCycleSetting override passed, check custom date range first
+    if (!payCycleSetting) {
+      const custom = this.getCustomCycleRange();
+      if (custom && custom.startDate && custom.endDate) {
+        const [sY, sM, sD] = custom.startDate.split('-').map(Number);
+        const [eY, eM, eD] = custom.endDate.split('-').map(Number);
+        const sDate = new Date(sY, sM - 1, sD);
+        const eDate = new Date(eY, eM - 1, eD);
+
+        const labelTh = `${sDate.getDate()} ${thShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${thShortMonths[eDate.getMonth()]} ${eDate.getFullYear() + 543}`;
+        const labelEn = `${sDate.getDate()} ${enShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${enShortMonths[eDate.getMonth()]} ${eDate.getFullYear()}`;
+        const monthTitleTh = `${thFullMonths[sDate.getMonth()]} ${sDate.getFullYear() + 543}`;
+        const monthTitleEn = `${enFullMonths[sDate.getMonth()]} ${sDate.getFullYear()}`;
+
+        return {
+          startDate: custom.startDate,
+          endDate: custom.endDate,
+          sDate,
+          eDate,
+          labelTh,
+          labelEn,
+          monthTitleTh,
+          monthTitleEn,
+          year: sDate.getFullYear(),
+          monthIndex: sDate.getMonth(),
+          isCalendar: false,
+          isCustom: true
+        };
+      }
+    }
+
     const setting = payCycleSetting || this.getPayCycleSetting();
     const ref = new Date(referenceDate);
     const Y = ref.getFullYear();
     const M = ref.getMonth(); // 0 to 11
-    const pad = (n) => String(n).padStart(2, '0');
 
     let sDate, eDate;
 
@@ -704,11 +815,6 @@ const StorageManager = {
     const startDateStr = `${sDate.getFullYear()}-${pad(sDate.getMonth() + 1)}-${pad(sDate.getDate())}`;
     const endDateStr = `${eDate.getFullYear()}-${pad(eDate.getMonth() + 1)}-${pad(eDate.getDate())}`;
 
-    const thShortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    const enShortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const thFullMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    const enFullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
     const labelTh = `${sDate.getDate()} ${thShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${thShortMonths[eDate.getMonth()]} ${eDate.getFullYear() + 543}`;
     const labelEn = `${sDate.getDate()} ${enShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${enShortMonths[eDate.getMonth()]} ${eDate.getFullYear()}`;
     const monthTitleTh = `${thFullMonths[sDate.getMonth()]} ${sDate.getFullYear() + 543}`;
@@ -725,7 +831,8 @@ const StorageManager = {
       monthTitleEn,
       year: sDate.getFullYear(),
       monthIndex: sDate.getMonth(),
-      isCalendar: setting.type === 'calendar'
+      isCalendar: setting.type === 'calendar',
+      isCustom: false
     };
   },
 
@@ -736,24 +843,82 @@ const StorageManager = {
 
     let priorIncome = 0;
     let priorExpense = 0;
+    let priorSavings = 0;
 
     allTxs.forEach(t => {
       const d = this.normalizeDateString(t.date);
       const amt = Number(t.amount) || 0;
       if (d < currentCycle.startDate) {
         if (t.type === 'income') priorIncome += amt;
+        else if (t.type === 'savings') priorSavings += amt;
         else priorExpense += amt;
       }
     });
 
-    const netSurplus = priorIncome - priorExpense;
+    // Check if any legacy deposits were recorded before current cycle
+    try {
+      const legacyDepositsStr = localStorage.getItem('smart_expense_savings_deposits_v1');
+      if (legacyDepositsStr) {
+        const legacyDeposits = JSON.parse(legacyDepositsStr);
+        if (Array.isArray(legacyDeposits)) {
+          legacyDeposits.forEach(d => {
+            const dStr = this.normalizeDateString(d.date);
+            if (dStr < currentCycle.startDate) {
+              const amt = Number(d.amount) || 0;
+              if (d.type === 'deposit') priorSavings += amt;
+              else if (d.type === 'withdraw') priorSavings -= amt;
+            }
+          });
+        }
+      }
+    } catch(e) {}
+
+    const netSurplus = priorIncome - priorExpense - priorSavings;
 
     return {
       currentCycle,
       priorIncome,
       priorExpense,
+      priorSavings,
       netSurplus,
       hasSurplus: netSurplus > 0
+    };
+  },
+
+  // --- ระบบเงินออมสะสม (Accumulated Savings) ---
+  getTotalAccumulatedSavings() {
+    const transactions = this.getTransactions();
+    let totalDeposits = 0;
+    let count = 0;
+
+    transactions.forEach(t => {
+      if (t.type === 'savings') {
+        totalDeposits += (Number(t.amount) || 0);
+        count++;
+      }
+    });
+
+    // Support legacy deposits if present
+    try {
+      const legacyDepositsStr = localStorage.getItem('smart_expense_savings_deposits_v1');
+      if (legacyDepositsStr) {
+        const legacyDeposits = JSON.parse(legacyDepositsStr);
+        if (Array.isArray(legacyDeposits)) {
+          legacyDeposits.forEach(d => {
+            const amt = Number(d.amount) || 0;
+            if (d.type === 'deposit') totalDeposits += amt;
+            else if (d.type === 'withdraw') totalDeposits -= amt;
+            count++;
+          });
+        }
+      }
+    } catch(e) {}
+
+    const totalAccumulated = Math.max(0, Math.round((totalDeposits + Number.EPSILON) * 100) / 100);
+
+    return {
+      totalAccumulated,
+      depositsCount: count
     };
   },
 
@@ -823,16 +988,21 @@ const StorageManager = {
 
     let totalIncome = 0;
     let totalExpense = 0;
+    let totalSavings = 0;
 
     const rows = filtered.map(t => {
       const cat = this.getCategoryById(t.categoryId);
       const catName = this.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
+      const isSav = t.type === 'savings';
       
       if (isExp) totalExpense += t.amount;
+      else if (isSav) totalSavings += t.amount;
       else totalIncome += t.amount;
 
-      const typeStr = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+      const typeStr = isExp 
+        ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+        : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
       const formattedDate = t.date.replace('T', ' ');
       const cleanNote = (t.note || '').replace(/"/g, '""');
 
@@ -846,13 +1016,14 @@ const StorageManager = {
       ].join(',');
     });
 
-    const netBalance = totalIncome - totalExpense;
+    const netBalance = totalIncome - totalExpense - totalSavings;
 
     // Summary Rows with Headers
     const emptyRow = '"","","","","",""';
     const summaryHeader = `"${lang === 'en' ? '=== SUMMARY ===' : '=== สรุปยอดรวม ==='}","","","","",""`;
     const incomeSummary = `"${lang === 'en' ? 'Total Income' : 'รายรับรวม'}","","","${totalIncome.toFixed(2)}","",""`;
     const expenseSummary = `"${lang === 'en' ? 'Total Expense' : 'รายจ่ายรวม'}","","","${totalExpense.toFixed(2)}","",""`;
+    const savingsSummary = `"${lang === 'en' ? 'Total Savings' : 'เงินออมรวม'}","","","${totalSavings.toFixed(2)}","",""`;
     const netSummary = `"${lang === 'en' ? 'Net Balance' : 'คงเหลือสุทธิ'}","","","${netBalance.toFixed(2)}","",""`;
 
     const csvContent = '\uFEFF' + [
@@ -865,6 +1036,7 @@ const StorageManager = {
       summaryHeader,
       incomeSummary,
       expenseSummary,
+      savingsSummary,
       netSummary
     ].join('\r\n');
 

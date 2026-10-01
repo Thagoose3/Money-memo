@@ -500,13 +500,13 @@ const App = {
       });
     });
 
-    // Transaction form: Income/Expense Toggle
+    // Transaction form: Income/Expense/Savings Toggle
     const typeToggleExp = document.getElementById('type-toggle-expense');
     const typeToggleInc = document.getElementById('type-toggle-income');
-    if (typeToggleExp && typeToggleInc) {
-      typeToggleExp.addEventListener('click', () => this.setEntryType('expense'));
-      typeToggleInc.addEventListener('click', () => this.setEntryType('income'));
-    }
+    const typeToggleSav = document.getElementById('type-toggle-savings');
+    if (typeToggleExp) typeToggleExp.addEventListener('click', () => this.setEntryType('expense'));
+    if (typeToggleInc) typeToggleInc.addEventListener('click', () => this.setEntryType('income'));
+    if (typeToggleSav) typeToggleSav.addEventListener('click', () => this.setEntryType('savings'));
 
     // Quick Amount Chips in Form
     document.querySelectorAll('.amount-chip').forEach(chip => {
@@ -655,33 +655,61 @@ const App = {
     this.currentEntryType = type;
     const typeToggleExp = document.getElementById('type-toggle-expense');
     const typeToggleInc = document.getElementById('type-toggle-income');
+    const typeToggleSav = document.getElementById('type-toggle-savings');
     const submitBtn = document.getElementById('tx-submit-btn');
+
+    const unselectedBtnCls = 'py-2 px-2 sm:px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1 cursor-pointer';
 
     if (type === 'expense') {
       if (typeToggleExp) {
-        typeToggleExp.className = 'py-2 px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleExp.className = 'py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
         typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_expense')}`;
       }
       if (typeToggleInc) {
-        typeToggleInc.className = 'py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleInc.className = unselectedBtnCls;
         typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${I18n.t('type_income')}`;
+      }
+      if (typeToggleSav) {
+        typeToggleSav.className = unselectedBtnCls;
+        typeToggleSav.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> ${I18n.t('type_savings')}`;
       }
       if (submitBtn) {
         submitBtn.className = 'w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = `<span>${I18n.t('btn_save_expense')}</span>`;
       }
-    } else {
+    } else if (type === 'income') {
       if (typeToggleExp) {
-        typeToggleExp.className = 'py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleExp.className = unselectedBtnCls;
         typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${I18n.t('type_expense')}`;
       }
       if (typeToggleInc) {
-        typeToggleInc.className = 'py-2 px-3 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleInc.className = 'py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
         typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_income')}`;
+      }
+      if (typeToggleSav) {
+        typeToggleSav.className = unselectedBtnCls;
+        typeToggleSav.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> ${I18n.t('type_savings')}`;
       }
       if (submitBtn) {
         submitBtn.className = 'w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = `<span>${I18n.t('btn_save_income')}</span>`;
+      }
+    } else if (type === 'savings') {
+      if (typeToggleExp) {
+        typeToggleExp.className = unselectedBtnCls;
+        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${I18n.t('type_expense')}`;
+      }
+      if (typeToggleInc) {
+        typeToggleInc.className = unselectedBtnCls;
+        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${I18n.t('type_income')}`;
+      }
+      if (typeToggleSav) {
+        typeToggleSav.className = 'py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-indigo-500 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
+        typeToggleSav.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_savings')}`;
+      }
+      if (submitBtn) {
+        submitBtn.className = 'w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
+        submitBtn.innerHTML = `<span>${I18n.t('btn_save_savings')}</span>`;
       }
     }
 
@@ -943,11 +971,11 @@ const App = {
       r.checked = (r.value === targetType);
     });
 
-    const defaultEmoji = targetType === 'income' ? '💰' : '🐾';
+    const defaultEmoji = targetType === 'income' ? '🟢' : (targetType === 'savings' ? '💰' : '🐾');
     if (emojiInput) emojiInput.value = defaultEmoji;
     this.updateCategoryEmojiPreview(defaultEmoji);
 
-    const defaultColor = targetType === 'income' ? '#34d399' : '#f87171';
+    const defaultColor = targetType === 'income' ? '#34d399' : (targetType === 'savings' ? '#6366f1' : '#f87171');
     if (colorInput) colorInput.value = defaultColor;
 
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
@@ -1785,7 +1813,11 @@ const App = {
     this.closeQuickEntryModal();
 
     this.renderAll();
-    this.showToast(this.currentEntryType === 'expense' ? I18n.t('toast_exp_saved') : I18n.t('toast_inc_saved'));
+    let toastMsg = this.currentEntryType === 'expense' ? I18n.t('toast_exp_saved') : I18n.t('toast_inc_saved');
+    if (this.currentEntryType === 'savings') {
+      toastMsg = I18n.getLanguage() === 'en' ? '💰 Savings recorded successfully!' : '💰 บันทึกเงินออมเรียบร้อยแล้ว!';
+    }
+    this.showToast(toastMsg);
   },
 
   renderMonthSelector() {
@@ -2626,6 +2658,7 @@ const App = {
     const btnAll = document.getElementById('history-filter-btn-all');
     const btnExp = document.getElementById('history-filter-btn-expense');
     const btnInc = document.getElementById('history-filter-btn-income');
+    const btnSav = document.getElementById('history-filter-btn-savings');
 
     const activeClass = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-xs transition-all cursor-pointer shrink-0';
     const inactiveClass = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1';
@@ -2636,6 +2669,9 @@ const App = {
     }
     if (btnInc) {
       btnInc.className = (type === 'income') ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-white shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1' : inactiveClass;
+    }
+    if (btnSav) {
+      btnSav.className = (type === 'savings') ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500 text-white shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1' : inactiveClass;
     }
 
     this.renderHistoryTab();
@@ -2978,15 +3014,25 @@ const App = {
 
       const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
       const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-      const dayNet = dayIncome - dayExpense;
+      const daySavings = dayTxs.filter(t => t.type === 'savings').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const dayNet = dayIncome - dayExpense - daySavings;
 
       const itemsHtml = dayTxs.map(t => {
         const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
         const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
         const emoji = cat.emoji || '📦';
         const isExp = t.type === 'expense';
+        const isSav = t.type === 'savings';
         const timeStr = t.date && t.date.length >= 16 ? t.date.slice(11, 16) : '';
-        const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+        const typeBadge = isExp 
+          ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+          : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+        const iconBg = isExp 
+          ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+          : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100');
+        const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+        const numSign = isExp ? '-' : '+';
+        const badgeColor = isExp ? 'text-rose-500' : (isSav ? 'text-indigo-500' : 'text-emerald-500');
         const amountNum = Number(t.amount) || 0;
 
         return `
@@ -2996,7 +3042,7 @@ const App = {
           >
             <!-- Left: Emoji + Category (Note) & Time • Payment -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${iconBg}">
                 ${emoji}
               </div>
               <div class="min-w-0 flex-1 pr-2">
@@ -3014,10 +3060,10 @@ const App = {
             <!-- Right: Amount & Actions -->
             <div class="flex items-center gap-2 shrink-0">
               <div class="text-right">
-                <span class="text-sm sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-                  ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                <span class="text-sm sm:text-base font-black num-font ${numColor}">
+                  ${numSign}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </span>
-                <span class="block sm:hidden text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
+                <span class="block sm:hidden text-[9px] font-bold ${badgeColor}">${typeBadge}</span>
               </div>
 
               <!-- Desktop Direct Edit/Delete Buttons -->
@@ -3067,10 +3113,18 @@ const App = {
         const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
         const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
         const isExp = t.type === 'expense';
+        const isSav = t.type === 'savings';
         const amountNum = Number(t.amount) || 0;
         const dStr = this.normalizeDateString(t.date);
         const timeStr = (t.date && t.date.length >= 16) ? t.date.slice(11, 16) : '';
-        const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+        const typeBadge = isExp 
+          ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+          : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+        const badgeCls = isExp 
+          ? 'bg-rose-50 text-rose-600 border border-rose-200/60' 
+          : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-200/60' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/60');
+        const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+        const numSign = isExp ? '-' : '+';
 
         return `
           <tr class="hover-action-trigger hover:bg-slate-50/80 transition-colors cursor-pointer" onclick="App.openTransactionDetailModal('${t.id}')">
@@ -3079,7 +3133,7 @@ const App = {
               ${timeStr ? `<span class="text-slate-400 ml-1 font-normal">${timeStr} น.</span>` : ''}
             </td>
             <td class="py-2.5 px-3 whitespace-nowrap">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-200/60' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'}">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeCls}">
                 ${typeBadge}
               </span>
             </td>
@@ -3095,8 +3149,8 @@ const App = {
             <td class="py-2.5 px-3 whitespace-nowrap text-slate-500">
               ${t.paymentMethod || '-'}
             </td>
-            <td class="py-2.5 px-3 text-right whitespace-nowrap font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-              ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <td class="py-2.5 px-3 text-right whitespace-nowrap font-black num-font ${numColor}">
+              ${numSign}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </td>
             <td class="py-2.5 px-3 text-center whitespace-nowrap no-print" onclick="event.stopPropagation()">
               <div class="desktop-row-actions inline-flex items-center gap-1 justify-center">
@@ -3140,9 +3194,15 @@ const App = {
       const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
       const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
+      const isSav = t.type === 'savings';
       const amountNum = Number(t.amount) || 0;
       const dateStr = this.normalizeDateString(t.date);
       const timeStr = (t.date && t.date.length >= 16) ? t.date.slice(11, 16) : '';
+      const iconBg = isExp 
+        ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+        : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100');
+      const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+      const numSign = isExp ? '-' : '+';
 
       return `
         <div 
@@ -3150,7 +3210,7 @@ const App = {
           class="hover-action-trigger flex items-center justify-between p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 transition-all cursor-pointer group shadow-2xs"
         >
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 ${iconBg}">
               ${cat.emoji || '📦'}
             </div>
             <div class="min-w-0 flex-1 pr-1">
@@ -3166,8 +3226,8 @@ const App = {
           </div>
 
           <div class="flex items-center gap-1 shrink-0">
-            <span class="text-xs font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-              ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <span class="text-xs font-black num-font ${numColor}">
+              ${numSign}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
 
             <div class="desktop-row-actions flex items-center ml-1" onclick="event.stopPropagation()">
@@ -3253,9 +3313,18 @@ const App = {
       const cat = StorageManager.getCategoryById(t.categoryId);
       const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
+      const isSav = t.type === 'savings';
       const d = new Date(t.date);
       const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-      const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+      const typeBadge = isExp 
+        ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+        : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+      const iconBg = isExp 
+        ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+        : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100');
+      const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+      const numSign = isExp ? '-' : '+';
+      const badgeColor = isExp ? 'text-rose-500' : (isSav ? 'text-indigo-500' : 'text-emerald-500');
 
       return `
         <div 
@@ -3264,7 +3333,7 @@ const App = {
         >
           <!-- Left Side: Emoji Icon + Category Name & Date/Time -->
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-base sm:text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-base sm:text-lg shrink-0 shadow-2xs ${iconBg}">
               ${cat.emoji}
             </div>
             <div class="min-w-0 flex-1 pr-1">
@@ -3282,10 +3351,10 @@ const App = {
           <!-- Right Side: Amount in Red/Green + Arrow / Action Buttons -->
           <div class="flex items-center gap-2 sm:gap-3 shrink-0 ml-1">
             <div class="text-right">
-              <span class="text-xs sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-                ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              <span class="text-xs sm:text-base font-black num-font ${numColor}">
+                ${numSign}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </span>
-              <span class="block sm:hidden text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
+              <span class="block sm:hidden text-[9px] font-bold ${badgeColor}">${typeBadge}</span>
             </div>
 
             <!-- Desktop Direct Edit/Delete Buttons -->
@@ -3320,8 +3389,19 @@ const App = {
     const cat = StorageManager.getCategoryById(tx.categoryId);
     const catName = StorageManager.getCategoryDisplayName(cat);
     const isExp = tx.type === 'expense';
+    const isSav = tx.type === 'savings';
     const lang = I18n.getLanguage();
-    const typeLabel = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+    const typeLabel = isExp 
+      ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+      : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+    const heroBg = isExp 
+      ? 'bg-rose-50/70 border border-rose-100/70' 
+      : (isSav ? 'bg-indigo-50/70 border border-indigo-100/70' : 'bg-emerald-50/70 border border-emerald-100/70');
+    const heroBorder = isExp ? 'border-rose-200' : (isSav ? 'border-indigo-200' : 'border-emerald-200');
+    const badgeBg = isExp ? 'bg-rose-100 text-rose-700' : (isSav ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700');
+    const badgeEmoji = isExp ? '🔴' : (isSav ? '💰' : '🟢');
+    const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+    const numSign = isExp ? '-' : '+';
     
     const d = new Date(tx.date);
     const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
@@ -3329,17 +3409,17 @@ const App = {
 
     content.innerHTML = `
       <!-- Hero Top inside Modal -->
-      <div class="text-center p-4 rounded-3xl ${isExp ? 'bg-rose-50/70 border border-rose-100/70' : 'bg-emerald-50/70 border border-emerald-100/70'}">
-        <div class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center text-3xl mx-auto shadow-xs border ${isExp ? 'border-rose-200' : 'border-emerald-200'}">
+      <div class="text-center p-4 rounded-3xl ${heroBg}">
+        <div class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center text-3xl mx-auto shadow-xs border ${heroBorder}">
           ${cat.emoji}
         </div>
         <div class="mt-2.5">
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
-            <span>${isExp ? '🔴' : '🟢'}</span> ${typeLabel}
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeBg}">
+            <span>${badgeEmoji}</span> ${typeLabel}
           </span>
         </div>
-        <p class="text-3xl font-black num-font mt-2 ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-          ${isExp ? '-' : '+'}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+        <p class="text-3xl font-black num-font mt-2 ${numColor}">
+          ${numSign}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
         </p>
         <p class="text-xs font-bold text-slate-700 mt-1">${catName}</p>
       </div>
@@ -3486,19 +3566,25 @@ const App = {
       const cat = StorageManager.getCategoryById(tx.categoryId);
       const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = tx.type === 'expense';
+      const isSav = tx.type === 'savings';
       const lang = I18n.getLanguage();
-      const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+      const typeBadge = isExp 
+        ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+        : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+      const badgeColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+      const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
+      const numSign = isExp ? '-' : '+';
 
       preview.innerHTML = `
         <div class="flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-left">
           <span class="text-2xl">${cat.emoji}</span>
           <div class="flex-1">
-            <p class="font-bold text-slate-800 text-xs">${catName} <span class="text-[10px] font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${typeBadge})</span></p>
+            <p class="font-bold text-slate-800 text-xs">${catName} <span class="text-[10px] font-semibold ${badgeColor}">(${typeBadge})</span></p>
             <p class="text-[10px] text-slate-400">${tx.date.replace('T', ' ')} · ${tx.paymentMethod}</p>
             ${tx.note ? `<p class="text-[11px] text-slate-600">"${tx.note}"</p>` : ''}
           </div>
-          <div class="font-bold text-sm num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
-            ${isExp ? '-' : '+'}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+          <div class="font-bold text-sm num-font ${numColor}">
+            ${numSign}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
           </div>
         </div>
       `;
@@ -3590,10 +3676,13 @@ const App = {
 
     let totalIncome = 0;
     let totalExpense = 0;
+    let totalSavings = 0;
 
     filtered.forEach(t => {
-      if (t.type === 'income') totalIncome += t.amount;
-      else totalExpense += t.amount;
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') totalIncome += amt;
+      else if (t.type === 'savings') totalSavings += amt;
+      else totalExpense += amt;
     });
 
     const countEl = document.getElementById('export-preview-count');
@@ -3605,7 +3694,12 @@ const App = {
     if (amountsEl) {
       const incLabel = lang === 'en' ? 'Income' : 'รายรับ';
       const expLabel = lang === 'en' ? 'Expense' : 'รายจ่าย';
-      amountsEl.innerHTML = `<span class="text-emerald-600 font-bold">${incLabel} ฿${totalIncome.toLocaleString()}</span> / <span class="text-rose-600 font-bold">${expLabel} ฿${totalExpense.toLocaleString()}</span>`;
+      const savLabel = lang === 'en' ? 'Savings' : 'เงินออม';
+      let previewText = `<span class="text-emerald-600 font-bold">${incLabel} ฿${totalIncome.toLocaleString()}</span> / <span class="text-rose-600 font-bold">${expLabel} ฿${totalExpense.toLocaleString()}</span>`;
+      if (totalSavings > 0) {
+        previewText += ` / <span class="text-indigo-600 font-bold">${savLabel} ฿${totalSavings.toLocaleString()}</span>`;
+      }
+      amountsEl.innerHTML = previewText;
     }
   },
 
@@ -3624,6 +3718,7 @@ const App = {
       if (this.currentTab !== 'transactions') {
         this.renderTab1OverviewHero();
         this.renderTab1DailyBudgetCard();
+        this.renderTab1SavingsCard();
         this.renderDesktopRecentTransactions();
       }
       if (this.currentTab !== 'history') this.renderHistoryTab();
@@ -3639,6 +3734,7 @@ const App = {
     if (this.currentTab === 'transactions') {
       this.renderTab1OverviewHero();
       this.renderTab1DailyBudgetCard();
+      this.renderTab1SavingsCard();
       this.renderDesktopRecentTransactions();
     } else if (this.currentTab === 'history') {
       this.renderHistoryTab();
@@ -3670,41 +3766,61 @@ const App = {
     const rolloverSurplus = Math.max(0, prevSurplusData.netSurplus);
 
     const currentTxs = allTxs.filter(t => {
-      const d = (t.date || '').slice(0, 10);
+      const d = StorageManager.normalizeDateString(t.date);
       return d >= cycleRange.startDate && d <= cycleRange.endDate;
     });
 
     let income = 0;
     let expense = 0;
+    let savingsInCycle = 0;
     currentTxs.forEach(t => {
-      if (t.type === 'income') income += t.amount;
-      else expense += t.amount;
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'income') income += amt;
+      else if (t.type === 'savings') savingsInCycle += amt;
+      else expense += amt;
     });
 
-    // Net balance includes leftover money from before this cycle!
-    const net = rolloverSurplus + income - expense;
+    // Net balance (Living Pool) = Rollover + Income - Expense - SavingsInCycle
+    const net = rolloverSurplus + income - expense - savingsInCycle;
     const lang = I18n.getLanguage();
 
-    const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    const enMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    
-    const periodLabel = (payCycleSetting.type === 'calendar')
-      ? ((lang === 'en') ? `${enMonths[currentMonth]} ${currentYear}` : `${thaiMonths[currentMonth]} ${currentYear + 543}`)
-      : ((lang === 'en') ? cycleRange.labelEn : cycleRange.labelTh);
+    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const enMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    // Format cycle date display
+    let periodLabel = (lang === 'en') ? cycleRange.labelEn : cycleRange.labelTh;
+    if (cycleRange.startDate && cycleRange.endDate) {
+      const sP = cycleRange.startDate.split('-').map(Number);
+      const eP = cycleRange.endDate.split('-').map(Number);
+      if (lang === 'en') {
+        periodLabel = `Cycle: ${sP[2]} ${enMonths[sP[1]-1]} - ${eP[2]} ${enMonths[eP[1]-1]} ${eP[0]}`;
+      } else {
+        periodLabel = `รอบ ${sP[2]} ${thaiMonths[sP[1]-1]} - ${eP[2]} ${thaiMonths[eP[1]-1]} ${eP[0] + 543}`;
+      }
+    }
 
     heroEl.innerHTML = `
-      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800 space-y-3.5">
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-xl relative overflow-hidden border border-slate-800 space-y-3.5">
         <!-- Ambient Glow Background -->
         <div class="absolute -right-8 -bottom-8 w-44 h-44 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -left-8 -top-8 w-44 h-44 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <!-- Top Section: Period + Health Badge -->
-        <div class="relative z-10 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-indigo-200 tracking-wider flex items-center gap-1.5">
-              <span>📅</span> <span>${periodLabel}</span>
+        <div class="relative z-10 flex items-center justify-between gap-2">
+          <!-- Clickable Cycle Pill -->
+          <button 
+            type="button" 
+            onclick="App.openCycleDateModal()"
+            class="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 active:scale-95 px-3 py-1.5 rounded-full border border-white/15 cursor-pointer transition-all shadow-xs group"
+            title="${lang === 'en' ? 'Click to customize cycle dates' : 'กดเพื่อเลือกรอบวันที่เอง'}"
+          >
+            <span class="text-xs">🗓️</span>
+            <span class="text-xs font-bold text-indigo-100 tracking-wide group-hover:text-white">
+              ${periodLabel}
             </span>
-          </div>
+            <span class="text-[10px] text-indigo-300 group-hover:text-white transition-colors">▾</span>
+          </button>
+
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold ${net >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
             ${net >= 0 ? (lang === 'en' ? '🟢 Healthy' : '🟢 สุขภาพการเงินดี') : (lang === 'en' ? '🔴 Deficit' : '🔴 ยอดติดลบ')}
           </span>
@@ -3714,7 +3830,7 @@ const App = {
         <div class="relative z-10">
           <div class="flex items-center justify-between">
             <span class="text-[11px] font-semibold text-slate-300 block">
-              ${lang === 'en' ? 'Net Balance' : 'ยอดคงเหลือสุทธิ'}
+              ${lang === 'en' ? 'Net Living Pool' : 'ยอดคงเหลือสุทธิ (Net Living Pool)'}
             </span>
             ${rolloverSurplus > 0 ? `
               <span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
@@ -3729,22 +3845,35 @@ const App = {
           </div>
         </div>
 
-        <!-- Bottom Section: Income / Expense Capsule -->
-        <div class="relative z-10 grid grid-cols-2 gap-2 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/10">
-          <div class="px-2 py-0.5">
-            <div class="flex items-center gap-1 text-[11px] text-emerald-300 font-bold">
+        <!-- Bottom Section: 3-Column Capsule (Income / Expense / Savings in Cycle) -->
+        <div class="relative z-10 grid grid-cols-3 gap-1 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/10 divide-x divide-white/10 text-center">
+          <!-- 1. Income -->
+          <div class="px-1">
+            <div class="flex items-center justify-center gap-1 text-[11px] text-emerald-300 font-bold">
               <span>↑</span> <span>${lang === 'en' ? 'Income' : 'รายรับ'}</span>
             </div>
-            <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
+            <p class="text-xs sm:text-sm font-extrabold text-white num-font mt-0.5">
               ฿${income.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
-          <div class="px-2 py-0.5 border-l border-white/15">
-            <div class="flex items-center gap-1 text-[11px] text-rose-300 font-bold">
+
+          <!-- 2. Expense -->
+          <div class="px-1">
+            <div class="flex items-center justify-center gap-1 text-[11px] text-rose-300 font-bold">
               <span>↓</span> <span>${lang === 'en' ? 'Expense' : 'รายจ่าย'}</span>
             </div>
-            <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
+            <p class="text-xs sm:text-sm font-extrabold text-white num-font mt-0.5">
               ฿${expense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <!-- 3. Savings in Cycle -->
+          <div class="px-1">
+            <div class="flex items-center justify-center gap-1 text-[11px] text-amber-300 font-bold">
+              <span>💰</span> <span>${lang === 'en' ? 'Savings' : 'เงินออม'}</span>
+            </div>
+            <p class="text-xs sm:text-sm font-extrabold text-white num-font mt-0.5">
+              ฿${savingsInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -3781,12 +3910,15 @@ const App = {
     let totalIncomeInCycle = 0;
     let pastExpenseInCycle = 0;
     let todayExpense = 0;
+    let totalSavingsInCycle = 0;
 
     cycleTxs.forEach(t => {
       const dStr = StorageManager.normalizeDateString(t.date);
       const amount = Number(t.amount) || 0;
       if (t.type === 'income') {
         totalIncomeInCycle += amount;
+      } else if (t.type === 'savings') {
+        totalSavingsInCycle += amount;
       } else if (t.type === 'expense') {
         if (dStr === todayStr) {
           todayExpense += amount;
@@ -3812,8 +3944,8 @@ const App = {
     const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
     const rolloverSurplus = Math.max(0, prevSurplusData.netSurplus);
 
-    // Dynamic available amount for the rest of the cycle (including today & rollover from last month)
-    const totalLivingPool = (effectiveIncome + rolloverSurplus);
+    // Dynamic living pool deducts actual savings logged in this cycle!
+    const totalLivingPool = Math.max(0, effectiveIncome + rolloverSurplus - totalSavingsInCycle);
     const availableForLiving = Math.max(0, totalLivingPool - pastExpenseInCycle - savingsGoal);
     const dailyQuotaToday = daysRemaining > 0 ? (availableForLiving / daysRemaining) : 0;
     const remainingToday = Math.max(0, dailyQuotaToday - todayExpense);
@@ -3870,9 +4002,10 @@ const App = {
             <p class="text-xl sm:text-2xl font-extrabold num-font ${isExceeded ? 'text-rose-600' : 'text-slate-900'}">
               ฿${remainingToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
+            <span class="text-[10px] text-slate-400 block">${lang === 'en' ? 'Savings are not counted as today\'s spending' : 'เงินออมไม่ถูกหักเป็นรายจ่ายวันนี้'}</span>
           </div>
           <div class="text-right">
-            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Daily Target' : 'งบแนะนำวันนี้'}</span>
+            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Daily Target' : 'งบเฉลี่ยต่อวัน'}</span>
             <span class="text-xs sm:text-sm font-bold text-slate-700 num-font">
               ฿${dailyQuotaToday.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${lang === 'en' ? 'day' : 'วัน'}
             </span>
@@ -3893,11 +4026,317 @@ const App = {
 
         <!-- Sub Context Stats (Income & Past Expenses) -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-          <span>${lang === 'en' ? 'Living Pool: ' : 'กองเงินกินใช้: '}<strong class="text-emerald-600 num-font font-bold">฿${totalLivingPool.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-          <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          <span>${lang === 'en' ? 'Spent in cycle: ' : 'กินใช้สะสมในรอบ: '}<strong class="text-rose-600 num-font font-bold">฿${(pastExpenseInCycle + todayExpense).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          <span>${lang === 'en' ? 'Saved in cycle: ' : 'ออมในรอบนี้: '}<strong class="text-indigo-600 num-font font-bold">฿${totalSavingsInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
         </div>
       </div>
     `;
+  },
+
+  renderTab1SavingsCard() {
+    const container = document.getElementById('tab1-savings-card');
+    if (!container) return;
+
+    const lang = I18n.getLanguage();
+    const now = new Date();
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
+
+    const allTxs = StorageManager.getTransactions();
+    const totalAccumulatedSavings = StorageManager.getTotalAccumulatedSavings();
+
+    // Savings strictly inside the current cycle
+    const savingsInCycle = allTxs
+      .filter(t => {
+        if (t.type !== 'savings') return false;
+        const d = StorageManager.normalizeDateString(t.date);
+        return d >= cycleRange.startDate && d <= cycleRange.endDate;
+      })
+      .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+    container.innerHTML = `
+      <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-slate-50 to-indigo-50/20">
+        <!-- Card Header -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>💰</span> <span>${lang === 'en' ? 'Total Accumulated Savings' : 'เงินออมสะสมรวม (Total Savings)'}</span>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">${lang === 'en' ? 'Total savings from all records' : 'ยอดเงินออมรวมทุกรายการ'}</p>
+          </div>
+          <button 
+            type="button" 
+            onclick="App.openSavingsHistoryModal()"
+            class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+          >
+            <span>📋</span>
+            <span>${lang === 'en' ? 'View All History' : 'ดูประวัติทั้งหมด'}</span>
+          </button>
+        </div>
+
+        <!-- Big Number Container with Bank Icon -->
+        <div class="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-indigo-50/50 via-slate-50 to-emerald-50/30 border border-slate-100 flex items-center justify-between">
+          <div class="space-y-0.5">
+            <span class="text-[11px] text-slate-400 font-semibold block">${lang === 'en' ? 'All-time Savings' : 'ยอดเงินออมสะสมทั้งหมด'}</span>
+            <p class="text-2xl sm:text-3xl font-black num-font text-indigo-700">
+              ฿${totalAccumulatedSavings.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <span class="text-[11px] text-emerald-600 font-bold block pt-0.5">
+              +฿${savingsInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${lang === 'en' ? 'saved in this cycle' : 'บันทึกออมในรอบนี้'}
+            </span>
+          </div>
+          <!-- Bank Icon -->
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-100/60 border border-indigo-200/60 flex items-center justify-center text-2xl sm:text-3xl shadow-2xs shrink-0">
+            🏦
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  // --- Cycle Date Range Custom Modal Handlers ---
+  openCycleDateModal() {
+    const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycleRange = StorageManager.getCycleDateRange(new Date(), payCycleSetting);
+    const startInput = document.getElementById('modal-cycle-start-date');
+    const endInput = document.getElementById('modal-cycle-end-date');
+    if (startInput) startInput.value = cycleRange.startDate;
+    if (endInput) endInput.value = cycleRange.endDate;
+
+    const modal = document.getElementById('cycle-date-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  },
+
+  closeCycleDateModal() {
+    const modal = document.getElementById('cycle-date-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  setCycleModalPreset(presetKey) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const pad = (n) => String(n).padStart(2, '0');
+
+    let startDate = '';
+    let endDate = '';
+
+    if (presetKey === 'current_month') {
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      startDate = `${year}-${pad(month + 1)}-01`;
+      endDate = `${year}-${pad(month + 1)}-${pad(lastDay)}`;
+    } else if (presetKey === 'payday_25') {
+      if (now.getDate() >= 25) {
+        const nextM = new Date(year, month + 1, 1);
+        startDate = `${year}-${pad(month + 1)}-25`;
+        endDate = `${nextM.getFullYear()}-${pad(nextM.getMonth() + 1)}-24`;
+      } else {
+        const prevM = new Date(year, month - 1, 1);
+        startDate = `${prevM.getFullYear()}-${pad(prevM.getMonth() + 1)}-25`;
+        endDate = `${year}-${pad(month + 1)}-24`;
+      }
+    } else if (presetKey === 'payday_28') {
+      if (now.getDate() >= 28) {
+        const nextM = new Date(year, month + 1, 1);
+        startDate = `${year}-${pad(month + 1)}-28`;
+        endDate = `${nextM.getFullYear()}-${pad(nextM.getMonth() + 1)}-27`;
+      } else {
+        const prevM = new Date(year, month - 1, 1);
+        startDate = `${prevM.getFullYear()}-${pad(prevM.getMonth() + 1)}-28`;
+        endDate = `${year}-${pad(month + 1)}-27`;
+      }
+    } else if (presetKey === 'payday_30') {
+      if (now.getDate() >= 30) {
+        const nextM = new Date(year, month + 1, 1);
+        startDate = `${year}-${pad(month + 1)}-30`;
+        endDate = `${nextM.getFullYear()}-${pad(nextM.getMonth() + 1)}-29`;
+      } else {
+        const prevM = new Date(year, month - 1, 1);
+        startDate = `${prevM.getFullYear()}-${pad(prevM.getMonth() + 1)}-30`;
+        endDate = `${year}-${pad(month + 1)}-29`;
+      }
+    }
+
+    const startInput = document.getElementById('modal-cycle-start-date');
+    const endInput = document.getElementById('modal-cycle-end-date');
+    if (startInput && startDate) startInput.value = startDate;
+    if (endInput && endDate) endInput.value = endDate;
+  },
+
+  handleSaveCycleDatesFromModal() {
+    const startInput = document.getElementById('modal-cycle-start-date');
+    const endInput = document.getElementById('modal-cycle-end-date');
+    if (!startInput || !endInput || !startInput.value || !endInput.value) {
+      this.showToast(I18n.getLanguage() === 'en' ? 'Please select both start and end dates' : 'กรุณาระบุวันเริ่มและวันสิ้นสุดรอบให้ครบถ้วน');
+      return;
+    }
+    if (startInput.value > endInput.value) {
+      this.showToast(I18n.getLanguage() === 'en' ? 'Start date must be before end date' : 'วันเริ่มรอบต้องไม่เกินวันสิ้นสุดรอบ');
+      return;
+    }
+
+    StorageManager.saveCustomCycleRange(startInput.value, endInput.value);
+    this.closeCycleDateModal();
+    this.renderAll(true);
+    this.showToast(I18n.getLanguage() === 'en' ? '🗓️ Cycle dates updated' : '🗓️ บันทึกช่วงวันที่ของรอบเรียบร้อย');
+  },
+
+  handleResetCycleDates() {
+    StorageManager.clearCustomCycleRange();
+    this.closeCycleDateModal();
+    this.renderAll(true);
+    this.showToast(I18n.getLanguage() === 'en' ? '🔄 Cycle reset to auto' : '🔄 รีเซ็ตรอบวันที่กลับเป็นค่าอัตโนมัติแล้ว');
+  },
+
+  // --- Savings History Modal Handlers ---
+  openSavingsHistoryModal() {
+    this.renderSavingsHistoryModal();
+    const modal = document.getElementById('savings-history-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  },
+
+  closeSavingsHistoryModal() {
+    const modal = document.getElementById('savings-history-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  },
+
+  renderSavingsHistoryModal() {
+    const listEl = document.getElementById('savings-history-list');
+    const badgeEl = document.getElementById('savings-history-badge');
+    if (!listEl) return;
+
+    const lang = I18n.getLanguage();
+    const allTxs = StorageManager.getTransactions();
+    const savingsTxs = allTxs.filter(t => t.type === 'savings').sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    // Legacy savings deposits check
+    const legacyDeposits = [];
+    try {
+      const goals = StorageManager.getSavingsGoals ? StorageManager.getSavingsGoals() : [];
+      goals.forEach(g => {
+        if (Array.isArray(g.deposits)) {
+          g.deposits.forEach(d => {
+            legacyDeposits.push({
+              id: `legacy_${d.id}`,
+              goalId: g.id,
+              goalTitle: g.title,
+              amount: Number(d.amount) || 0,
+              date: d.date,
+              note: d.note || g.title,
+              isLegacy: true
+            });
+          });
+        }
+      });
+    } catch (e) {
+      console.warn('Error reading legacy deposits:', e);
+    }
+
+    const combined = [
+      ...savingsTxs.map(t => ({
+        id: t.id,
+        amount: Number(t.amount) || 0,
+        date: t.date,
+        note: t.note || (StorageManager.getCategoryDisplayName(StorageManager.getCategoryById(t.categoryId)) || (lang === 'en' ? 'Savings' : 'เงินออม')),
+        categoryId: t.categoryId,
+        isLegacy: false
+      })),
+      ...legacyDeposits
+    ].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    if (badgeEl) {
+      badgeEl.textContent = lang === 'en' ? `Total ${combined.length} items` : `ทั้งหมด ${combined.length} รายการ`;
+    }
+
+    if (combined.length === 0) {
+      listEl.innerHTML = `
+        <div class="text-center py-8 text-slate-400">
+          <span class="text-3xl block mb-2">💰</span>
+          <p class="text-xs font-semibold">${lang === 'en' ? 'No savings records yet' : 'ยังไม่มีรายการเงินออม'}</p>
+          <p class="text-[10px] text-slate-400 mt-1">${lang === 'en' ? 'Record savings via quick entry (+) button' : 'บันทึกออมเงินได้ที่ปุ่มบันทึกด่วน (+)'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    const totalAccumulated = combined.reduce((s, item) => s + (item.amount || 0), 0);
+
+    listEl.innerHTML = `
+      <div class="p-3 mb-2 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-center justify-between">
+        <span class="text-xs text-indigo-700 font-bold">${lang === 'en' ? 'Total Saved' : 'เงินออมสะสมรวมทั้งสิ้น'}:</span>
+        <span class="text-sm font-black text-indigo-700 num-font">฿${totalAccumulated.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      ${combined.map(item => {
+        const cat = item.categoryId ? StorageManager.getCategoryById(item.categoryId) : null;
+        const emoji = cat && cat.emoji ? cat.emoji : '💰';
+        const dStr = (item.date || '').slice(0, 10);
+        const tStr = (item.date && item.date.length >= 16) ? item.date.slice(11, 16) : '';
+        return `
+          <div class="p-3 rounded-2xl bg-slate-50/90 border border-slate-100 flex items-center justify-between hover:bg-slate-100/70 transition-colors">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-bold shrink-0">${emoji}</span>
+              <div class="min-w-0 flex-1 pr-2">
+                <p class="text-xs font-bold text-slate-800 truncate">${item.note}</p>
+                <span class="text-[10px] text-slate-400 block">${dStr} ${tStr ? `• ${tStr}` : ''}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-xs font-black num-font text-indigo-600">+฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <button 
+                type="button" 
+                onclick="App.handleDeleteSavingsRecord('${item.id}', ${item.isLegacy})"
+                class="w-6 h-6 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center text-xs transition-colors cursor-pointer"
+                title="${lang === 'en' ? 'Delete' : 'ลบ'}"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  },
+
+  handleDeleteSavingsRecord(id, isLegacy) {
+    const lang = I18n.getLanguage();
+    if (!confirm(lang === 'en' ? 'Delete this savings record?' : 'ต้องการลบรายการเงินออมนี้หรือไม่?')) {
+      return;
+    }
+    if (isLegacy) {
+      try {
+        const rawId = id.replace('legacy_', '');
+        const goals = StorageManager.getSavingsGoals ? StorageManager.getSavingsGoals() : [];
+        goals.forEach(g => {
+          if (Array.isArray(g.deposits)) {
+            const idx = g.deposits.findIndex(d => String(d.id) === String(rawId));
+            if (idx !== -1) {
+              g.currentAmount = Math.max(0, (g.currentAmount || 0) - (Number(g.deposits[idx].amount) || 0));
+              g.deposits.splice(idx, 1);
+              StorageManager.saveSavingsGoals(goals);
+            }
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      StorageManager.deleteTransaction(id);
+    }
+    this.renderSavingsHistoryModal();
+    this.renderAll(true);
+    this.showToast(lang === 'en' ? 'Savings record deleted' : 'ลบรายการเงินออมเรียบร้อยแล้ว');
   },
 
   // --- Monthly Savings Goal Manager ---
@@ -4308,14 +4747,13 @@ const App = {
     this.settingsCatType = type;
     const expBtn = document.getElementById('settings-cat-type-exp');
     const incBtn = document.getElementById('settings-cat-type-inc');
+    const savBtn = document.getElementById('settings-cat-type-sav');
 
-    if (type === 'expense') {
-      if (expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer';
-      if (incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
-    } else {
-      if (expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
-      if (incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs cursor-pointer';
-    }
+    const inactiveCls = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
+
+    if (expBtn) expBtn.className = (type === 'expense') ? 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer' : inactiveCls;
+    if (incBtn) incBtn.className = (type === 'income') ? 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs cursor-pointer' : inactiveCls;
+    if (savBtn) savBtn.className = (type === 'savings') ? 'px-3 py-1.5 rounded-xl font-bold text-xs bg-indigo-500 text-white shadow-xs cursor-pointer' : inactiveCls;
 
     this.renderSettingsCategoryList();
   },

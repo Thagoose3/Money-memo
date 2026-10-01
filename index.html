@@ -280,6 +280,9 @@
           <!-- 2. กล่องโควตาเงินกินใช้วันนี้ (Daily Budget Tracker Widget) -->
           <div id="tab1-daily-budget-card"></div>
 
+          <!-- 2.5 กล่องเงินออมสะสมรวม (Total Savings Card) -->
+          <div id="tab1-savings-card"></div>
+
           <!-- 3. เมนูบริการด่วน (Quick Services Hub - 4 Icon Grid กะทัดรัด) -->
           <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80">
             <div class="flex items-center justify-between mb-3 px-1">
@@ -539,6 +542,14 @@
               class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
             >
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 🟢 รายรับ
+            </button>
+            <button 
+              type="button" 
+              id="history-filter-btn-savings" 
+              onclick="App.setHistoryTypeFilter('savings')" 
+              class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1"
+            >
+              <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 💰 เงินออม
             </button>
 
             <!-- Category Dropdown Filter -->
@@ -1408,6 +1419,7 @@
                   <div class="flex items-center gap-1">
                     <button type="button" id="settings-cat-type-exp" onclick="App.setSettingsCatType('expense')" class="px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer">🔴 หมวดหมู่รายจ่าย</button>
                     <button type="button" id="settings-cat-type-inc" onclick="App.setSettingsCatType('income')" class="px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer">🟢 หมวดหมู่รายรับ</button>
+                    <button type="button" id="settings-cat-type-sav" onclick="App.setSettingsCatType('savings')" class="px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer">💰 หมวดหมู่เงินออม</button>
                   </div>
                   <button type="button" onclick="App.handleRestoreDefaultCategories()" class="text-[11px] text-slate-500 hover:text-slate-800 font-semibold cursor-pointer">🔄 คืนค่าเริ่มต้น</button>
                 </div>
@@ -1613,13 +1625,16 @@
         <button type="button" onclick="App.closeQuickEntryModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-sm cursor-pointer transition-colors">✕</button>
       </div>
 
-      <!-- 1-Click Toggle รายจ่าย / รายรับ -->
-      <div class="grid grid-cols-2 gap-1.5 bg-slate-100/90 p-1 rounded-2xl">
-        <button type="button" id="type-toggle-expense" class="py-2 px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-          <span class="w-1.5 h-1.5 rounded-full bg-white"></span> <span data-i18n="type_expense">🔴 รายจ่าย (Expense)</span>
+      <!-- 1-Click Toggle รายจ่าย / รายรับ / เงินออม -->
+      <div class="grid grid-cols-3 gap-1.5 bg-slate-100/90 p-1 rounded-2xl">
+        <button type="button" id="type-toggle-expense" class="py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer">
+          <span class="w-1.5 h-1.5 rounded-full bg-white"></span> <span data-i18n="type_expense">🔴 รายจ่าย</span>
         </button>
-        <button type="button" id="type-toggle-income" class="py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> <span data-i18n="type_income">🟢 รายรับ (Income)</span>
+        <button type="button" id="type-toggle-income" class="py-2 px-2 sm:px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1 cursor-pointer">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> <span data-i18n="type_income">🟢 รายรับ</span>
+        </button>
+        <button type="button" id="type-toggle-savings" class="py-2 px-2 sm:px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1 cursor-pointer">
+          <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> <span data-i18n="type_savings">💰 เงินออม</span>
         </button>
       </div>
 
@@ -1795,14 +1810,18 @@
         <!-- Category Type Toggle -->
         <div>
           <label data-i18n="modal_add_cat_type" class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">ประเภทหมวดหมู่</label>
-          <div class="grid grid-cols-2 gap-2">
-            <label class="flex items-center gap-1.5 p-2.5 bg-rose-50/50 hover:bg-rose-100/50 border border-rose-100 rounded-2xl cursor-pointer">
+          <div class="grid grid-cols-3 gap-1.5">
+            <label class="flex items-center gap-1 p-2 bg-rose-50/50 hover:bg-rose-100/50 border border-rose-100 rounded-2xl cursor-pointer">
               <input type="radio" name="new-cat-type" value="expense" checked onchange="App.handleNewCategoryTypeChange('expense')" class="text-rose-500 focus:ring-rose-400" />
-              <span class="text-xs font-bold text-rose-600">🔴 Expense</span>
+              <span class="text-[11px] font-bold text-rose-600 truncate">🔴 Expense</span>
             </label>
-            <label class="flex items-center gap-1.5 p-2.5 bg-emerald-50/50 hover:bg-emerald-100/50 border border-emerald-100 rounded-2xl cursor-pointer">
+            <label class="flex items-center gap-1 p-2 bg-emerald-50/50 hover:bg-emerald-100/50 border border-emerald-100 rounded-2xl cursor-pointer">
               <input type="radio" name="new-cat-type" value="income" onchange="App.handleNewCategoryTypeChange('income')" class="text-emerald-600 focus:ring-emerald-400" />
-              <span class="text-xs font-bold text-emerald-600">🟢 Income</span>
+              <span class="text-[11px] font-bold text-emerald-600 truncate">🟢 Income</span>
+            </label>
+            <label class="flex items-center gap-1 p-2 bg-indigo-50/50 hover:bg-indigo-100/50 border border-indigo-100 rounded-2xl cursor-pointer">
+              <input type="radio" name="new-cat-type" value="savings" onchange="App.handleNewCategoryTypeChange('savings')" class="text-indigo-600 focus:ring-indigo-400" />
+              <span class="text-[11px] font-bold text-indigo-600 truncate">💰 Savings</span>
             </label>
           </div>
         </div>
@@ -2127,6 +2146,7 @@
             <select id="edit-tx-type" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800">
               <option value="expense">🔴 รายจ่าย (Expense)</option>
               <option value="income">🟢 รายรับ (Income)</option>
+              <option value="savings">💰 เงินออม (Savings)</option>
             </select>
           </div>
 
@@ -2299,6 +2319,7 @@
               <option value="all" data-i18n="filter_all">ทั้งหมด</option>
               <option value="expense" data-i18n="filter_expense">🔴 รายจ่าย</option>
               <option value="income" data-i18n="filter_income">🟢 รายรับ</option>
+              <option value="savings" data-i18n="filter_savings">💰 เงินออม</option>
             </select>
           </div>
 
@@ -2556,6 +2577,111 @@
     </div>
   </div>
 
+  <!-- ========================================== -->
+  <!-- MODAL: 🗓️ กำหนดช่วงรอบวันที่ (Custom Cycle Date Modal) -->
+  <!-- ========================================== -->
+  <div id="cycle-date-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-slate-200 space-y-4 max-h-[85vh] overflow-y-auto animate-modal">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🗓️</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">กำหนดช่วงวันที่รอบนี้</h3>
+            <p class="text-[11px] text-slate-400">ระบบจำค่าไว้ตลอด ปิดเปิดใหม่ไม่หาย</p>
+          </div>
+        </div>
+        <button type="button" onclick="App.closeCycleDateModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <!-- Date Inputs -->
+      <div class="space-y-3 text-xs">
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-600">วันเริ่มรอบ (เช่น เงินเดือนเข้า):</label>
+          <input 
+            type="date" 
+            id="modal-cycle-start-date" 
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+          />
+        </div>
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-600">วันสิ้นสุดรอบ (สิ้นสุดรอบบิล):</label>
+          <input 
+            type="date" 
+            id="modal-cycle-end-date" 
+            class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+          />
+        </div>
+      </div>
+
+      <!-- Quick Preset Chips -->
+      <div class="space-y-1.5 pt-1">
+        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">ปุ่มลัดเลือกด่วน:</span>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+          <button type="button" onclick="App.setCycleModalPreset('current_month')" class="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-semibold text-center cursor-pointer">
+            1 - สิ้นเดือนนี้
+          </button>
+          <button type="button" onclick="App.setCycleModalPreset('payday_25')" class="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-semibold text-center cursor-pointer">
+            รอบเงินเดือน 25
+          </button>
+          <button type="button" onclick="App.setCycleModalPreset('payday_28')" class="p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-semibold text-center cursor-pointer">
+            รอบเงินเดือน 28
+          </button>
+          <button type="button" onclick="App.setCycleModalPreset('payday_30')" class="p-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-indigo-700 font-bold text-center cursor-pointer">
+            รอบเงินเดือน 30
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+        <button 
+          type="button" 
+          onclick="App.handleResetCycleDates()" 
+          class="flex-1 py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-all cursor-pointer text-center"
+        >
+          🔄 อัตโนมัติ
+        </button>
+        <button 
+          type="button" 
+          onclick="App.handleSaveCycleDatesFromModal()" 
+          class="flex-1 py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer text-center"
+        >
+          ✓ บันทึกรอบนี้
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 📋 ประวัติเงินออมทั้งหมด (Savings History Modal) -->
+  <!-- ========================================== -->
+  <div id="savings-history-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-slate-200 space-y-4 max-h-[85vh] flex flex-col animate-modal">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📋</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">ประวัติการบันทึกเงินออม</h3>
+            <p class="text-[11px] text-slate-400">รายการเงินออมทั้งหมด</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="savings-history-badge" class="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200/50">
+            ทั้งหมด 0 รายการ
+          </span>
+          <button type="button" onclick="App.closeSavingsHistoryModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs font-bold cursor-pointer">✕</button>
+        </div>
+      </div>
+
+      <!-- History List Container -->
+      <div id="savings-history-list" class="space-y-2 overflow-y-auto flex-1 pr-0.5">
+        <!-- Dynamically rendered via JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- Drag and Drop Overlay for Backup Restore -->
   <div id="drag-drop-overlay" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-white text-center opacity-0 pointer-events-none transition-opacity duration-200">
     <div class="w-20 h-20 rounded-3xl bg-indigo-600/30 border-2 border-dashed border-indigo-400 flex items-center justify-center text-4xl mb-4 animate-bounce">
@@ -2571,10 +2697,10 @@
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=3.9.6" defer></script>
-  <script src="js/storage.js?v=3.9.6" defer></script>
-  <script src="js/firebase-client.js?v=3.9.6" defer></script>
-  <script src="js/budget-simulator.js?v=3.9.6" defer></script>
-  <script src="js/app.js?v=3.9.6" defer></script>
+  <script src="js/i18n.js?v=4.2.0" defer></script>
+  <script src="js/storage.js?v=4.2.0" defer></script>
+  <script src="js/firebase-client.js?v=4.2.0" defer></script>
+  <script src="js/budget-simulator.js?v=4.2.0" defer></script>
+  <script src="js/app.js?v=4.2.0" defer></script>
 </body>
 </html>

@@ -46,7 +46,13 @@ const DEFAULT_CATEGORIES = [
   { id: 'inc_bonus', name: 'โบนัส & คอมมิชชั่น', nameEn: 'Bonus & Commission', emoji: '🎁', color: '#14b8a6', type: 'income', isDefault: true },
   { id: 'inc_business', name: 'ธุรกิจ & ค้าขาย', nameEn: 'Business & Sales', emoji: '🛒', color: '#059669', type: 'income', isDefault: true },
   { id: 'inc_invest', name: 'เงินปันผล & ดอกเบี้ย', nameEn: 'Dividends & Interest', emoji: '📈', color: '#6366f1', type: 'income', isDefault: true },
-  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
+  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true },
+
+  // เงินออม (Savings)
+  { id: 'sav_general', name: 'เงินออมทั่วไป', nameEn: 'General Savings', emoji: '💰', color: '#6366f1', type: 'savings', isDefault: true },
+  { id: 'sav_emergency', name: 'เงินสำรองฉุกเฉิน', nameEn: 'Emergency Fund', emoji: '🛡️', color: '#10b981', type: 'savings', isDefault: true },
+  { id: 'sav_invest', name: 'ลงทุน & พอร์ตหุ้น', nameEn: 'Investment & Stocks', emoji: '📈', color: '#3b82f6', type: 'savings', isDefault: true },
+  { id: 'sav_dream', name: 'เป้าหมาย & ของที่อยากได้', nameEn: 'Goals & Dreams', emoji: '🎯', color: '#ec4899', type: 'savings', isDefault: true }
 ];
 
 // รายการประจำเริ่มต้น
@@ -136,6 +142,15 @@ const StorageManager = {
             }
           }
         });
+
+        // Ensure default savings categories exist for existing users
+        DEFAULT_CATEGORIES.forEach(def => {
+          if (def.type === 'savings' && !parsed.some(c => c.id === def.id)) {
+            parsed.push({ ...def });
+            needsSave = true;
+          }
+        });
+
         this._categories = parsed;
         this._updateCatMap();
         if (needsSave) {
@@ -186,16 +201,17 @@ const StorageManager = {
 
   addCategory(category) {
     const categories = this.getCategories();
-    const type = category.type === 'income' ? 'income' : 'expense';
-    const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : 'รายจ่ายใหม่');
+    const type = category.type === 'income' ? 'income' : (category.type === 'savings' ? 'savings' : 'expense');
+    const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : (type === 'savings' ? 'หมวดเงินออมใหม่' : 'รายจ่ายใหม่'));
     const nameEn = (category.nameEn || '').trim() || name;
+    const prefix = type === 'income' ? 'inc_' : (type === 'savings' ? 'sav_' : 'exp_');
     
     const newCat = {
-      id: 'cat_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'cat_' + prefix + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       name: name,
       nameEn: nameEn,
-      emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
-      color: category.color || (type === 'income' ? '#34d399' : '#f87171'),
+      emoji: category.emoji || (type === 'income' ? '💰' : (type === 'savings' ? '🏦' : '📦')),
+      color: category.color || (type === 'income' ? '#34d399' : (type === 'savings' ? '#6366f1' : '#f87171')),
       type: type,
       isDefault: false
     };
@@ -491,13 +507,15 @@ const StorageManager = {
 
   addTransaction(tx) {
     const transactions = this.getTransactions();
+    const txType = (tx.type === 'income') ? 'income' : ((tx.type === 'savings') ? 'savings' : 'expense');
+    const defaultCat = (txType === 'income') ? 'inc_other' : ((txType === 'savings') ? 'sav_general' : 'exp_other');
     const newTx = {
       id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      type: tx.type === 'income' ? 'income' : 'expense',
+      type: txType,
       amount: Math.abs(parseFloat(tx.amount)) || 0,
-      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
+      categoryId: tx.categoryId || defaultCat,
       date: tx.date || new Date().toISOString().slice(0, 16),
-      paymentMethod: tx.paymentMethod || 'เงินสด (Cash)',
+      paymentMethod: tx.paymentMethod || (txType === 'savings' ? 'บัญชีเงินออม / ธนาคาร' : 'เงินสด (Cash)'),
       note: (tx.note || '').trim(),
       createdAt: Date.now()
     };
@@ -511,16 +529,20 @@ const StorageManager = {
   addTransactionsBatch(txList) {
     if (!Array.isArray(txList) || txList.length === 0) return 0;
     const transactions = this.getTransactions();
-    const newItems = txList.map((tx, idx) => ({
-      id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
-      type: tx.type === 'income' ? 'income' : 'expense',
-      amount: Math.abs(parseFloat(tx.amount)) || 0,
-      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
-      date: tx.date || new Date().toISOString().slice(0, 16),
-      paymentMethod: tx.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
-      note: (tx.note || '').trim(),
-      createdAt: Date.now() + idx
-    }));
+    const newItems = txList.map((tx, idx) => {
+      const txType = (tx.type === 'income') ? 'income' : ((tx.type === 'savings') ? 'savings' : 'expense');
+      const defaultCat = (txType === 'income') ? 'inc_other' : ((txType === 'savings') ? 'sav_general' : 'exp_other');
+      return {
+        id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
+        type: txType,
+        amount: Math.abs(parseFloat(tx.amount)) || 0,
+        categoryId: tx.categoryId || defaultCat,
+        date: tx.date || new Date().toISOString().slice(0, 16),
+        paymentMethod: tx.paymentMethod || (txType === 'savings' ? 'บัญชีเงินออม / ธนาคาร' : 'โอนเงิน / บัญชีธนาคาร'),
+        note: (tx.note || '').trim(),
+        createdAt: Date.now() + idx
+      };
+    });
     const merged = [...newItems, ...transactions];
     this.saveTransactions(merged);
 
@@ -534,9 +556,11 @@ const StorageManager = {
     const index = transactions.findIndex(t => t.id === id);
     if (index === -1) return { success: false, message: 'ไม่พบรายการที่ต้องการแก้ไข' };
 
+    const txType = (updatedData.type === 'income') ? 'income' : ((updatedData.type === 'savings') ? 'savings' : 'expense');
+
     transactions[index] = {
       ...transactions[index],
-      type: updatedData.type === 'income' ? 'income' : 'expense',
+      type: txType,
       amount: Math.abs(parseFloat(updatedData.amount)) || 0,
       categoryId: updatedData.categoryId || transactions[index].categoryId,
       date: updatedData.date || transactions[index].date,
@@ -766,9 +790,11 @@ const StorageManager = {
 
     let totalIncome = 0;
     let totalExpense = 0;
+    let prevTxSavings = 0;
     prevTxs.forEach(t => {
       const amt = Number(t.amount) || 0;
       if (t.type === 'income') totalIncome += amt;
+      else if (t.type === 'savings') prevTxSavings += amt;
       else totalExpense += amt;
     });
 
@@ -778,7 +804,7 @@ const StorageManager = {
 
     // Filter savings deposits during previous cycle that were deducted from budget
     const allDeposits = this.getSavingsDeposits();
-    let prevSavingsDeducted = 0;
+    let prevSavingsDeducted = prevTxSavings;
     allDeposits.forEach(d => {
       const dStr = this.normalizeDateString(d.date);
       if (dStr >= prevCycle.startDate && dStr <= prevCycle.endDate && d.deductFromDailyBudget && !d.isSurplus) {
@@ -874,6 +900,7 @@ const StorageManager = {
 
   getTotalAccumulatedSavings() {
     const deposits = this.getSavingsDeposits();
+    const transactions = this.getTransactions();
     let totalDeposits = 0;
 
     deposits.forEach(d => {
@@ -885,11 +912,18 @@ const StorageManager = {
       }
     });
 
+    // Also include transactions recorded with type === 'savings'
+    transactions.forEach(t => {
+      if (t.type === 'savings') {
+        totalDeposits += (Number(t.amount) || 0);
+      }
+    });
+
     const totalAccumulated = Math.max(0, Math.round((totalDeposits + Number.EPSILON) * 100) / 100);
 
     return {
       totalAccumulated,
-      depositsCount: deposits.length
+      depositsCount: deposits.length + transactions.filter(t => t.type === 'savings').length
     };
   },
 
@@ -1033,16 +1067,21 @@ const StorageManager = {
 
     let totalIncome = 0;
     let totalExpense = 0;
+    let totalSavings = 0;
 
     const rows = filtered.map(t => {
       const cat = this.getCategoryById(t.categoryId);
       const catName = this.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
+      const isSav = t.type === 'savings';
       
       if (isExp) totalExpense += t.amount;
+      else if (isSav) totalSavings += t.amount;
       else totalIncome += t.amount;
 
-      const typeStr = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
+      const typeStr = isExp 
+        ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
+        : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
       const formattedDate = t.date.replace('T', ' ');
       const cleanNote = (t.note || '').replace(/"/g, '""');
 
@@ -1056,13 +1095,14 @@ const StorageManager = {
       ].join(',');
     });
 
-    const netBalance = totalIncome - totalExpense;
+    const netBalance = totalIncome - totalExpense - totalSavings;
 
     // Summary Rows with Headers
     const emptyRow = '"","","","","",""';
     const summaryHeader = `"${lang === 'en' ? '=== SUMMARY ===' : '=== สรุปยอดรวม ==='}","","","","",""`;
     const incomeSummary = `"${lang === 'en' ? 'Total Income' : 'รายรับรวม'}","","","${totalIncome.toFixed(2)}","",""`;
     const expenseSummary = `"${lang === 'en' ? 'Total Expense' : 'รายจ่ายรวม'}","","","${totalExpense.toFixed(2)}","",""`;
+    const savingsSummary = `"${lang === 'en' ? 'Total Savings' : 'เงินออมรวม'}","","","${totalSavings.toFixed(2)}","",""`;
     const netSummary = `"${lang === 'en' ? 'Net Balance' : 'คงเหลือสุทธิ'}","","","${netBalance.toFixed(2)}","",""`;
 
     const csvContent = '\uFEFF' + [
@@ -1075,6 +1115,7 @@ const StorageManager = {
       summaryHeader,
       incomeSummary,
       expenseSummary,
+      savingsSummary,
       netSummary
     ].join('\r\n');
 

@@ -10,10 +10,18 @@ const STORAGE_KEYS = {
   DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1',
   PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1',
   SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1',
-  SURPLUS_SETTLEMENT: 'smart_expense_surplus_settlement_v1'
+  SURPLUS_SETTLEMENT: 'smart_expense_surplus_settlement_v1',
+  SAVINGS_DEPOSITS: 'smart_expense_savings_deposits_v1',
+  SAVINGS_POCKETS: 'smart_expense_savings_pockets_v1'
 };
 
 const DEFAULT_SAVINGS_GOAL = 5000;
+
+const DEFAULT_SAVINGS_POCKETS = [
+  { id: 'pocket_general', name: 'เงินออมทั่วไป', nameEn: 'General Savings', emoji: '💰', targetAmount: 0 },
+  { id: 'pocket_emergency', name: 'เงินสำรองฉุกเฉิน', nameEn: 'Emergency Fund', emoji: '🛡️', targetAmount: 10000 },
+  { id: 'pocket_travel', name: 'ทริปท่องเที่ยว', nameEn: 'Travel & Vacation', emoji: '🏖️', targetAmount: 10000 }
+];
 
 const DEFAULT_PAY_CYCLE = {
   type: 'calendar', // 'calendar' | 'end_of_month' | 'custom'
@@ -754,6 +762,123 @@ const StorageManager = {
     };
   },
 
+  // --- กระปุกเงินออม & รายการฝากเงินออมทันที (Savings Pockets & Ad-hoc Deposits) ---
+  _savingsPockets: null,
+  _savingsDeposits: null,
+
+  getSavingsPockets() {
+    if (this._savingsPockets) return this._savingsPockets;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.SAVINGS_POCKETS);
+      if (data) {
+        this._savingsPockets = JSON.parse(data);
+        return this._savingsPockets;
+      }
+      this._savingsPockets = JSON.parse(JSON.stringify(DEFAULT_SAVINGS_POCKETS));
+      this.saveSavingsPockets(this._savingsPockets);
+      return this._savingsPockets;
+    } catch (e) {
+      this._savingsPockets = JSON.parse(JSON.stringify(DEFAULT_SAVINGS_POCKETS));
+      return this._savingsPockets;
+    }
+  },
+
+  saveSavingsPockets(pockets) {
+    this._savingsPockets = pockets;
+    try {
+      localStorage.setItem(STORAGE_KEYS.SAVINGS_POCKETS, JSON.stringify(pockets));
+    } catch (e) {
+      console.error('Error saving savings pockets:', e);
+    }
+  },
+
+  addSavingsPocket(pocket) {
+    const pockets = this.getSavingsPockets();
+    const newPocket = {
+      id: 'pocket_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: (pocket.name || '').trim() || 'กระปุกใหม่',
+      nameEn: (pocket.nameEn || '').trim() || pocket.name || 'New Pocket',
+      emoji: pocket.emoji || '🎯',
+      targetAmount: Math.max(0, parseFloat(pocket.targetAmount) || 0),
+      createdAt: new Date().toISOString()
+    };
+    pockets.push(newPocket);
+    this.saveSavingsPockets(pockets);
+    return newPocket;
+  },
+
+  deleteSavingsPocket(id) {
+    let pockets = this.getSavingsPockets();
+    pockets = pockets.filter(p => p.id !== id);
+    this.saveSavingsPockets(pockets);
+  },
+
+  getSavingsPocketById(id) {
+    const pockets = this.getSavingsPockets();
+    return pockets.find(p => p.id === id) || {
+      id: 'pocket_general',
+      name: 'เงินออมทั่วไป',
+      nameEn: 'General Savings',
+      emoji: '💰',
+      targetAmount: 0
+    };
+  },
+
+  getSavingsDeposits() {
+    if (this._savingsDeposits) return this._savingsDeposits;
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.SAVINGS_DEPOSITS);
+      if (data) {
+        this._savingsDeposits = JSON.parse(data);
+        return this._savingsDeposits;
+      }
+      this._savingsDeposits = [];
+      return this._savingsDeposits;
+    } catch (e) {
+      this._savingsDeposits = [];
+      return this._savingsDeposits;
+    }
+  },
+
+  saveSavingsDeposits(deposits) {
+    this._savingsDeposits = deposits;
+    try {
+      localStorage.setItem(STORAGE_KEYS.SAVINGS_DEPOSITS, JSON.stringify(deposits));
+    } catch (e) {
+      console.error('Error saving savings deposits:', e);
+    }
+  },
+
+  addSavingsDeposit(data) {
+    const deposits = this.getSavingsDeposits();
+    const amt = Math.max(0, Math.round(((parseFloat(data.amount) || 0) + Number.EPSILON) * 100) / 100);
+    const type = data.type === 'withdraw' ? 'withdraw' : 'deposit';
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateStr = data.date || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const newDeposit = {
+      id: 'sav_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      amount: amt,
+      type: type, // 'deposit' | 'withdraw'
+      pocketId: data.pocketId || 'pocket_general',
+      date: dateStr,
+      note: (data.note || '').trim(),
+      deductFromDailyBudget: data.deductFromDailyBudget !== undefined ? Boolean(data.deductFromDailyBudget) : true,
+      createdAt: new Date().toISOString()
+    };
+
+    deposits.unshift(newDeposit);
+    this.saveSavingsDeposits(deposits);
+    return newDeposit;
+  },
+
+  deleteSavingsDeposit(id) {
+    let deposits = this.getSavingsDeposits();
+    deposits = deposits.filter(d => d.id !== id);
+    this.saveSavingsDeposits(deposits);
+  },
+
   getTotalAccumulatedSavings() {
     const settlements = this.getSurplusSettlements();
     let totalSurplusSavings = 0;
@@ -762,11 +887,35 @@ const StorageManager = {
     });
 
     const currentGoal = this.getMonthlySavingsGoal();
+    const deposits = this.getSavingsDeposits();
+
+    let totalManualDeposits = 0;
+    const pocketBalances = {};
+
+    deposits.forEach(d => {
+      const amt = Number(d.amount) || 0;
+      const pocketId = d.pocketId || 'pocket_general';
+      if (!pocketBalances[pocketId]) pocketBalances[pocketId] = 0;
+
+      if (d.type === 'deposit') {
+        totalManualDeposits += amt;
+        pocketBalances[pocketId] += amt;
+      } else if (d.type === 'withdraw') {
+        totalManualDeposits -= amt;
+        pocketBalances[pocketId] -= amt;
+      }
+    });
+
+    totalSurplusSavings = Math.round((totalSurplusSavings + Number.EPSILON) * 100) / 100;
+    totalManualDeposits = Math.round((totalManualDeposits + Number.EPSILON) * 100) / 100;
+    const totalAccumulated = Math.round((totalSurplusSavings + totalManualDeposits + currentGoal + Number.EPSILON) * 100) / 100;
 
     return {
-      totalSurplusSavings: Math.round((totalSurplusSavings + Number.EPSILON) * 100) / 100,
+      totalSurplusSavings,
+      totalManualDeposits,
       currentGoal: Math.round((currentGoal + Number.EPSILON) * 100) / 100,
-      totalAccumulated: Math.round((totalSurplusSavings + currentGoal + Number.EPSILON) * 100) / 100
+      totalAccumulated,
+      pocketBalances
     };
   },
 
@@ -974,14 +1123,17 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '3.9.1',
+      version: '4.0.0',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
       recurringItems: this.getRecurringItems(),
       budgetSimulator: this.getBudgetSimulator(),
       payCycleSetting: this.getPayCycleSetting(),
-      savingsGoal: this.getMonthlySavingsGoal()
+      savingsGoal: this.getMonthlySavingsGoal(),
+      surplusSettlements: this.getSurplusSettlements(),
+      savingsPockets: this.getSavingsPockets(),
+      savingsDeposits: this.getSavingsDeposits()
     };
 
     const jsonStr = JSON.stringify(backupData, null, 2);
@@ -1011,6 +1163,11 @@ const StorageManager = {
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
         if (data.payCycleSetting) this.savePayCycleSetting(data.payCycleSetting);
         if (typeof data.savingsGoal === 'number') this.saveMonthlySavingsGoal(data.savingsGoal);
+        if (data.surplusSettlements && typeof data.surplusSettlements === 'object') {
+          localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(data.surplusSettlements));
+        }
+        if (Array.isArray(data.savingsPockets)) this.saveSavingsPockets(data.savingsPockets);
+        if (Array.isArray(data.savingsDeposits)) this.saveSavingsDeposits(data.savingsDeposits);
       }
       return { success: true };
     } catch (e) {

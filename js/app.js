@@ -3916,8 +3916,23 @@ const App = {
       }
     }
 
+    // Filter manual savings deposits in the current pay cycle that deduct from daily budget
+    const allDeposits = StorageManager.getSavingsDeposits();
+    let manualSavingsDeductedInCycle = 0;
+    allDeposits.forEach(d => {
+      const dStr = StorageManager.normalizeDateString(d.date);
+      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate && d.deductFromDailyBudget) {
+        const amt = Number(d.amount) || 0;
+        if (d.type === 'deposit') {
+          manualSavingsDeductedInCycle += amt;
+        } else if (d.type === 'withdraw') {
+          manualSavingsDeductedInCycle -= amt;
+        }
+      }
+    });
+
     // Dynamic available amount for the rest of the cycle (including today & rollover)
-    const availableForLiving = Math.max(0, (effectiveIncome + rolloverSurplus) - pastExpenseInCycle - savingsGoal);
+    const availableForLiving = Math.max(0, (effectiveIncome + rolloverSurplus) - pastExpenseInCycle - savingsGoal - manualSavingsDeductedInCycle);
     const dailyQuotaToday = daysRemaining > 0 ? (availableForLiving / daysRemaining) : 0;
     const remainingToday = Math.max(0, dailyQuotaToday - todayExpense);
     const isExceeded = (todayExpense > dailyQuotaToday && dailyQuotaToday > 0) || (dailyQuotaToday === 0 && todayExpense > 0);
@@ -3991,7 +4006,7 @@ const App = {
         <!-- Sub Context Stats (Income & Past Expenses) -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
           <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${(effectiveIncome + rolloverSurplus).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-          <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          <span>${lang === 'en' ? 'Saved & Goal: ' : 'เป้าออม+ฝากแยก: '}<strong class="text-indigo-600 num-font font-bold">฿${(savingsGoal + manualSavingsDeductedInCycle).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
         </div>
       </div>
     `;
@@ -4005,13 +4020,26 @@ const App = {
     const lang = I18n.getLanguage();
     const now = new Date();
     const payCycleSetting = StorageManager.getPayCycleSetting();
+    const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
     const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
     const savingsGoal = StorageManager.getMonthlySavingsGoal();
     const accumulatedData = StorageManager.getTotalAccumulatedSavings();
+    const pockets = StorageManager.getSavingsPockets();
+    const allDeposits = StorageManager.getSavingsDeposits();
 
     const settlement = prevSurplusData.settlement;
     const settledSavingsAmount = settlement ? (Number(settlement.savingsAmount) || 0) : 0;
-    const currentCycleSavingsTotal = Math.round((savingsGoal + settledSavingsAmount + Number.EPSILON) * 100) / 100;
+
+    // Filter deposits in current cycle
+    let cycleDepositsTotal = 0;
+    allDeposits.forEach(d => {
+      const dStr = StorageManager.normalizeDateString(d.date);
+      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate) {
+        const amt = Number(d.amount) || 0;
+        if (d.type === 'deposit') cycleDepositsTotal += amt;
+        else if (d.type === 'withdraw') cycleDepositsTotal -= amt;
+      }
+    });
 
     let surplusStatusBadge = '';
     if (settlement) {
@@ -4075,6 +4103,105 @@ const App = {
       `;
     }
 
+    // Pockets list HTML
+    const pocketsHtml = pockets.map(pocket => {
+      const pocketBal = accumulatedData.pocketBalances[pocket.id] || 0;
+      const target = Number(pocket.targetAmount) || 0;
+      const pocketName = (lang === 'en' && pocket.nameEn) ? pocket.nameEn : pocket.name;
+      
+      let progressHtml = '';
+      if (target > 0) {
+        const pct = Math.min(100, Math.max(0, (pocketBal / target) * 100));
+        progressHtml = `
+          <div class="mt-1 flex items-center gap-2">
+            <div class="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+            </div>
+            <span class="text-[9px] text-slate-400 font-medium num-font">${pct.toFixed(0)}%</span>
+          </div>
+        `;
+      } else {
+        progressHtml = `
+          <span class="text-[10px] text-slate-400 block mt-0.5">${lang === 'en' ? 'General savings buffer' : 'สะสมเรื่อยๆ ไม่มีกำหนด'}</span>
+        `;
+      }
+
+      return `
+        <div class="bg-white p-2.5 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between gap-2 hover:border-indigo-100 transition-colors">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <span class="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-sm shrink-0">${pocket.emoji || '💰'}</span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800 truncate">${pocketName}</span>
+                ${target > 0 ? `<span class="text-[10px] text-slate-400 font-medium ml-1 shrink-0">${lang === 'en' ? 'Target ' : 'เป้า '}฿${target.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>` : ''}
+              </div>
+              ${progressHtml}
+            </div>
+          </div>
+          <div class="text-right shrink-0 ml-1">
+            <span class="text-xs font-black text-slate-900 num-font block">฿${pocketBal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <div class="flex items-center justify-end gap-1 mt-0.5">
+              <button type="button" onclick="App.openSavingsDepositModal('${pocket.id}')" class="text-[10px] text-emerald-600 hover:text-emerald-700 font-bold hover:underline cursor-pointer">
+                + ${lang === 'en' ? 'Deposit' : 'ฝาก'}
+              </button>
+              ${pocketBal > 0 ? `
+                <span class="text-slate-300">·</span>
+                <button type="button" onclick="App.openSavingsWithdrawModal('${pocket.id}')" class="text-[10px] text-rose-500 hover:text-rose-700 font-semibold hover:underline cursor-pointer">
+                  ${lang === 'en' ? 'Withdraw' : 'ถอน'}
+                </button>
+              ` : ''}
+              ${pocket.id !== 'pocket_general' ? `
+                <span class="text-slate-300">·</span>
+                <button type="button" onclick="App.handleDeleteSavingsPocket('${pocket.id}')" class="text-[10px] text-slate-400 hover:text-rose-600 font-medium cursor-pointer" title="${lang === 'en' ? 'Delete Pocket' : 'ลบกระปุก'}">
+                  ✕
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Recent activity list (last 3 items)
+    let recentActivityHtml = '';
+    if (allDeposits.length > 0) {
+      const recentList = allDeposits.slice(0, 3);
+      const itemsHtml = recentList.map(d => {
+        const p = StorageManager.getSavingsPocketById(d.pocketId);
+        const pName = (lang === 'en' && p.nameEn) ? p.nameEn : p.name;
+        const isDep = d.type === 'deposit';
+        const amtStr = (isDep ? '+' : '-') + '฿' + (Number(d.amount) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const colorClass = isDep ? 'text-emerald-600' : 'text-rose-600';
+        const dStr = StorageManager.normalizeDateString(d.date);
+
+        return `
+          <div class="flex items-center justify-between text-[11px] py-1 border-b border-slate-100 last:border-0">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span>${p.emoji || '💰'}</span>
+              <span class="font-medium text-slate-700 truncate">${pName}${d.note ? ` (${d.note})` : ''}</span>
+              <span class="text-[10px] text-slate-400">${dStr}</span>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="font-extrabold num-font ${colorClass}">${amtStr}</span>
+              <button type="button" onclick="App.handleDeleteSavingsDeposit('${d.id}')" class="text-slate-300 hover:text-rose-500 text-[10px] cursor-pointer" title="${lang === 'en' ? 'Delete entry' : 'ลบรายการนี้'}">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      recentActivityHtml = `
+        <div class="pt-2 border-t border-slate-100 space-y-1">
+          <div class="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase px-0.5">
+            <span>${lang === 'en' ? 'Recent Savings Activity' : 'ประวัติการฝาก/ถอนเงินออมล่าสุด'}</span>
+            <span class="text-slate-400 font-normal">${allDeposits.length} ${lang === 'en' ? 'records' : 'รายการ'}</span>
+          </div>
+          <div class="space-y-0.5 bg-slate-50/70 p-2 rounded-xl border border-slate-100">
+            ${itemsHtml}
+          </div>
+        </div>
+      `;
+    }
+
     container.innerHTML = `
       <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-emerald-50/20 to-slate-50">
         <!-- Header -->
@@ -4086,15 +4213,14 @@ const App = {
             </h3>
             <span class="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/50">Savings Hub</span>
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1.5">
             <button 
               type="button" 
-              onclick="App.openSurplusSettlementModal()" 
-              class="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200/80 shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-              title="${lang === 'en' ? 'Manage/Adjust Last Cycle Surplus' : 'ปรับเปลี่ยน/จัดการเงินเหลือรอบก่อน'}"
+              onclick="App.openSavingsDepositModal()" 
+              class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
             >
-              <span>🔄</span>
-              <span>${lang === 'en' ? 'Surplus' : 'จัดการยอดยก'}</span>
+              <span>+</span>
+              <span>${lang === 'en' ? 'Deposit' : 'ฝากเงินออม'}</span>
             </button>
             <button 
               type="button" 
@@ -4112,45 +4238,336 @@ const App = {
 
         <!-- 2 Bento Cards -->
         <div class="grid grid-cols-2 gap-2 pt-0.5">
-          <!-- Left: Current Cycle Total Savings Plan -->
-          <div class="bg-white/85 p-2.5 rounded-2xl border border-slate-100 shadow-2xs">
-            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Savings This Cycle' : 'เงินออมรวมรอบนี้'}</span>
-            <p class="text-base sm:text-xl font-black num-font text-emerald-600 mt-0.5">
-              ฿${currentCycleSavingsTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-            <span class="text-[9px] text-slate-400 block mt-0.5 truncate">
-              ${lang === 'en' ? `Goal: ฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} + Surplus: ฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `เป้า ฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} + ยกออม ฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
-            </span>
-          </div>
-
-          <!-- Right: All-time Total Accumulated Savings -->
-          <div class="bg-white/85 p-2.5 rounded-2xl border border-slate-100 shadow-2xs">
-            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Total Saved (All Cycles)' : 'ยอดเงินออมสะสมรวม'}</span>
+          <!-- Left: All-time Total Accumulated Savings -->
+          <div class="bg-white/90 p-2.5 rounded-2xl border border-slate-100 shadow-2xs">
+            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Total Savings Balance' : 'ยอดเงินออมสะสมรวม'}</span>
             <p class="text-base sm:text-xl font-black num-font text-indigo-600 mt-0.5">
               ฿${accumulatedData.totalAccumulated.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
+            <span class="text-[9px] text-emerald-700 font-bold block mt-0.5 truncate">
+              ${cycleDepositsTotal !== 0 ? `${cycleDepositsTotal > 0 ? '+' : ''}฿${cycleDepositsTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} ${lang === 'en' ? 'this cycle' : 'รอบนี้'}` : (accumulatedData.totalSurplusSavings > 0 ? `${lang === 'en' ? 'Surplus saved' : 'ออมจากเงินเหลือ'}: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `${lang === 'en' ? 'Ready to grow' : 'พร้อมสะสมเพิ่ม'}`)}
+            </span>
+          </div>
+
+          <!-- Right: Monthly Savings Goal -->
+          <div class="bg-white/90 p-2.5 rounded-2xl border border-slate-100 shadow-2xs cursor-pointer hover:border-indigo-300 transition-colors" onclick="App.openSavingsGoalModal()" title="${lang === 'en' ? 'Click to adjust target' : 'คลิกเพื่อปรับเป้าหมาย'}">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Monthly Goal' : 'เป้าหมายประจำเดือน'}</span>
+              <span class="text-[9px] text-indigo-600 font-bold">✏️</span>
+            </div>
+            <p class="text-base sm:text-xl font-black num-font text-emerald-600 mt-0.5">
+              ฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
             <span class="text-[9px] text-slate-400 block mt-0.5 truncate">
-              ${lang === 'en' ? `Surplus saved: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `ออมสะสมจากเงินเหลือ: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
+              ${lang === 'en' ? 'Deducted for daily allowance' : 'หักจัดสรรงบกินใช้อัตโนมัติ'}
             </span>
           </div>
         </div>
 
-        <!-- Footnote / Quick Switcher Trigger -->
+        <!-- Savings Pockets Section -->
+        <div class="space-y-2 pt-1 border-t border-slate-100">
+          <div class="flex items-center justify-between text-[11px] font-bold text-slate-600 px-0.5">
+            <span class="flex items-center gap-1">
+              <span>📂</span>
+              <span>${lang === 'en' ? 'Savings Pockets' : 'กระปุกเงินออมแยกเป้าหมาย'}</span>
+            </span>
+            <button type="button" onclick="App.openSavingsPocketModal()" class="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold cursor-pointer hover:underline">
+              + ${lang === 'en' ? 'Add Pocket' : 'เพิ่มกระปุก'}
+            </button>
+          </div>
+          <div class="space-y-1.5">
+            ${pocketsHtml}
+          </div>
+        </div>
+
+        ${recentActivityHtml}
+
+        <!-- Footnote / Withdraw & Surplus Trigger -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
           <span class="flex items-center gap-1 truncate mr-2">
             <span>💡</span>
-            <span>${lang === 'en' ? 'Surplus saved is locked into your savings balance.' : 'เงินเหลือที่เก็บเข้าเงินออมจะถูกสะสมเป็นเงินเก็บถาวร'}</span>
+            <span>${lang === 'en' ? 'Deposit anytime or withdraw back to daily budget.' : 'ฝากเพิ่มได้ทุกเมื่อ หรือถอนคืนเข้าโควตากินใช้ได้'}</span>
           </span>
-          <button 
-            type="button" 
-            onclick="App.openSurplusSettlementModal()" 
-            class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer shrink-0 ml-2"
-          >
-            ${lang === 'en' ? 'Adjust / Reset' : 'ปรับสัดส่วน/รีเซ็ต'}
-          </button>
+          <div class="flex items-center gap-2 shrink-0">
+            <button 
+              type="button" 
+              onclick="App.openSavingsWithdrawModal()" 
+              class="text-rose-600 hover:text-rose-800 font-bold hover:underline cursor-pointer"
+            >
+              ${lang === 'en' ? 'Withdraw' : 'ถอนเงินออม'}
+            </button>
+            <span class="text-slate-300">·</span>
+            <button 
+              type="button" 
+              onclick="App.openSurplusSettlementModal()" 
+              class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
+            >
+              ${lang === 'en' ? 'Surplus' : 'จัดการยอดยก'}
+            </button>
+          </div>
         </div>
       </div>
     `;
+  },
+
+  // --- Savings Instant Deposit & Withdrawal & Pockets Handlers ---
+  openSavingsDepositModal(pocketId = null) {
+    const modal = document.getElementById('savings-deposit-modal');
+    if (!modal) return;
+
+    const pocketSelect = document.getElementById('savings-deposit-pocket');
+    const dateInput = document.getElementById('savings-deposit-date');
+    const amountInput = document.getElementById('savings-deposit-amount');
+    const noteInput = document.getElementById('savings-deposit-note');
+    const deductToggle = document.getElementById('savings-deposit-deduct-toggle');
+    const lang = I18n.getLanguage();
+
+    const pockets = StorageManager.getSavingsPockets();
+    if (pocketSelect) {
+      pocketSelect.innerHTML = pockets.map(p => {
+        const pName = (lang === 'en' && p.nameEn) ? p.nameEn : p.name;
+        return `<option value="${p.id}" ${pocketId === p.id ? 'selected' : ''}>${p.emoji || '💰'} ${pName}</option>`;
+      }).join('');
+    }
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    if (dateInput) {
+      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+    if (amountInput) {
+      if (!amountInput.value) amountInput.value = '1000';
+      setTimeout(() => amountInput.focus(), 100);
+    }
+    if (noteInput) noteInput.value = '';
+    if (deductToggle) deductToggle.checked = true;
+
+    modal.classList.add('show');
+  },
+
+  closeSavingsDepositModal() {
+    const modal = document.getElementById('savings-deposit-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  setSavingsDepositPreset(amt) {
+    const amountInput = document.getElementById('savings-deposit-amount');
+    if (amountInput) {
+      amountInput.value = amt;
+      amountInput.focus();
+    }
+  },
+
+  handleSaveSavingsDeposit() {
+    const amountInput = document.getElementById('savings-deposit-amount');
+    const pocketSelect = document.getElementById('savings-deposit-pocket');
+    const dateInput = document.getElementById('savings-deposit-date');
+    const noteInput = document.getElementById('savings-deposit-note');
+    const deductToggle = document.getElementById('savings-deposit-deduct-toggle');
+    const lang = I18n.getLanguage();
+
+    const amt = Math.max(0, Math.round(((parseFloat(amountInput?.value) || 0) + Number.EPSILON) * 100) / 100);
+    if (amt <= 0) {
+      alert(lang === 'en' ? 'Please enter a valid deposit amount' : 'กรุณาระบุจำนวนเงินที่ต้องการออม');
+      return;
+    }
+
+    const pocketId = pocketSelect?.value || 'pocket_general';
+    const date = dateInput?.value || new Date().toISOString().slice(0, 10);
+    const note = noteInput?.value || '';
+    const deductFromDailyBudget = deductToggle ? deductToggle.checked : true;
+
+    StorageManager.addSavingsDeposit({
+      type: 'deposit',
+      amount: amt,
+      pocketId,
+      date,
+      note,
+      deductFromDailyBudget
+    });
+
+    this.closeSavingsDepositModal();
+    this.renderTab1DailyBudgetCard();
+    this.renderTab1SavingsCard();
+    this.renderTab1OverviewHero();
+
+    const pocket = StorageManager.getSavingsPocketById(pocketId);
+    const pName = (lang === 'en' && pocket.nameEn) ? pocket.nameEn : pocket.name;
+    this.showToast(lang === 'en' ? `💰 Saved ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} into ${pName}!` : `💰 ฝากเงิน ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} เข้า ${pocket.emoji} ${pName} เรียบร้อย!`);
+  },
+
+  openSavingsWithdrawModal(pocketId = null) {
+    const modal = document.getElementById('savings-withdraw-modal');
+    if (!modal) return;
+
+    const pocketSelect = document.getElementById('savings-withdraw-pocket');
+    const dateInput = document.getElementById('savings-withdraw-date');
+    const amountInput = document.getElementById('savings-withdraw-amount');
+    const noteInput = document.getElementById('savings-withdraw-note');
+    const creditToggle = document.getElementById('savings-withdraw-credit-toggle');
+    const lang = I18n.getLanguage();
+
+    const pockets = StorageManager.getSavingsPockets();
+    const accData = StorageManager.getTotalAccumulatedSavings();
+
+    if (pocketSelect) {
+      pocketSelect.innerHTML = pockets.map(p => {
+        const pName = (lang === 'en' && p.nameEn) ? p.nameEn : p.name;
+        const bal = accData.pocketBalances[p.id] || 0;
+        return `<option value="${p.id}" ${pocketId === p.id ? 'selected' : ''}>${p.emoji || '💰'} ${pName} (คงเหลือ ฿${bal.toLocaleString('th-TH', { minimumFractionDigits: 2 })})</option>`;
+      }).join('');
+    }
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    if (dateInput) {
+      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+    if (amountInput) {
+      amountInput.value = '';
+      setTimeout(() => amountInput.focus(), 100);
+    }
+    if (noteInput) noteInput.value = '';
+    if (creditToggle) creditToggle.checked = true;
+
+    modal.classList.add('show');
+  },
+
+  closeSavingsWithdrawModal() {
+    const modal = document.getElementById('savings-withdraw-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  handleSaveSavingsWithdraw() {
+    const amountInput = document.getElementById('savings-withdraw-amount');
+    const pocketSelect = document.getElementById('savings-withdraw-pocket');
+    const dateInput = document.getElementById('savings-withdraw-date');
+    const noteInput = document.getElementById('savings-withdraw-note');
+    const creditToggle = document.getElementById('savings-withdraw-credit-toggle');
+    const lang = I18n.getLanguage();
+
+    const amt = Math.max(0, Math.round(((parseFloat(amountInput?.value) || 0) + Number.EPSILON) * 100) / 100);
+    if (amt <= 0) {
+      alert(lang === 'en' ? 'Please enter a valid withdrawal amount' : 'กรุณาระบุจำนวนเงินที่ต้องการถอน');
+      return;
+    }
+
+    const pocketId = pocketSelect?.value || 'pocket_general';
+    const date = dateInput?.value || new Date().toISOString().slice(0, 10);
+    const note = noteInput?.value || '';
+    const deductFromDailyBudget = creditToggle ? creditToggle.checked : true;
+
+    StorageManager.addSavingsDeposit({
+      type: 'withdraw',
+      amount: amt,
+      pocketId,
+      date,
+      note,
+      deductFromDailyBudget
+    });
+
+    this.closeSavingsWithdrawModal();
+    this.renderTab1DailyBudgetCard();
+    this.renderTab1SavingsCard();
+    this.renderTab1OverviewHero();
+
+    const pocket = StorageManager.getSavingsPocketById(pocketId);
+    const pName = (lang === 'en' && pocket.nameEn) ? pocket.nameEn : pocket.name;
+    this.showToast(lang === 'en' ? `💸 Withdrew ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} from ${pName}` : `💸 ถอนเงิน ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} จาก ${pocket.emoji} ${pName} แล้ว`);
+  },
+
+  openSavingsPocketModal() {
+    const modal = document.getElementById('savings-pocket-modal');
+    if (!modal) return;
+
+    const nameInput = document.getElementById('savings-pocket-name');
+    const targetInput = document.getElementById('savings-pocket-target');
+    const emojiInput = document.getElementById('savings-pocket-emoji');
+
+    if (nameInput) nameInput.value = '';
+    if (targetInput) targetInput.value = '';
+    if (emojiInput) emojiInput.value = '🎯';
+
+    // reset active emoji border
+    const emojiBtns = document.querySelectorAll('.pocket-emoji-btn');
+    emojiBtns.forEach((btn, idx) => {
+      if (idx === 0) {
+        btn.className = 'pocket-emoji-btn w-8 h-8 rounded-xl bg-indigo-50 border-2 border-indigo-600 text-sm flex items-center justify-center';
+      } else {
+        btn.className = 'pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100';
+      }
+    });
+
+    modal.classList.add('show');
+    if (nameInput) setTimeout(() => nameInput.focus(), 100);
+  },
+
+  closeSavingsPocketModal() {
+    const modal = document.getElementById('savings-pocket-modal');
+    if (modal) modal.classList.remove('show');
+  },
+
+  selectPocketEmoji(emoji, btn) {
+    const emojiInput = document.getElementById('savings-pocket-emoji');
+    if (emojiInput) emojiInput.value = emoji;
+
+    const emojiBtns = document.querySelectorAll('.pocket-emoji-btn');
+    emojiBtns.forEach(b => {
+      b.className = 'pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100';
+    });
+    if (btn) {
+      btn.className = 'pocket-emoji-btn w-8 h-8 rounded-xl bg-indigo-50 border-2 border-indigo-600 text-sm flex items-center justify-center';
+    }
+  },
+
+  handleSaveSavingsPocket() {
+    const nameInput = document.getElementById('savings-pocket-name');
+    const targetInput = document.getElementById('savings-pocket-target');
+    const emojiInput = document.getElementById('savings-pocket-emoji');
+    const lang = I18n.getLanguage();
+
+    const name = (nameInput?.value || '').trim();
+    if (!name) {
+      alert(lang === 'en' ? 'Please enter a pocket name' : 'กรุณาระบุชื่อกระปุกเงินออม');
+      return;
+    }
+
+    const emoji = emojiInput?.value || '🎯';
+    const targetAmount = Math.max(0, Math.round(((parseFloat(targetInput?.value) || 0) + Number.EPSILON) * 100) / 100);
+
+    StorageManager.addSavingsPocket({
+      name,
+      emoji,
+      targetAmount
+    });
+
+    this.closeSavingsPocketModal();
+    this.renderTab1SavingsCard();
+
+    this.showToast(lang === 'en' ? `🎯 Created pocket "${name}"!` : `🎯 สร้างกระปุก "${emoji} ${name}" เรียบร้อยแล้ว!`);
+  },
+
+  handleDeleteSavingsPocket(id) {
+    const lang = I18n.getLanguage();
+    const pocket = StorageManager.getSavingsPocketById(id);
+    const pName = (lang === 'en' && pocket.nameEn) ? pocket.nameEn : pocket.name;
+
+    if (confirm(lang === 'en' ? `Are you sure you want to delete pocket "${pName}"?` : `คุณแน่ใจหรือไม่ว่าต้องการลบกระปุก "${pName}"?`)) {
+      StorageManager.deleteSavingsPocket(id);
+      this.renderTab1SavingsCard();
+      this.showToast(lang === 'en' ? `Deleted pocket "${pName}"` : `ลบกระปุก "${pName}" แล้ว`);
+    }
+  },
+
+  handleDeleteSavingsDeposit(id) {
+    const lang = I18n.getLanguage();
+    if (confirm(lang === 'en' ? 'Delete this savings record?' : 'ลบรายการบันทึกเงินออมนี้หรือไม่?')) {
+      StorageManager.deleteSavingsDeposit(id);
+      this.renderTab1DailyBudgetCard();
+      this.renderTab1SavingsCard();
+      this.renderTab1OverviewHero();
+      this.showToast(lang === 'en' ? 'Deleted savings record' : 'ลบรายการบันทึกเงินออมแล้ว');
+    }
   },
 
   // --- Monthly Savings Goal Manager ---

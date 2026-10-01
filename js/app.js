@@ -3694,7 +3694,35 @@ const App = {
       if (t.type === 'income') income += t.amount;
       else expense += t.amount;
     });
-    const net = income - expense;
+
+    // Check Previous Cycle Surplus & Settlement Rollover
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    let rolloverSurplus = 0;
+    if (prevSurplusData.hasSurplus && prevSurplusData.settlement) {
+      if (prevSurplusData.settlement.action === 'rollover' || prevSurplusData.settlement.action === 'split') {
+        rolloverSurplus = Number(prevSurplusData.settlement.rolloverAmount) || 0;
+      }
+    }
+
+    const effectiveIncome = income + rolloverSurplus;
+
+    // Filter manual savings deposits in the current pay cycle that deduct from daily budget
+    const allDeposits = StorageManager.getSavingsDeposits();
+    let manualSavingsDeductedInCycle = 0;
+    allDeposits.forEach(d => {
+      const dStr = StorageManager.normalizeDateString(d.date);
+      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate && d.deductFromDailyBudget) {
+        const amt = Number(d.amount) || 0;
+        if (d.type === 'deposit') {
+          manualSavingsDeductedInCycle += amt;
+        } else if (d.type === 'withdraw') {
+          manualSavingsDeductedInCycle -= amt;
+        }
+      }
+    });
+
+    // Available Spending Balance = (Income + Rollover) - Expense - Savings Deposits
+    const netAvailable = Math.round((effectiveIncome - expense - manualSavingsDeductedInCycle + Number.EPSILON) * 100) / 100;
     const lang = I18n.getLanguage();
 
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -3703,6 +3731,10 @@ const App = {
     const periodLabel = (payCycleSetting.type === 'calendar')
       ? ((lang === 'en') ? `${enMonths[currentMonth]} ${currentYear}` : `${thaiMonths[currentMonth]} ${currentYear + 543}`)
       : ((lang === 'en') ? cycleRange.labelEn : cycleRange.labelTh);
+
+    const balanceTitle = manualSavingsDeductedInCycle > 0
+      ? (lang === 'en' ? 'Available Balance (After Savings)' : 'คงเหลือพร้อมใช้รอบนี้ (หลังหักเงินออม)')
+      : (lang === 'en' ? 'Net Balance This Period' : 'คงเหลือสุทธิรอบนี้');
 
     heroEl.innerHTML = `
       <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800 space-y-3.5">
@@ -3717,37 +3749,50 @@ const App = {
               <span>📅</span> <span>${periodLabel}</span>
             </span>
           </div>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold ${net >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-            ${net >= 0 ? (lang === 'en' ? '🟢 Healthy' : '🟢 สุขภาพการเงินดี') : (lang === 'en' ? '🔴 Deficit' : '🔴 ยอดติดลบ')}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold ${netAvailable >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+            ${netAvailable >= 0 ? (lang === 'en' ? '🟢 Healthy' : '🟢 สุขภาพการเงินดี') : (lang === 'en' ? '🔴 Deficit' : '🔴 ยอดติดลบ')}
           </span>
         </div>
 
-        <!-- Middle Section: Big Net Balance -->
+        <!-- Middle Section: Big Available / Net Balance -->
         <div class="relative z-10">
-          <span class="text-[11px] font-semibold text-slate-300 block">${lang === 'en' ? 'Net Balance This Period' : 'คงเหลือสุทธิรอบนี้'}</span>
+          <span class="text-[11px] font-semibold text-slate-300 block">${balanceTitle}</span>
           <div class="mt-0.5 flex items-baseline gap-2">
-            <span class="text-3xl sm:text-4xl font-black tracking-tight num-font ${net >= 0 ? 'text-white' : 'text-rose-300'}">
-              ${net < 0 ? '-' : ''}฿${Math.abs(net).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <span class="text-3xl sm:text-4xl font-black tracking-tight num-font ${netAvailable >= 0 ? 'text-white' : 'text-rose-300'}">
+              ${netAvailable < 0 ? '-' : ''}฿${Math.abs(netAvailable).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
 
-        <!-- Bottom Section: Income / Expense Capsule -->
-        <div class="relative z-10 grid grid-cols-2 gap-2 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/10">
-          <div class="px-2 py-0.5">
-            <div class="flex items-center gap-1 text-[11px] text-emerald-300 font-bold">
+        <!-- Bottom Section: 3 Columns Capsule (Income / Expense / Savings) -->
+        <div class="relative z-10 grid grid-cols-3 gap-1 sm:gap-2 bg-white/10 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-white/10">
+          <!-- Col 1: Income -->
+          <div class="px-1.5 sm:px-2 py-0.5 min-w-0">
+            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-300 font-bold truncate">
               <span>↑</span> <span>${lang === 'en' ? 'Income' : 'รายรับ'}</span>
             </div>
-            <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
-              ฿${income.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <p class="text-xs sm:text-base font-extrabold text-white num-font mt-0.5 truncate">
+              ฿${effectiveIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
-          <div class="px-2 py-0.5 border-l border-white/15">
-            <div class="flex items-center gap-1 text-[11px] text-rose-300 font-bold">
+
+          <!-- Col 2: Expense -->
+          <div class="px-1.5 sm:px-2 py-0.5 border-l border-white/15 min-w-0">
+            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] text-rose-300 font-bold truncate">
               <span>↓</span> <span>${lang === 'en' ? 'Expense' : 'รายจ่าย'}</span>
             </div>
-            <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
-              ฿${expense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <p class="text-xs sm:text-base font-extrabold text-white num-font mt-0.5 truncate">
+              ฿${expense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          </div>
+
+          <!-- Col 3: Savings -->
+          <div class="px-1.5 sm:px-2 py-0.5 border-l border-white/15 min-w-0">
+            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] text-indigo-300 font-bold truncate">
+              <span>💰</span> <span>${lang === 'en' ? 'Savings' : 'เงินออม'}</span>
+            </div>
+            <p class="text-xs sm:text-base font-extrabold text-white num-font mt-0.5 truncate">
+              ฿${manualSavingsDeductedInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>

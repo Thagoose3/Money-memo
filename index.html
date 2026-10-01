@@ -2535,7 +2535,37 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: 💰 ฝากเงินออมทันที (Instant Savings Deposit Modal) -->
+  <!-- MODAL: 📋 ประวัติการออมเงิน (Savings History Modal) -->
+  <!-- ========================================== -->
+  <div id="savings-history-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-base">📋</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900" data-i18n="savings_history_modal_title">ประวัติการออมเงิน (Savings History)</h3>
+            <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="savings_history_modal_desc">รายการฝาก-ถอน และยกเงินเหลือเข้าออมทั้งหมด</p>
+          </div>
+        </div>
+        <button type="button" onclick="App.closeSavingsHistoryModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1.5 cursor-pointer">✕</button>
+      </div>
+
+      <!-- History List Items Scroll Container -->
+      <div id="savings-history-items-container" class="flex-1 overflow-y-auto space-y-2 pr-0.5 max-h-[50vh]">
+        <!-- Injected by App.renderSavingsHistoryModal() -->
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100 shrink-0">
+        <span id="savings-history-count-badge" class="text-[11px] text-slate-400 font-medium"></span>
+        <button type="button" onclick="App.closeSavingsHistoryModal()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 💰 ฝากเงินออม (Savings Deposit Modal) -->
   <!-- ========================================== -->
   <div id="savings-deposit-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4 max-h-[90vh] overflow-y-auto">
@@ -2543,8 +2573,8 @@
         <div class="flex items-center gap-2">
           <span class="w-8 h-8 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base">💰</span>
           <div>
-            <h3 class="text-sm font-bold text-slate-900" data-i18n="savings_deposit_modal_title">ฝากเงินออมทันที (Deposit Savings)</h3>
-            <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="savings_deposit_modal_desc">แยกเงินเก็บเข้าพอร์ตออมทันทีโดยไม่ต้องรอสิ้นเดือน</p>
+            <h3 class="text-sm font-bold text-slate-900" data-i18n="savings_deposit_modal_title">ฝากเงินออม (Deposit Savings)</h3>
+            <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="savings_deposit_modal_desc">หักออกจากยอดคงเหลือสุทธิและงบกินใช้เข้าสู่เงินออมสะสม</p>
           </div>
         </div>
         <button type="button" onclick="App.closeSavingsDepositModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1.5 cursor-pointer">✕</button>
@@ -2576,28 +2606,17 @@
           <button type="button" onclick="App.setSavingsDepositPreset(5000)" class="px-2.5 py-1 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer">+฿5,000</button>
         </div>
 
-        <!-- Pocket Selector -->
-        <div>
-          <div class="flex items-center justify-between mb-1">
-            <label class="block text-[11px] font-semibold text-slate-600 uppercase">เลือกกระปุก / เป้าหมายเงินออม</label>
-            <button type="button" onclick="App.openSavingsPocketModal()" class="text-[10px] text-indigo-600 hover:underline font-bold cursor-pointer">+ เพิ่มกระปุกใหม่</button>
-          </div>
-          <select id="savings-deposit-pocket" class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none">
-            <!-- Dynamically populated -->
-          </select>
-        </div>
-
-        <!-- Deduction Toggle -->
+        <!-- Deduction Notice Box -->
         <div class="p-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl space-y-1">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
               <span>⚡</span>
-              <span>หักออกจากโควตากินใช้วันนี้</span>
+              <span>หักออกจากยอดคงเหลือสุทธิและงบกินใช้ทันที</span>
             </span>
             <input type="checkbox" id="savings-deposit-deduct-toggle" checked class="w-4 h-4 accent-emerald-600 rounded cursor-pointer" />
           </div>
           <p class="text-[10px] text-emerald-800/80 leading-relaxed">
-            หากเลือก ระบบจะปรับลดงบกินใช้ของงวดนี้ลงทันที เสมือนแยกเงินสดไปเก็บเพื่อสร้างวินัยการออม
+            ระบบจะปรับลดยอดคงเหลือและงบกินใช้ของงวดนี้ลงทันที เสมือนแยกเงินสดไปเก็บเข้าบัญชีออม
           </p>
         </div>
 
@@ -2609,7 +2628,7 @@
           </div>
           <div>
             <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">โน้ตช่วยจำ (ถ้ามี)</label>
-            <input type="text" id="savings-deposit-note" placeholder="เช่น เงินคืน, โบนัสพิเศษ" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs" />
+            <input type="text" id="savings-deposit-note" placeholder="เช่น เงินออมประจำเดือน, โบนัส" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs" />
           </div>
         </div>
 
@@ -2636,7 +2655,7 @@
           <span class="w-8 h-8 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-base">💸</span>
           <div>
             <h3 class="text-sm font-bold text-slate-900" data-i18n="savings_withdraw_modal_title">ถอนเงินออม / ดึงเงินเก็บมาใช้</h3>
-            <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="savings_withdraw_modal_desc">ดึงเงินจากพอร์ตออมเพื่อใช้จ่ายฉุกเฉินหรือโอนคืนงบกินใช้</p>
+            <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="savings_withdraw_modal_desc">ดึงเงินจากเงินออมสะสมเพื่อใช้จ่ายหรือโอนคืนคงเหลือสุทธิ</p>
           </div>
         </div>
         <button type="button" onclick="App.closeSavingsWithdrawModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1.5 cursor-pointer">✕</button>
@@ -2659,25 +2678,17 @@
           </div>
         </div>
 
-        <!-- Pocket Selector -->
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">ถอนจากกระปุก / เป้าหมาย</label>
-          <select id="savings-withdraw-pocket" class="w-full px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none">
-            <!-- Dynamically populated -->
-          </select>
-        </div>
-
         <!-- Credit Back Toggle -->
         <div class="p-3 bg-rose-50/70 border border-rose-100 rounded-2xl space-y-1">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-rose-950 flex items-center gap-1.5">
               <span>🔄</span>
-              <span>โอนคืนเข้าโควตากินใช้วันนี้</span>
+              <span>โอนคืนเข้ายอดคงเหลือสุทธิและงบกินใช้วันนี้</span>
             </span>
             <input type="checkbox" id="savings-withdraw-credit-toggle" checked class="w-4 h-4 accent-rose-600 rounded cursor-pointer" />
           </div>
           <p class="text-[10px] text-rose-800/80 leading-relaxed">
-            หากเลือก ยอดเงินนี้จะถูกนำไปเพิ่มเป็นงบกินใช้วันนี้ของงวดปัจจุบันทันที
+            หากเลือก ยอดเงินนี้จะถูกนำไปเพิ่มเป็นยอดคงเหลือและงบกินใช้วันนี้ของงวดปัจจุบันทันที
           </p>
         </div>
 
@@ -2689,7 +2700,7 @@
           </div>
           <div>
             <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">เหตุผลที่ถอน (โน้ต)</label>
-            <input type="text" id="savings-withdraw-note" placeholder="เช่น ค่าซ่อมรถ, จ่ายบิลด่วน" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs" />
+            <input type="text" id="savings-withdraw-note" placeholder="เช่น ถอนฉุกเฉิน, ซื้อของจำเป็น" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs" />
           </div>
         </div>
 
@@ -2700,78 +2711,6 @@
           <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-2xl shadow-xs transition-all cursor-pointer flex items-center gap-1 active:scale-95">
             <span>✓</span>
             <span>ยืนยันการถอนเงินออม</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- MODAL: 🎯 สร้างกระปุกเงินออมใหม่ (New Savings Pocket Modal) -->
-  <!-- ========================================== -->
-  <div id="savings-pocket-modal" class="modal-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 animate-modal space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
-        <div class="flex items-center gap-2">
-          <span class="w-8 h-8 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-base">🎯</span>
-          <div>
-            <h3 class="text-sm font-bold text-slate-900" data-i18n="savings_pocket_modal_title">สร้างกระปุกเงินออมใหม่</h3>
-            <p class="text-[10px] text-slate-400 mt-0.5" data-i18n="savings_pocket_modal_desc">แยกเป้าหมายเงินออมตามความฝัน</p>
-          </div>
-        </div>
-        <button type="button" onclick="App.closeSavingsPocketModal()" class="text-slate-400 hover:text-slate-600 text-sm p-1.5 cursor-pointer">✕</button>
-      </div>
-
-      <form id="savings-pocket-form" onsubmit="event.preventDefault(); App.handleSaveSavingsPocket();" class="space-y-3 text-xs">
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">ชื่อกระปุกเงินออม *</label>
-          <input 
-            type="text" 
-            id="savings-pocket-name" 
-            class="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-900"
-            placeholder="เช่น ซื้อ iPhone, กองทุนแต่งงาน"
-            required 
-          />
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">ไอคอนอิโมจิ (Emoji)</label>
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <input type="hidden" id="savings-pocket-emoji" value="🎯" />
-            <button type="button" onclick="App.selectPocketEmoji('🎯', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-indigo-50 border-2 border-indigo-600 text-sm flex items-center justify-center">🎯</button>
-            <button type="button" onclick="App.selectPocketEmoji('💰', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">💰</button>
-            <button type="button" onclick="App.selectPocketEmoji('🏖️', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">🏖️</button>
-            <button type="button" onclick="App.selectPocketEmoji('🛡️', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">🛡️</button>
-            <button type="button" onclick="App.selectPocketEmoji('🎁', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">🎁</button>
-            <button type="button" onclick="App.selectPocketEmoji('🏠', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">🏠</button>
-            <button type="button" onclick="App.selectPocketEmoji('🚗', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">🚗</button>
-            <button type="button" onclick="App.selectPocketEmoji('📱', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">📱</button>
-            <button type="button" onclick="App.selectPocketEmoji('🎓', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">🎓</button>
-            <button type="button" onclick="App.selectPocketEmoji('✈️', this)" class="pocket-emoji-btn w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 text-sm flex items-center justify-center hover:bg-slate-100">✈️</button>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1">เป้าหมายจำนวนเงิน (บาท) - ไม่บังคับ</label>
-          <div class="relative">
-            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">฿</span>
-            <input 
-              type="number" 
-              id="savings-pocket-target" 
-              min="0" 
-              step="any" 
-              class="w-full pl-8 pr-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-900 num-font"
-              placeholder="0.00 (ไม่ระบุก็ได้)"
-            />
-          </div>
-        </div>
-
-        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-          <button type="button" onclick="App.closeSavingsPocketModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
-            ยกเลิก
-          </button>
-          <button type="submit" class="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-2xl shadow-xs transition-all cursor-pointer">
-            สร้างกระปุกออม
           </button>
         </div>
       </form>
@@ -2952,10 +2891,10 @@
   </div>
 
   <!-- Scripts (Deferred execution in strict order) -->
-  <script src="js/i18n.js?v=4.0.0" defer></script>
-  <script src="js/storage.js?v=4.0.0" defer></script>
-  <script src="js/firebase-client.js?v=4.0.0" defer></script>
-  <script src="js/budget-simulator.js?v=4.0.0" defer></script>
-  <script src="js/app.js?v=4.0.0" defer></script>
+  <script src="js/i18n.js?v=4.1.0" defer></script>
+  <script src="js/storage.js?v=4.1.0" defer></script>
+  <script src="js/firebase-client.js?v=4.1.0" defer></script>
+  <script src="js/budget-simulator.js?v=4.1.0" defer></script>
+  <script src="js/app.js?v=4.1.0" defer></script>
 </body>
 </html>

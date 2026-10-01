@@ -703,6 +703,33 @@ const StorageManager = {
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(all));
+
+      // Also sync surplus savings directly into savingsDeposits ledger
+      const savingsAmt = Number(settlement.savingsAmount) || 0;
+      let deposits = this.getSavingsDeposits();
+      const existingIdx = deposits.findIndex(d => d.cycleStartDate === cycleStartDate && d.isSurplus);
+
+      if (savingsAmt > 0) {
+        const surplusRecord = {
+          id: existingIdx >= 0 ? deposits[existingIdx].id : ('sav_surplus_' + cycleStartDate.replace(/-/g, '')),
+          type: 'deposit',
+          amount: savingsAmt,
+          date: cycleStartDate,
+          note: 'ยกเงินเหลือจากรอบก่อนหน้าเข้าเงินออม',
+          isSurplus: true,
+          cycleStartDate: cycleStartDate,
+          deductFromDailyBudget: false,
+          createdAt: existingIdx >= 0 ? deposits[existingIdx].createdAt : new Date().toISOString()
+        };
+        if (existingIdx >= 0) {
+          deposits[existingIdx] = surplusRecord;
+        } else {
+          deposits.unshift(surplusRecord);
+        }
+      } else if (existingIdx >= 0) {
+        deposits.splice(existingIdx, 1);
+      }
+      this.saveSavingsDeposits(deposits);
     } catch (e) {
       console.error('Error saving surplus settlement:', e);
     }
@@ -714,6 +741,10 @@ const StorageManager = {
       const all = this.getSurplusSettlements();
       delete all[cycleStartDate];
       localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(all));
+
+      let deposits = this.getSavingsDeposits();
+      deposits = deposits.filter(d => !(d.cycleStartDate === cycleStartDate && d.isSurplus));
+      this.saveSavingsDeposits(deposits);
     } catch (e) {
       console.error('Error removing surplus settlement:', e);
     }
@@ -762,67 +793,8 @@ const StorageManager = {
     };
   },
 
-  // --- กระปุกเงินออม & รายการฝากเงินออมทันที (Savings Pockets & Ad-hoc Deposits) ---
-  _savingsPockets: null,
+  // --- เงินออมสะสม & รายการฝาก/ถอนเงินออม (Accumulated Savings & Deposits Ledger) ---
   _savingsDeposits: null,
-
-  getSavingsPockets() {
-    if (this._savingsPockets) return this._savingsPockets;
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.SAVINGS_POCKETS);
-      if (data) {
-        this._savingsPockets = JSON.parse(data);
-        return this._savingsPockets;
-      }
-      this._savingsPockets = JSON.parse(JSON.stringify(DEFAULT_SAVINGS_POCKETS));
-      this.saveSavingsPockets(this._savingsPockets);
-      return this._savingsPockets;
-    } catch (e) {
-      this._savingsPockets = JSON.parse(JSON.stringify(DEFAULT_SAVINGS_POCKETS));
-      return this._savingsPockets;
-    }
-  },
-
-  saveSavingsPockets(pockets) {
-    this._savingsPockets = pockets;
-    try {
-      localStorage.setItem(STORAGE_KEYS.SAVINGS_POCKETS, JSON.stringify(pockets));
-    } catch (e) {
-      console.error('Error saving savings pockets:', e);
-    }
-  },
-
-  addSavingsPocket(pocket) {
-    const pockets = this.getSavingsPockets();
-    const newPocket = {
-      id: 'pocket_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      name: (pocket.name || '').trim() || 'กระปุกใหม่',
-      nameEn: (pocket.nameEn || '').trim() || pocket.name || 'New Pocket',
-      emoji: pocket.emoji || '🎯',
-      targetAmount: Math.max(0, parseFloat(pocket.targetAmount) || 0),
-      createdAt: new Date().toISOString()
-    };
-    pockets.push(newPocket);
-    this.saveSavingsPockets(pockets);
-    return newPocket;
-  },
-
-  deleteSavingsPocket(id) {
-    let pockets = this.getSavingsPockets();
-    pockets = pockets.filter(p => p.id !== id);
-    this.saveSavingsPockets(pockets);
-  },
-
-  getSavingsPocketById(id) {
-    const pockets = this.getSavingsPockets();
-    return pockets.find(p => p.id === id) || {
-      id: 'pocket_general',
-      name: 'เงินออมทั่วไป',
-      nameEn: 'General Savings',
-      emoji: '💰',
-      targetAmount: 0
-    };
-  },
 
   getSavingsDeposits() {
     if (this._savingsDeposits) return this._savingsDeposits;
@@ -861,10 +833,11 @@ const StorageManager = {
       id: 'sav_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       amount: amt,
       type: type, // 'deposit' | 'withdraw'
-      pocketId: data.pocketId || 'pocket_general',
       date: dateStr,
-      note: (data.note || '').trim(),
+      note: (data.note || (type === 'withdraw' ? 'ถอนเงินออม' : 'ฝากเงินออม')).trim(),
       deductFromDailyBudget: data.deductFromDailyBudget !== undefined ? Boolean(data.deductFromDailyBudget) : true,
+      isSurplus: Boolean(data.isSurplus),
+      cycleStartDate: data.cycleStartDate || null,
       createdAt: new Date().toISOString()
     };
 
@@ -880,42 +853,23 @@ const StorageManager = {
   },
 
   getTotalAccumulatedSavings() {
-    const settlements = this.getSurplusSettlements();
-    let totalSurplusSavings = 0;
-    Object.values(settlements).forEach(s => {
-      totalSurplusSavings += Number(s.savingsAmount) || 0;
-    });
-
-    const currentGoal = this.getMonthlySavingsGoal();
     const deposits = this.getSavingsDeposits();
-
-    let totalManualDeposits = 0;
-    const pocketBalances = {};
+    let totalDeposits = 0;
 
     deposits.forEach(d => {
       const amt = Number(d.amount) || 0;
-      const pocketId = d.pocketId || 'pocket_general';
-      if (!pocketBalances[pocketId]) pocketBalances[pocketId] = 0;
-
-      if (d.type === 'deposit') {
-        totalManualDeposits += amt;
-        pocketBalances[pocketId] += amt;
-      } else if (d.type === 'withdraw') {
-        totalManualDeposits -= amt;
-        pocketBalances[pocketId] -= amt;
+      if (d.type === 'withdraw') {
+        totalDeposits -= amt;
+      } else {
+        totalDeposits += amt;
       }
     });
 
-    totalSurplusSavings = Math.round((totalSurplusSavings + Number.EPSILON) * 100) / 100;
-    totalManualDeposits = Math.round((totalManualDeposits + Number.EPSILON) * 100) / 100;
-    const totalAccumulated = Math.max(0, Math.round((totalSurplusSavings + totalManualDeposits + Number.EPSILON) * 100) / 100);
+    const totalAccumulated = Math.max(0, Math.round((totalDeposits + Number.EPSILON) * 100) / 100);
 
     return {
-      totalSurplusSavings,
-      totalManualDeposits,
-      currentGoal: Math.round((currentGoal + Number.EPSILON) * 100) / 100,
       totalAccumulated,
-      pocketBalances
+      depositsCount: deposits.length
     };
   },
 
@@ -1132,7 +1086,6 @@ const StorageManager = {
       payCycleSetting: this.getPayCycleSetting(),
       savingsGoal: this.getMonthlySavingsGoal(),
       surplusSettlements: this.getSurplusSettlements(),
-      savingsPockets: this.getSavingsPockets(),
       savingsDeposits: this.getSavingsDeposits()
     };
 
@@ -1166,7 +1119,6 @@ const StorageManager = {
         if (data.surplusSettlements && typeof data.surplusSettlements === 'object') {
           localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(data.surplusSettlements));
         }
-        if (Array.isArray(data.savingsPockets)) this.saveSavingsPockets(data.savingsPockets);
         if (Array.isArray(data.savingsDeposits)) this.saveSavingsDeposits(data.savingsDeposits);
       }
       return { success: true };

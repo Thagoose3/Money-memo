@@ -233,10 +233,6 @@ const App = {
     this.closeQuickFixedModal();
     this.closeExportModal();
     if (typeof this.closeSavingsGoalModal === 'function') this.closeSavingsGoalModal();
-    if (typeof this.closeSurplusSettlementModal === 'function') this.closeSurplusSettlementModal();
-    if (typeof this.closeSavingsHistoryModal === 'function') this.closeSavingsHistoryModal();
-    if (typeof this.closeSavingsDepositModal === 'function') this.closeSavingsDepositModal();
-    if (typeof this.closeSavingsWithdrawModal === 'function') this.closeSavingsWithdrawModal();
     
     // Generic modal class removal
     document.querySelectorAll('.modal.show, .modal.active').forEach(m => m.classList.remove('show', 'active'));
@@ -442,23 +438,16 @@ const App = {
     this.currentPayCyclePreset = preset;
     const payCycleSetting = StorageManager.getPayCycleSetting();
     payCycleSetting.type = preset;
-    if (preset === 'end_of_month') payCycleSetting.customDay = 31;
+    if (preset === 'day_25') payCycleSetting.customDay = 25;
+    else if (preset === 'day_28') payCycleSetting.customDay = 28;
+    else if (preset === 'end_of_month') payCycleSetting.customDay = 31;
     else if (preset === 'calendar') payCycleSetting.customDay = 1;
-    else if (preset === 'custom') {
-      if (!payCycleSetting.customDay) payCycleSetting.customDay = 15;
-    }
     
     StorageManager.savePayCycleSetting(payCycleSetting);
 
     this.updateCustomDateRangeFromSelectedDate();
     this.renderMonthSelector();
     this.renderDashboard();
-    this.renderTab1OverviewHero();
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
-    this.renderHistoryTab();
-    this.renderSettingsPayCycleSection();
-    this.renderSettingsSurplusSection();
   },
 
   navigateDashboardMonth(direction) {
@@ -472,14 +461,12 @@ const App = {
   },
 
   shiftCustomDateRange(direction) {
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const cycle = StorageManager.getCycleDateRange(this.selectedDate, payCycleSetting);
-    if (direction < 0) {
-      this.selectedDate = new Date(cycle.sDate.getTime() - 86400000);
-    } else {
-      this.selectedDate = new Date(cycle.eDate.getTime() + 86400000);
-    }
+    // Shifting month always uses safe 1st-of-month math to avoid 31st overflow:
+    const curYear = this.selectedDate.getFullYear();
+    const curMonth = this.selectedDate.getMonth();
+    this.selectedDate = new Date(curYear, curMonth + direction, 1);
     this.updateCustomDateRangeFromSelectedDate();
+
     this.renderMonthSelector();
     this.renderDashboard();
   },
@@ -513,13 +500,13 @@ const App = {
       });
     });
 
-    // Transaction form: Income/Expense/Savings Toggle
+    // Transaction form: Income/Expense Toggle
     const typeToggleExp = document.getElementById('type-toggle-expense');
     const typeToggleInc = document.getElementById('type-toggle-income');
-    const typeToggleSav = document.getElementById('type-toggle-savings');
-    if (typeToggleExp) typeToggleExp.addEventListener('click', () => this.setEntryType('expense'));
-    if (typeToggleInc) typeToggleInc.addEventListener('click', () => this.setEntryType('income'));
-    if (typeToggleSav) typeToggleSav.addEventListener('click', () => this.setEntryType('savings'));
+    if (typeToggleExp && typeToggleInc) {
+      typeToggleExp.addEventListener('click', () => this.setEntryType('expense'));
+      typeToggleInc.addEventListener('click', () => this.setEntryType('income'));
+    }
 
     // Quick Amount Chips in Form
     document.querySelectorAll('.amount-chip').forEach(chip => {
@@ -668,66 +655,34 @@ const App = {
     this.currentEntryType = type;
     const typeToggleExp = document.getElementById('type-toggle-expense');
     const typeToggleInc = document.getElementById('type-toggle-income');
-    const typeToggleSav = document.getElementById('type-toggle-savings');
     const submitBtn = document.getElementById('tx-submit-btn');
-    const quickChipsContainer = document.getElementById('quick-fixed-chips-container');
-
-    const inactiveClass = 'py-2 px-2 sm:px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1 cursor-pointer';
 
     if (type === 'expense') {
       if (typeToggleExp) {
-        typeToggleExp.className = 'py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
-        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_expense') || '🔴 รายจ่าย'}`;
+        typeToggleExp.className = 'py-2 px-3 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_expense')}`;
       }
       if (typeToggleInc) {
-        typeToggleInc.className = inactiveClass;
-        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${I18n.t('type_income') || '🟢 รายรับ'}`;
-      }
-      if (typeToggleSav) {
-        typeToggleSav.className = inactiveClass;
-        typeToggleSav.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> <span>${I18n.t('type_savings') || '💰 เงินออม'}</span>`;
+        typeToggleInc.className = 'py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${I18n.t('type_income')}`;
       }
       if (submitBtn) {
         submitBtn.className = 'w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = `<span>${I18n.t('btn_save_expense')}</span>`;
       }
-      if (quickChipsContainer) quickChipsContainer.classList.remove('hidden');
-    } else if (type === 'income') {
+    } else {
       if (typeToggleExp) {
-        typeToggleExp.className = inactiveClass;
-        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${I18n.t('type_expense') || '🔴 รายจ่าย'}`;
+        typeToggleExp.className = 'py-2 px-3 rounded-xl font-medium text-xs text-slate-600 hover:text-slate-900 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${I18n.t('type_expense')}`;
       }
       if (typeToggleInc) {
-        typeToggleInc.className = 'py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
-        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_income') || '🟢 รายรับ'}`;
-      }
-      if (typeToggleSav) {
-        typeToggleSav.className = inactiveClass;
-        typeToggleSav.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> <span>${I18n.t('type_savings') || '💰 เงินออม'}</span>`;
+        typeToggleInc.className = 'py-2 px-3 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> ${I18n.t('type_income')}`;
       }
       if (submitBtn) {
         submitBtn.className = 'w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
         submitBtn.innerHTML = `<span>${I18n.t('btn_save_income')}</span>`;
       }
-      if (quickChipsContainer) quickChipsContainer.classList.remove('hidden');
-    } else if (type === 'savings') {
-      if (typeToggleExp) {
-        typeToggleExp.className = inactiveClass;
-        typeToggleExp.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> ${I18n.t('type_expense') || '🔴 รายจ่าย'}`;
-      }
-      if (typeToggleInc) {
-        typeToggleInc.className = inactiveClass;
-        typeToggleInc.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${I18n.t('type_income') || '🟢 รายรับ'}`;
-      }
-      if (typeToggleSav) {
-        typeToggleSav.className = 'py-2 px-2 sm:px-3 rounded-xl font-bold text-xs bg-indigo-600 text-white shadow-xs transition-all flex items-center justify-center gap-1 cursor-pointer';
-        typeToggleSav.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-white"></span> <span>${I18n.t('type_savings') || '💰 เงินออม'}</span>`;
-      }
-      if (submitBtn) {
-        submitBtn.className = 'w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5 text-sm cursor-pointer';
-        submitBtn.innerHTML = `<span>${I18n.t('btn_save_savings') || '➕ บันทึกเงินออม'}</span>`;
-      }
-      if (quickChipsContainer) quickChipsContainer.classList.add('hidden');
     }
 
     this.initCategoryGrid('form-category-grid', type);
@@ -988,19 +943,11 @@ const App = {
       r.checked = (r.value === targetType);
     });
 
-    let defaultEmoji = '🐾';
-    let defaultColor = '#f87171';
-    if (targetType === 'income') {
-      defaultEmoji = '💰';
-      defaultColor = '#34d399';
-    } else if (targetType === 'savings') {
-      defaultEmoji = '🏦';
-      defaultColor = '#6366f1';
-    }
-
+    const defaultEmoji = targetType === 'income' ? '💰' : '🐾';
     if (emojiInput) emojiInput.value = defaultEmoji;
     this.updateCategoryEmojiPreview(defaultEmoji);
 
+    const defaultColor = targetType === 'income' ? '#34d399' : '#f87171';
     if (colorInput) colorInput.value = defaultColor;
 
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
@@ -1057,9 +1004,7 @@ const App = {
   },
 
   handleNewCategoryTypeChange(type) {
-    let defaultEmoji = '🐾';
-    if (type === 'income') defaultEmoji = '💰';
-    else if (type === 'savings') defaultEmoji = '🏦';
+    const defaultEmoji = type === 'income' ? '💰' : '🐾';
     const emojiInput = document.getElementById('new-cat-emoji-input');
     if (emojiInput) emojiInput.value = defaultEmoji;
     this.updateCategoryEmojiPreview(defaultEmoji);
@@ -1140,7 +1085,7 @@ const App = {
           </div>
           <div>
             <p class="font-bold text-slate-900 text-xs">${displayName}</p>
-            <p class="text-[11px] text-slate-400">${cat.type === 'expense' ? '🔴 Expense' : (cat.type === 'savings' ? '💰 Savings' : '🟢 Income')}</p>
+            <p class="text-[11px] text-slate-400">${cat.type === 'expense' ? '🔴 Expense' : '🟢 Income'}</p>
           </div>
         </div>
       `;
@@ -1840,10 +1785,7 @@ const App = {
     this.closeQuickEntryModal();
 
     this.renderAll();
-    const toastMsg = this.currentEntryType === 'expense'
-      ? I18n.t('toast_exp_saved')
-      : (this.currentEntryType === 'savings' ? I18n.t('toast_savings_saved') : I18n.t('toast_inc_saved'));
-    this.showToast(toastMsg);
+    this.showToast(this.currentEntryType === 'expense' ? I18n.t('toast_exp_saved') : I18n.t('toast_inc_saved'));
   },
 
   renderMonthSelector() {
@@ -1976,19 +1918,16 @@ const App = {
     
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalSavings = 0;
 
     txs.forEach(t => {
       if (t.type === 'income') {
         totalIncome += t.amount;
-      } else if (t.type === 'savings') {
-        totalSavings += t.amount;
       } else {
         totalExpense += t.amount;
       }
     });
 
-    const netBalance = totalIncome - totalExpense - totalSavings;
+    const netBalance = totalIncome - totalExpense;
 
     const incEl = document.getElementById('dash-total-income');
     const expEl = document.getElementById('dash-total-expense');
@@ -2040,13 +1979,11 @@ const App = {
 
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalSavings = 0;
 
     const monthlyStats = Array.from({ length: 12 }, (_, i) => ({
       monthIndex: i,
       income: 0,
       expense: 0,
-      savings: 0,
       net: 0,
       count: 0
     }));
@@ -2057,9 +1994,6 @@ const App = {
       if (t.type === 'income') {
         totalIncome += t.amount;
         monthlyStats[mIdx].income += t.amount;
-      } else if (t.type === 'savings') {
-        totalSavings += t.amount;
-        monthlyStats[mIdx].savings = (monthlyStats[mIdx].savings || 0) + t.amount;
       } else {
         totalExpense += t.amount;
         monthlyStats[mIdx].expense += t.amount;
@@ -2068,10 +2002,10 @@ const App = {
     });
 
     monthlyStats.forEach(m => {
-      m.net = m.income - m.expense - (m.savings || 0);
+      m.net = m.income - m.expense;
     });
 
-    const netSavings = totalIncome - totalExpense - totalSavings;
+    const netSavings = totalIncome - totalExpense;
     const savingsRate = totalIncome > 0 ? ((netSavings / totalIncome) * 100) : 0;
     const avgMonthlySpend = totalExpense / 12;
 
@@ -2437,7 +2371,7 @@ const App = {
         if (dMap[dStr] !== undefined) {
           const idx = dMap[dStr];
           if (t.type === 'expense') dailySpending[idx] += t.amount;
-          else if (t.type === 'income') dailyIncome[idx] += t.amount;
+          else dailyIncome[idx] += t.amount;
         }
       });
     } else {
@@ -2453,7 +2387,7 @@ const App = {
         const dayIndex = d.getDate() - 1;
         if (dayIndex >= 0 && dayIndex < daysInMonth) {
           if (t.type === 'expense') dailySpending[dayIndex] += t.amount;
-          else if (t.type === 'income') dailyIncome[dayIndex] += t.amount;
+          else dailyIncome[dayIndex] += t.amount;
         }
       });
 
@@ -2603,27 +2537,22 @@ const App = {
 
       const dayIncome = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
       const dayExpense = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-      const daySavings = txs.filter(t => t.type === 'savings').reduce((s, t) => s + t.amount, 0);
 
       const itemsHtml = txs.map(t => {
         const cat = StorageManager.getCategoryById(t.categoryId);
         const catName = StorageManager.getCategoryDisplayName(cat);
         const timeStr = t.date.length >= 16 ? t.date.slice(11, 16) : '';
         const isExp = t.type === 'expense';
-        const isSav = t.type === 'savings';
-        const amountColor = isSav ? 'text-indigo-600' : (isExp ? 'text-rose-600' : 'text-emerald-600');
-        const amountSign = isSav ? '💰' : (isExp ? '-' : '+');
 
         return `
           <div class="flex items-center justify-between p-2.5 hover:bg-slate-50 rounded-2xl transition-colors group">
             <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-xl flex items-center justify-center text-base ${isSav ? 'bg-indigo-50 border border-indigo-100' : 'bg-slate-50 border border-slate-100'}">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center text-base bg-slate-50 border border-slate-100">
                 ${cat.emoji}
               </div>
               <div>
                 <div class="flex items-center gap-1.5">
                   <span class="font-semibold text-xs text-slate-800">${catName}</span>
-                  ${isSav ? `<span class="text-[9px] px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700 font-bold">เงินออม</span>` : ''}
                   <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500">${t.paymentMethod}</span>
                   ${timeStr ? `<span class="text-[10px] text-slate-400">${timeStr}</span>` : ''}
                 </div>
@@ -2631,8 +2560,8 @@ const App = {
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <span class="font-bold text-sm num-font ${amountColor}">
-                ${amountSign}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              <span class="font-bold text-sm num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+                ${isExp ? '-' : '+'}฿${t.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
               </span>
               <div class="flex items-center opacity-70 group-hover:opacity-100 transition-opacity">
                 <button onclick="App.openEditModal('${t.id}')" class="p-1 text-slate-400 hover:text-slate-800 rounded transition-colors cursor-pointer" title="${I18n.t('btn_edit')}">
@@ -2657,7 +2586,6 @@ const App = {
             </div>
             <div class="flex items-center gap-2 text-xs font-bold num-font">
               ${dayIncome > 0 ? `<span class="text-emerald-600">+฿${dayIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
-              ${daySavings > 0 ? `<span class="text-indigo-600">💰฿${daySavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
               ${dayExpense > 0 ? `<span class="text-rose-600">-฿${dayExpense.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>` : ''}
             </div>
           </div>
@@ -2674,18 +2602,9 @@ const App = {
   // ==========================================
   navigateHistoryMonth(direction) {
     if (!this.historyDate) this.historyDate = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const isCalendarView = (this.historyCycleMode === 'calendar');
-    const effectiveCycleSetting = isCalendarView 
-      ? { type: 'calendar', customDay: 1 } 
-      : payCycleSetting;
-
-    const cycle = StorageManager.getCycleDateRange(this.historyDate, effectiveCycleSetting);
-    if (direction < 0) {
-      this.historyDate = new Date(cycle.sDate.getTime() - 86400000);
-    } else {
-      this.historyDate = new Date(cycle.eDate.getTime() + 86400000);
-    }
+    const curY = this.historyDate.getFullYear();
+    const curM = this.historyDate.getMonth();
+    this.historyDate = new Date(curY, curM + direction, 1);
     this.renderHistoryTab();
   },
 
@@ -2707,7 +2626,6 @@ const App = {
     const btnAll = document.getElementById('history-filter-btn-all');
     const btnExp = document.getElementById('history-filter-btn-expense');
     const btnInc = document.getElementById('history-filter-btn-income');
-    const btnSav = document.getElementById('history-filter-btn-savings');
 
     const activeClass = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-xs transition-all cursor-pointer shrink-0';
     const inactiveClass = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 transition-all cursor-pointer shrink-0 flex items-center gap-1';
@@ -2718,9 +2636,6 @@ const App = {
     }
     if (btnInc) {
       btnInc.className = (type === 'income') ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 text-white shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1' : inactiveClass;
-    }
-    if (btnSav) {
-      btnSav.className = (type === 'savings') ? 'px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs transition-all cursor-pointer shrink-0 flex items-center gap-1' : inactiveClass;
     }
 
     this.renderHistoryTab();
@@ -2858,11 +2773,14 @@ const App = {
     } catch(e) {}
 
     const payCycleSetting = StorageManager.getPayCycleSetting();
+    // In cycle mode, if user setting is calendar, provide end_of_month (payday) cycle
     let effectiveCycleSetting;
     if (this.historyCycleMode === 'calendar') {
       effectiveCycleSetting = { type: 'calendar', customDay: 1 };
     } else {
-      effectiveCycleSetting = payCycleSetting;
+      effectiveCycleSetting = (payCycleSetting.type === 'calendar') 
+        ? { type: 'end_of_month', customDay: 31 }
+        : payCycleSetting;
     }
 
     const isCalendarView = (this.historyCycleMode === 'calendar');
@@ -2921,14 +2839,12 @@ const App = {
     // 4. Flow Summary Capsule Stats (Calculate for active period)
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalSavings = 0;
     monthTxs.forEach(t => {
       const amt = Number(t.amount) || 0;
       if (t.type === 'income') totalIncome += amt;
-      else if (t.type === 'savings') totalSavings += amt;
       else totalExpense += amt;
     });
-    const net = totalIncome - totalExpense - totalSavings;
+    const net = totalIncome - totalExpense;
 
     const bannerCountEl = document.getElementById('history-banner-count');
     const bannerNetEl = document.getElementById('history-banner-net');
@@ -3069,19 +2985,9 @@ const App = {
         const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
         const emoji = cat.emoji || '📦';
         const isExp = t.type === 'expense';
-        const isSav = t.type === 'savings';
         const timeStr = t.date && t.date.length >= 16 ? t.date.slice(11, 16) : '';
-        const typeBadge = isExp 
-          ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
-          : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+        const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
         const amountNum = Number(t.amount) || 0;
-
-        const iconContainerClass = isExp 
-          ? 'bg-rose-50 text-rose-600 border border-rose-100' 
-          : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100');
-        const amountColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
-        const badgeColor = isExp ? 'text-rose-500' : (isSav ? 'text-indigo-500' : 'text-emerald-500');
-        const sign = isExp ? '-' : (isSav ? '+' : '+');
 
         return `
           <div 
@@ -3090,8 +2996,8 @@ const App = {
           >
             <!-- Left: Emoji + Category (Note) & Time • Payment -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
-              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${iconContainerClass}">
-                ${cat.emoji || (isSav ? '💰' : '📦')}
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-lg shrink-0 shadow-2xs ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+                ${emoji}
               </div>
               <div class="min-w-0 flex-1 pr-2">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -3108,10 +3014,10 @@ const App = {
             <!-- Right: Amount & Actions -->
             <div class="flex items-center gap-2 shrink-0">
               <div class="text-right">
-                <span class="text-sm sm:text-base font-black num-font ${amountColor}">
-                  ${sign}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                <span class="text-sm sm:text-base font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+                  ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                 </span>
-                <span class="block sm:hidden text-[9px] font-bold ${badgeColor}">${typeBadge}</span>
+                <span class="block sm:hidden text-[9px] font-bold ${isExp ? 'text-rose-500' : 'text-emerald-500'}">${typeBadge}</span>
               </div>
 
               <!-- Desktop Direct Edit/Delete Buttons -->
@@ -3161,18 +3067,10 @@ const App = {
         const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
         const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
         const isExp = t.type === 'expense';
-        const isSav = t.type === 'savings';
         const amountNum = Number(t.amount) || 0;
         const dStr = this.normalizeDateString(t.date);
         const timeStr = (t.date && t.date.length >= 16) ? t.date.slice(11, 16) : '';
-        const typeBadge = isExp 
-          ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
-          : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
-        const badgeClass = isExp 
-          ? 'bg-rose-50 text-rose-600 border border-rose-200/60' 
-          : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-200/60' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/60');
-        const numColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
-        const sign = isExp ? '-' : (isSav ? '+' : '+');
+        const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
 
         return `
           <tr class="hover-action-trigger hover:bg-slate-50/80 transition-colors cursor-pointer" onclick="App.openTransactionDetailModal('${t.id}')">
@@ -3181,13 +3079,13 @@ const App = {
               ${timeStr ? `<span class="text-slate-400 ml-1 font-normal">${timeStr} น.</span>` : ''}
             </td>
             <td class="py-2.5 px-3 whitespace-nowrap">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-200/60' : 'bg-emerald-50 text-emerald-600 border border-emerald-200/60'}">
                 ${typeBadge}
               </span>
             </td>
             <td class="py-2.5 px-3 whitespace-nowrap">
               <span class="inline-flex items-center gap-1 font-bold text-slate-800">
-                <span>${cat.emoji || (isSav ? '💰' : '📦')}</span>
+                <span>${cat.emoji || '📦'}</span>
                 <span>${catName}</span>
               </span>
             </td>
@@ -3197,8 +3095,8 @@ const App = {
             <td class="py-2.5 px-3 whitespace-nowrap text-slate-500">
               ${t.paymentMethod || '-'}
             </td>
-            <td class="py-2.5 px-3 text-right whitespace-nowrap font-black num-font ${numColor}">
-              ${sign}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <td class="py-2.5 px-3 text-right whitespace-nowrap font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+              ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </td>
             <td class="py-2.5 px-3 text-center whitespace-nowrap no-print" onclick="event.stopPropagation()">
               <div class="desktop-row-actions inline-flex items-center gap-1 justify-center">
@@ -3242,15 +3140,9 @@ const App = {
       const cat = StorageManager.getCategoryById(t.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
       const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
-      const isSav = t.type === 'savings';
       const amountNum = Number(t.amount) || 0;
       const dateStr = this.normalizeDateString(t.date);
       const timeStr = (t.date && t.date.length >= 16) ? t.date.slice(11, 16) : '';
-      const iconContainerClass = isExp 
-        ? 'bg-rose-50 text-rose-600 border border-rose-100' 
-        : (isSav ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100');
-      const amountColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
-      const sign = isExp ? '-' : (isSav ? '+' : '+');
 
       return `
         <div 
@@ -3258,8 +3150,8 @@ const App = {
           class="hover-action-trigger flex items-center justify-between p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-100 transition-all cursor-pointer group shadow-2xs"
         >
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 ${iconContainerClass}">
-              ${cat.emoji || (isSav ? '💰' : '📦')}
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 ${isExp ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}">
+              ${cat.emoji || '📦'}
             </div>
             <div class="min-w-0 flex-1 pr-1">
               <div class="flex items-center gap-1 truncate">
@@ -3274,8 +3166,8 @@ const App = {
           </div>
 
           <div class="flex items-center gap-1 shrink-0">
-            <span class="text-xs font-black num-font ${amountColor}">
-              ${sign}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+            <span class="text-xs font-black num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+              ${isExp ? '-' : '+'}฿${amountNum.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
             </span>
 
             <div class="desktop-row-actions flex items-center ml-1" onclick="event.stopPropagation()">
@@ -3425,41 +3317,29 @@ const App = {
     const actions = document.getElementById('tx-detail-actions');
     if (!modal || !content || !actions) return;
 
-    const cat = StorageManager.getCategoryById(tx.categoryId) || { emoji: '📦', name: 'ทั่วไป', nameEn: 'General' };
-    const catName = StorageManager.getCategoryDisplayName(cat) || 'ทั่วไป';
+    const cat = StorageManager.getCategoryById(tx.categoryId);
+    const catName = StorageManager.getCategoryDisplayName(cat);
     const isExp = tx.type === 'expense';
-    const isSav = tx.type === 'savings';
     const lang = I18n.getLanguage();
-    const typeLabel = isExp 
-      ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
-      : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+    const typeLabel = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
     
     const d = new Date(tx.date);
     const dateFormatted = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     const timeFormatted = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
-    const heroBoxClass = isExp 
-      ? 'bg-rose-50/70 border border-rose-100/70' 
-      : (isSav ? 'bg-indigo-50/70 border border-indigo-100/70' : 'bg-emerald-50/70 border border-emerald-100/70');
-    const heroBorderClass = isExp ? 'border-rose-200' : (isSav ? 'border-indigo-200' : 'border-emerald-200');
-    const badgeClass = isExp ? 'bg-rose-100 text-rose-700' : (isSav ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700');
-    const badgeEmoji = isExp ? '🔴' : (isSav ? '💰' : '🟢');
-    const amountColor = isExp ? 'text-rose-600' : (isSav ? 'text-indigo-600' : 'text-emerald-600');
-    const sign = isExp ? '-' : '+';
-
     content.innerHTML = `
       <!-- Hero Top inside Modal -->
-      <div class="text-center p-4 rounded-3xl ${heroBoxClass}">
-        <div class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center text-3xl mx-auto shadow-xs border ${heroBorderClass}">
-          ${cat.emoji || (isSav ? '💰' : '📦')}
+      <div class="text-center p-4 rounded-3xl ${isExp ? 'bg-rose-50/70 border border-rose-100/70' : 'bg-emerald-50/70 border border-emerald-100/70'}">
+        <div class="w-14 h-14 rounded-3xl bg-white flex items-center justify-center text-3xl mx-auto shadow-xs border ${isExp ? 'border-rose-200' : 'border-emerald-200'}">
+          ${cat.emoji}
         </div>
         <div class="mt-2.5">
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}">
-            <span>${badgeEmoji}</span> ${typeLabel}
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${isExp ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+            <span>${isExp ? '🔴' : '🟢'}</span> ${typeLabel}
           </span>
         </div>
-        <p class="text-3xl font-black num-font mt-2 ${amountColor}">
-          ${sign}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+        <p class="text-3xl font-black num-font mt-2 ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+          ${isExp ? '-' : '+'}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
         </p>
         <p class="text-xs font-bold text-slate-700 mt-1">${catName}</p>
       </div>
@@ -3606,23 +3486,19 @@ const App = {
       const cat = StorageManager.getCategoryById(tx.categoryId);
       const catName = StorageManager.getCategoryDisplayName(cat);
       const isExp = tx.type === 'expense';
-      const isSav = tx.type === 'savings';
       const lang = I18n.getLanguage();
-      const typeBadge = isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ'));
-      const badgeColor = isSav ? 'text-indigo-600' : (isExp ? 'text-rose-600' : 'text-emerald-600');
-      const numColor = isSav ? 'text-indigo-600' : (isExp ? 'text-rose-600' : 'text-emerald-600');
-      const numSign = isSav ? '💰' : (isExp ? '-' : '+');
+      const typeBadge = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
 
       preview.innerHTML = `
         <div class="flex items-center gap-2.5 bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-left">
           <span class="text-2xl">${cat.emoji}</span>
           <div class="flex-1">
-            <p class="font-bold text-slate-800 text-xs">${catName} <span class="text-[10px] font-semibold ${badgeColor}">(${typeBadge})</span></p>
+            <p class="font-bold text-slate-800 text-xs">${catName} <span class="text-[10px] font-semibold ${isExp ? 'text-rose-600' : 'text-emerald-600'}">(${typeBadge})</span></p>
             <p class="text-[10px] text-slate-400">${tx.date.replace('T', ' ')} · ${tx.paymentMethod}</p>
             ${tx.note ? `<p class="text-[11px] text-slate-600">"${tx.note}"</p>` : ''}
           </div>
-          <div class="font-bold text-sm num-font ${numColor}">
-            ${numSign}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+          <div class="font-bold text-sm num-font ${isExp ? 'text-rose-600' : 'text-emerald-600'}">
+            ${isExp ? '-' : '+'}฿${tx.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
           </div>
         </div>
       `;
@@ -3714,11 +3590,9 @@ const App = {
 
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalSavings = 0;
 
     filtered.forEach(t => {
       if (t.type === 'income') totalIncome += t.amount;
-      else if (t.type === 'savings') totalSavings += t.amount;
       else totalExpense += t.amount;
     });
 
@@ -3731,8 +3605,7 @@ const App = {
     if (amountsEl) {
       const incLabel = lang === 'en' ? 'Income' : 'รายรับ';
       const expLabel = lang === 'en' ? 'Expense' : 'รายจ่าย';
-      const savLabel = lang === 'en' ? 'Savings' : 'เงินออม';
-      amountsEl.innerHTML = `<span class="text-emerald-600 font-bold">${incLabel} ฿${totalIncome.toLocaleString()}</span> / <span class="text-rose-600 font-bold">${expLabel} ฿${totalExpense.toLocaleString()}</span> / <span class="text-indigo-600 font-bold">${savLabel} ฿${totalSavings.toLocaleString()}</span>`;
+      amountsEl.innerHTML = `<span class="text-emerald-600 font-bold">${incLabel} ฿${totalIncome.toLocaleString()}</span> / <span class="text-rose-600 font-bold">${expLabel} ฿${totalExpense.toLocaleString()}</span>`;
     }
   },
 
@@ -3751,7 +3624,6 @@ const App = {
       if (this.currentTab !== 'transactions') {
         this.renderTab1OverviewHero();
         this.renderTab1DailyBudgetCard();
-        this.renderTab1SavingsCard();
         this.renderDesktopRecentTransactions();
       }
       if (this.currentTab !== 'history') this.renderHistoryTab();
@@ -3767,7 +3639,6 @@ const App = {
     if (this.currentTab === 'transactions') {
       this.renderTab1OverviewHero();
       this.renderTab1DailyBudgetCard();
-      this.renderTab1SavingsCard();
       this.renderDesktopRecentTransactions();
     } else if (this.currentTab === 'history') {
       this.renderHistoryTab();
@@ -3794,6 +3665,10 @@ const App = {
     const payCycleSetting = StorageManager.getPayCycleSetting();
     const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
 
+    // Get rollover surplus from prior periods
+    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
+    const rolloverSurplus = Math.max(0, prevSurplusData.netSurplus);
+
     const currentTxs = allTxs.filter(t => {
       const d = (t.date || '').slice(0, 10);
       return d >= cycleRange.startDate && d <= cycleRange.endDate;
@@ -3801,42 +3676,13 @@ const App = {
 
     let income = 0;
     let expense = 0;
-    let txSavingsInCycle = 0;
     currentTxs.forEach(t => {
-      const amt = Number(t.amount) || 0;
-      if (t.type === 'income') income += amt;
-      else if (t.type === 'savings') txSavingsInCycle += amt;
-      else expense += amt;
+      if (t.type === 'income') income += t.amount;
+      else expense += t.amount;
     });
 
-    // Check Previous Cycle Surplus & Settlement Rollover
-    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    let rolloverSurplus = 0;
-    if (prevSurplusData.hasSurplus && prevSurplusData.settlement) {
-      if (prevSurplusData.settlement.action === 'rollover' || prevSurplusData.settlement.action === 'split') {
-        rolloverSurplus = Number(prevSurplusData.settlement.rolloverAmount) || 0;
-      }
-    }
-
-    const effectiveIncome = income + rolloverSurplus;
-
-    // Filter manual savings deposits in the current pay cycle that deduct from daily budget
-    const allDeposits = StorageManager.getSavingsDeposits();
-    let manualSavingsDeductedInCycle = txSavingsInCycle;
-    allDeposits.forEach(d => {
-      const dStr = StorageManager.normalizeDateString(d.date);
-      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate && d.deductFromDailyBudget) {
-        const amt = Number(d.amount) || 0;
-        if (d.type === 'deposit') {
-          manualSavingsDeductedInCycle += amt;
-        } else if (d.type === 'withdraw') {
-          manualSavingsDeductedInCycle -= amt;
-        }
-      }
-    });
-
-    // Available Spending Balance = (Income + Rollover) - Expense - Savings Deposits
-    const netAvailable = Math.round((effectiveIncome - expense - manualSavingsDeductedInCycle + Number.EPSILON) * 100) / 100;
+    // Net balance includes leftover money from before this cycle!
+    const net = rolloverSurplus + income - expense;
     const lang = I18n.getLanguage();
 
     const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
@@ -3845,10 +3691,6 @@ const App = {
     const periodLabel = (payCycleSetting.type === 'calendar')
       ? ((lang === 'en') ? `${enMonths[currentMonth]} ${currentYear}` : `${thaiMonths[currentMonth]} ${currentYear + 543}`)
       : ((lang === 'en') ? cycleRange.labelEn : cycleRange.labelTh);
-
-    const balanceTitle = manualSavingsDeductedInCycle > 0
-      ? (lang === 'en' ? 'Available Balance (After Savings)' : 'คงเหลือพร้อมใช้รอบนี้ (หลังหักเงินออม)')
-      : (lang === 'en' ? 'Net Balance This Period' : 'คงเหลือสุทธิรอบนี้');
 
     heroEl.innerHTML = `
       <div class="pastel-card p-4 sm:p-5 rounded-3xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-white shadow-lg relative overflow-hidden border border-slate-800 space-y-3.5">
@@ -3863,50 +3705,46 @@ const App = {
               <span>📅</span> <span>${periodLabel}</span>
             </span>
           </div>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold ${netAvailable >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
-            ${netAvailable >= 0 ? (lang === 'en' ? '🟢 Healthy' : '🟢 สุขภาพการเงินดี') : (lang === 'en' ? '🔴 Deficit' : '🔴 ยอดติดลบ')}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-extrabold ${net >= 0 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">
+            ${net >= 0 ? (lang === 'en' ? '🟢 Healthy' : '🟢 สุขภาพการเงินดี') : (lang === 'en' ? '🔴 Deficit' : '🔴 ยอดติดลบ')}
           </span>
         </div>
 
-        <!-- Middle Section: Big Available / Net Balance -->
+        <!-- Middle Section: Big Net Balance -->
         <div class="relative z-10">
-          <span class="text-[11px] font-semibold text-slate-300 block">${balanceTitle}</span>
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold text-slate-300 block">
+              ${lang === 'en' ? 'Net Balance' : 'ยอดคงเหลือสุทธิ'}
+            </span>
+            ${rolloverSurplus > 0 ? `
+              <span class="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                📥 ${lang === 'en' ? 'Rollover: +' : 'ยกยอดมา: +'}฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            ` : ''}
+          </div>
           <div class="mt-0.5 flex items-baseline gap-2">
-            <span class="text-3xl sm:text-4xl font-black tracking-tight num-font ${netAvailable >= 0 ? 'text-white' : 'text-rose-300'}">
-              ${netAvailable < 0 ? '-' : ''}฿${Math.abs(netAvailable).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span class="text-3xl sm:text-4xl font-black tracking-tight num-font ${net >= 0 ? 'text-white' : 'text-rose-300'}">
+              ${net < 0 ? '-' : ''}฿${Math.abs(net).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
 
-        <!-- Bottom Section: 3 Columns Capsule (Income / Expense / Savings) -->
-        <div class="relative z-10 grid grid-cols-3 gap-1 sm:gap-2 bg-white/10 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-white/10">
-          <!-- Col 1: Income -->
-          <div class="px-1.5 sm:px-2 py-0.5 min-w-0">
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-300 font-bold truncate">
+        <!-- Bottom Section: Income / Expense Capsule -->
+        <div class="relative z-10 grid grid-cols-2 gap-2 bg-white/10 backdrop-blur-md p-2.5 rounded-2xl border border-white/10">
+          <div class="px-2 py-0.5">
+            <div class="flex items-center gap-1 text-[11px] text-emerald-300 font-bold">
               <span>↑</span> <span>${lang === 'en' ? 'Income' : 'รายรับ'}</span>
             </div>
-            <p class="text-xs sm:text-base font-extrabold text-white num-font mt-0.5 truncate">
-              ฿${effectiveIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
+              ฿${income.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
-
-          <!-- Col 2: Expense -->
-          <div class="px-1.5 sm:px-2 py-0.5 border-l border-white/15 min-w-0">
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] text-rose-300 font-bold truncate">
+          <div class="px-2 py-0.5 border-l border-white/15">
+            <div class="flex items-center gap-1 text-[11px] text-rose-300 font-bold">
               <span>↓</span> <span>${lang === 'en' ? 'Expense' : 'รายจ่าย'}</span>
             </div>
-            <p class="text-xs sm:text-base font-extrabold text-white num-font mt-0.5 truncate">
+            <p class="text-sm sm:text-base font-extrabold text-white num-font mt-0.5">
               ฿${expense.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-          </div>
-
-          <!-- Col 3: Savings -->
-          <div class="px-1.5 sm:px-2 py-0.5 border-l border-white/15 min-w-0">
-            <div class="flex items-center gap-1 text-[10px] sm:text-[11px] text-indigo-300 font-bold truncate">
-              <span>💰</span> <span>${lang === 'en' ? 'Savings' : 'เงินออม'}</span>
-            </div>
-            <p class="text-xs sm:text-base font-extrabold text-white num-font mt-0.5 truncate">
-              ฿${manualSavingsDeductedInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         </div>
@@ -3943,15 +3781,12 @@ const App = {
     let totalIncomeInCycle = 0;
     let pastExpenseInCycle = 0;
     let todayExpense = 0;
-    let txSavingsInCycle = 0;
 
     cycleTxs.forEach(t => {
       const dStr = StorageManager.normalizeDateString(t.date);
       const amount = Number(t.amount) || 0;
       if (t.type === 'income') {
         totalIncomeInCycle += amount;
-      } else if (t.type === 'savings') {
-        txSavingsInCycle += amount;
       } else if (t.type === 'expense') {
         if (dStr === todayStr) {
           todayExpense += amount;
@@ -3961,7 +3796,7 @@ const App = {
       }
     });
 
-    // Monthly savings goal
+    // Monthly savings goal (if user set a goal in settings)
     const savingsGoal = StorageManager.getMonthlySavingsGoal();
 
     // Determine baseline income: if no actual income logged yet, check recurring income fallback
@@ -3973,133 +3808,13 @@ const App = {
       if (recIncome > 0) effectiveIncome = recIncome;
     }
 
-    // Check Previous Cycle Surplus & Settlement Choice
+    // Rollover surplus from previous cycle
     const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    let rolloverSurplus = 0;
-    let settlementBannerHtml = '';
-    let surplusBadgeHtml = '';
+    const rolloverSurplus = Math.max(0, prevSurplusData.netSurplus);
 
-    if (prevSurplusData.hasSurplus) {
-      const settlement = prevSurplusData.settlement;
-      if (!settlement) {
-        // Show Prompt Banner on Tab 1
-        settlementBannerHtml = `
-          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-teal-500/10 border border-indigo-200/80 space-y-2.5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <span class="text-xl">🎉</span>
-                <div>
-                  <h4 class="text-xs font-bold text-slate-800">
-                    ${lang === 'en' ? 'Previous Cycle Surplus: ' : 'สิ้นสุดรอบก่อน คุณมีเงินเหลือ '} 
-                    <span class="text-emerald-600 font-extrabold num-font">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </h4>
-                  <p class="text-[11px] text-slate-500 font-medium">
-                    ${lang === 'en' ? 'Choose how to allocate this surplus for the new cycle:' : 'ต้องการจัดการเงินเหลือส่วนนี้อย่างไรสำหรับรอบใหม่?'}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-0.5">
-              <button 
-                type="button" 
-                onclick="App.handleApplySurplusSettlement('rollover', ${prevSurplusData.netSurplus}, 0)" 
-                class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
-              >
-                <span>📥</span>
-                <span>${lang === 'en' ? `Rollover (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : `ยกยอดมากินใช้ (+฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}</span>
-              </button>
-              <button 
-                type="button" 
-                onclick="App.handleApplySurplusSettlement('savings', 0, ${prevSurplusData.netSurplus})" 
-                class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-xl shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
-              >
-                <span>🏦</span>
-                <span>${lang === 'en' ? 'Keep in Savings' : 'เก็บเข้าเงินออมทั้งหมด'}</span>
-              </button>
-              <button 
-                type="button" 
-                onclick="App.openSurplusSettlementModal()" 
-                class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-[11px] rounded-xl border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95"
-              >
-                <span>✂️</span>
-                <span>${lang === 'en' ? 'Custom Split' : 'แบ่งออม / ยกยอดเอง'}</span>
-              </button>
-            </div>
-          </div>
-        `;
-      } else {
-        if (settlement.action === 'rollover') {
-          rolloverSurplus = Number(settlement.rolloverAmount) || prevSurplusData.netSurplus;
-          surplusBadgeHtml = `
-            <div class="flex items-center justify-between text-[11px] bg-emerald-50 border border-emerald-200/60 text-emerald-800 px-2.5 py-1 rounded-xl">
-              <span class="flex items-center gap-1 font-semibold truncate mr-1">
-                <span>📥</span> 
-                <span>${lang === 'en' ? 'Rolled over from previous cycle: ' : 'มียอดยกมาจากรอบก่อน: '}</span>
-                <strong class="font-extrabold num-font">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-              </span>
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-emerald-700 font-bold hover:underline cursor-pointer shrink-0">
-                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
-              </button>
-            </div>
-          `;
-        } else if (settlement.action === 'split') {
-          rolloverSurplus = Number(settlement.rolloverAmount) || 0;
-          const savAmt = Number(settlement.savingsAmount) || 0;
-          surplusBadgeHtml = `
-            <div class="flex items-center justify-between text-[11px] bg-indigo-50 border border-indigo-200/60 text-indigo-800 px-2.5 py-1 rounded-xl">
-              <span class="flex items-center gap-1 font-semibold truncate mr-1">
-                <span>✂️</span> 
-                <span>${lang === 'en' ? 'Rollover: ' : 'ยกยอดใช้: '}</span>
-                <strong class="font-extrabold num-font text-emerald-700">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                <span class="text-slate-400">|</span>
-                <span>${lang === 'en' ? 'Savings: ' : 'เงินออม: '}</span>
-                <strong class="font-extrabold num-font text-indigo-700">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-              </span>
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-700 font-bold hover:underline cursor-pointer shrink-0">
-                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
-              </button>
-            </div>
-          `;
-        } else if (settlement.action === 'savings') {
-          const savAmt = Number(settlement.savingsAmount) || prevSurplusData.netSurplus;
-          surplusBadgeHtml = `
-            <div class="flex items-center justify-between text-[11px] bg-slate-100 border border-slate-200 text-slate-700 px-2.5 py-1 rounded-xl">
-              <span class="flex items-center gap-1 font-semibold truncate mr-1">
-                <span>🏦</span> 
-                <span>${lang === 'en' ? 'Surplus kept in savings: ' : 'ปิดยอดเข้าเงินออมเรียบร้อย: '}</span>
-                <strong class="font-extrabold num-font text-slate-900">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-              </span>
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 font-bold hover:underline cursor-pointer shrink-0">
-                ${lang === 'en' ? 'Change' : 'เปลี่ยน'}
-              </button>
-            </div>
-          `;
-        }
-      }
-    }
-
-    // Filter manual savings deposits in the current pay cycle that deduct from daily budget
-    const allDeposits = StorageManager.getSavingsDeposits();
-    let manualSavingsDeductedInCycle = txSavingsInCycle;
-    allDeposits.forEach(d => {
-      const dStr = StorageManager.normalizeDateString(d.date);
-      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate && d.deductFromDailyBudget) {
-        const amt = Number(d.amount) || 0;
-        if (d.type === 'deposit') {
-          manualSavingsDeductedInCycle += amt;
-        } else if (d.type === 'withdraw') {
-          manualSavingsDeductedInCycle -= amt;
-        }
-      }
-    });
-
-    // Total savings deduction for cycle living budget:
-    // When a user has a monthly savingsGoal (e.g. 5000) and deposited 2000 into pockets,
-    // the 2000 is part of the 5000 goal, so we deduct max(savingsGoal, manualSavingsDeductedInCycle)
-    const totalCycleSavingsDeduction = Math.max(savingsGoal, manualSavingsDeductedInCycle);
-
-    // Dynamic available amount for the rest of the cycle (including today & rollover)
-    const availableForLiving = Math.max(0, (effectiveIncome + rolloverSurplus) - pastExpenseInCycle - totalCycleSavingsDeduction);
+    // Dynamic available amount for the rest of the cycle (including today & rollover from last month)
+    const totalLivingPool = (effectiveIncome + rolloverSurplus);
+    const availableForLiving = Math.max(0, totalLivingPool - pastExpenseInCycle - savingsGoal);
     const dailyQuotaToday = daysRemaining > 0 ? (availableForLiving / daysRemaining) : 0;
     const remainingToday = Math.max(0, dailyQuotaToday - todayExpense);
     const isExceeded = (todayExpense > dailyQuotaToday && dailyQuotaToday > 0) || (dailyQuotaToday === 0 && todayExpense > 0);
@@ -4117,8 +3832,6 @@ const App = {
       : `เหลืออีก ${daysRemaining} วันในรอบ`;
 
     container.innerHTML = `
-      ${settlementBannerHtml}
-
       <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-indigo-50/20 to-slate-50">
         <!-- Header -->
         <div class="flex items-center justify-between">
@@ -4140,7 +3853,15 @@ const App = {
           </button>
         </div>
 
-        ${surplusBadgeHtml}
+        ${rolloverSurplus > 0 ? `
+          <div class="flex items-center justify-between text-[11px] bg-emerald-50 border border-emerald-200/60 text-emerald-800 px-2.5 py-1 rounded-xl">
+            <span class="flex items-center gap-1 font-semibold truncate">
+              <span>📥</span>
+              <span>${lang === 'en' ? 'Rolled over from last month: ' : 'มียอดยกมาจากเดือนก่อน: '}</span>
+              <strong class="font-extrabold num-font text-emerald-700">+฿${rolloverSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </span>
+          </div>
+        ` : ''}
 
         <!-- Balance + Limit -->
         <div class="flex items-baseline justify-between pt-0.5">
@@ -4172,401 +3893,11 @@ const App = {
 
         <!-- Sub Context Stats (Income & Past Expenses) -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-          <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${(effectiveIncome + rolloverSurplus).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-          <span>${lang === 'en' ? 'Target: ' : 'เป้าออมเดือนนี้: '}<strong class="text-indigo-600 num-font font-bold">฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> <span class="text-emerald-600 font-semibold">(ออมแล้ว ฿${manualSavingsDeductedInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span></span>
+          <span>${lang === 'en' ? 'Living Pool: ' : 'กองเงินกินใช้: '}<strong class="text-emerald-600 num-font font-bold">฿${totalLivingPool.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          <span>${lang === 'en' ? 'Past Spent: ' : 'จ่ายสะสมก่อนวันนี้: '}<strong class="text-slate-600 num-font font-bold">฿${pastExpenseInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
         </div>
       </div>
     `;
-  },
-
-  // --- กล่องเงินออมสะสมรวม & ประวัติ (Accumulated Savings Card) ---
-  renderTab1SavingsCard() {
-    const container = document.getElementById('tab1-savings-card');
-    if (!container) return;
-
-    const lang = I18n.getLanguage();
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
-    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    const accumulatedData = StorageManager.getTotalAccumulatedSavings();
-    const allDeposits = StorageManager.getSavingsDeposits();
-
-    const settlement = prevSurplusData.settlement;
-    const settledSavingsAmount = settlement ? (Number(settlement.savingsAmount) || 0) : 0;
-
-    // Filter deposits in current cycle (excluding surplus rollover from past cycle for this cycle badge)
-    let cycleDepositsTotal = 0;
-    allDeposits.forEach(d => {
-      const dStr = StorageManager.normalizeDateString(d.date);
-      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate && !d.isSurplus) {
-        const amt = Number(d.amount) || 0;
-        if (d.type === 'deposit') cycleDepositsTotal += amt;
-        else if (d.type === 'withdraw') cycleDepositsTotal -= amt;
-      }
-    });
-
-    const allCycleTxs = StorageManager.getTransactions();
-    allCycleTxs.forEach(t => {
-      const dStr = StorageManager.normalizeDateString(t.date);
-      if (dStr >= cycleRange.startDate && dStr <= cycleRange.endDate && t.type === 'savings') {
-        cycleDepositsTotal += (Number(t.amount) || 0);
-      }
-    });
-
-    let surplusStatusBadge = '';
-    if (settlement && settlement.action === 'savings') {
-      surplusStatusBadge = `
-        <div class="flex items-center justify-between text-[11px] bg-emerald-50 border border-emerald-200/80 text-emerald-800 px-3 py-1.5 rounded-xl">
-          <span class="flex items-center gap-1.5 font-semibold truncate mr-1">
-            <span>🏦</span>
-            <span>${lang === 'en' ? 'Surplus saved from last cycle: ' : 'เก็บเงินเหลือจากรอบก่อนเข้าเงินออม: '}</span>
-            <strong class="font-extrabold num-font text-emerald-700">+฿${settledSavingsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-          </span>
-          <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold underline cursor-pointer shrink-0">
-            ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
-          </button>
-        </div>
-      `;
-    } else if (prevSurplusData.hasSurplus && !settlement) {
-      surplusStatusBadge = `
-        <div class="flex items-center justify-between text-[11px] bg-amber-50 border border-amber-200/80 text-amber-800 px-3 py-1.5 rounded-xl">
-          <span class="flex items-center gap-1.5 font-semibold truncate mr-1">
-            <span>🎉</span>
-            <span>${lang === 'en' ? 'Surplus pending settlement: ' : 'มีเงินเหลือรอบก่อนรอกำหนด: '}</span>
-            <strong class="font-extrabold num-font text-amber-900">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-          </span>
-          <button type="button" onclick="App.openSurplusSettlementModal()" class="text-[10px] text-amber-900 hover:underline font-bold cursor-pointer shrink-0">
-            ${lang === 'en' ? 'Allocate Now' : 'จัดสรรเงิน'}
-          </button>
-        </div>
-      `;
-    }
-
-    container.innerHTML = `
-      <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-emerald-50/20 to-slate-50">
-        <!-- Header -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-xl">💰</span>
-            <div>
-              <h3 class="text-xs sm:text-sm font-bold text-slate-800 tracking-tight leading-tight">
-                ${lang === 'en' ? 'Total Savings Balance' : 'เงินออมสะสมรวม (Total Savings)'}
-              </h3>
-              <span class="text-[10px] text-slate-400 font-medium">${lang === 'en' ? 'Accumulated savings from all periods' : 'ยอดเงินออมสะสมรวมทุกรอบ'}</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <button 
-              type="button" 
-              onclick="App.openSavingsHistoryModal()" 
-              class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-              title="${lang === 'en' ? 'Savings History' : 'ประวัติการออมเงินทั้งหมด'}"
-            >
-              <span>📋</span>
-              <span>${lang === 'en' ? 'History' : 'ประวัติ'}</span>
-            </button>
-            <button 
-              type="button" 
-              onclick="App.openSavingsDepositModal()" 
-              class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-all flex items-center gap-1 cursor-pointer active:scale-95"
-            >
-              <span>+</span>
-              <span>${lang === 'en' ? 'Deposit' : 'ฝากเงินออม'}</span>
-            </button>
-          </div>
-        </div>
-
-        ${surplusStatusBadge}
-
-        <!-- Big Savings Number Box -->
-        <div class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/70 via-slate-50 to-indigo-50/40 border border-slate-100 flex items-center justify-between">
-          <div>
-            <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'All-time Accumulated Savings' : 'ยอดเงินออมสะสมทั้งหมดที่มีอยู่'}</span>
-            <p class="text-2xl sm:text-3xl font-black num-font text-emerald-600 mt-0.5">
-              ฿${accumulatedData.totalAccumulated.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
-            <span class="text-[10px] text-emerald-700 font-bold block mt-0.5">
-              ${cycleDepositsTotal > 0 ? `+฿${cycleDepositsTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${lang === 'en' ? 'deposited this cycle' : 'ฝากเพิ่มในรอบนี้'}` : (lang === 'en' ? 'Ready to grow with your discipline' : 'ออมสร้างวินัยการเงิน')}
-            </span>
-          </div>
-          <div class="text-4xl shrink-0 opacity-80">
-            🏦
-          </div>
-        </div>
-
-        <!-- Footnote / Withdraw & Surplus Trigger -->
-        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <button 
-            type="button" 
-            onclick="App.openSurplusSettlementModal()" 
-            class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <span>🎉</span> <span>${lang === 'en' ? 'Manage Surplus / Rollover' : 'จัดการเงินเหลือ/ยอดยก'}</span>
-          </button>
-          <button 
-            type="button" 
-            onclick="App.openSavingsWithdrawModal()" 
-            class="text-rose-600 hover:text-rose-800 font-bold hover:underline cursor-pointer"
-          >
-            ${lang === 'en' ? 'Withdraw Savings' : 'ถอนเงินออม'}
-          </button>
-        </div>
-      </div>
-    `;
-  },
-
-  // --- Savings History Modal ---
-  openSavingsHistoryModal() {
-    const modal = document.getElementById('savings-history-modal');
-    if (!modal) return;
-    this.renderSavingsHistoryModal();
-    modal.classList.add('show');
-  },
-
-  closeSavingsHistoryModal() {
-    const modal = document.getElementById('savings-history-modal');
-    if (modal) modal.classList.remove('show');
-  },
-
-  renderSavingsHistoryModal() {
-    const container = document.getElementById('savings-history-items-container');
-    const badgeEl = document.getElementById('savings-history-count-badge');
-    if (!container) return;
-
-    const lang = I18n.getLanguage();
-    const deposits = StorageManager.getSavingsDeposits();
-    const allTxs = StorageManager.getTransactions();
-    const savingsTxs = allTxs.filter(t => t.type === 'savings').map(t => {
-      const cat = StorageManager.getCategoryById(t.categoryId);
-      const catName = StorageManager.getCategoryDisplayName(cat);
-      return {
-        id: t.id,
-        date: t.date,
-        amount: t.amount,
-        note: t.note || (catName ? `${cat?.emoji || '💰'} ${catName}` : (lang === 'en' ? 'Savings Entry' : 'บันทึกเงินออม')),
-        type: 'deposit',
-        isTransaction: true,
-        emoji: cat?.emoji || '💰'
-      };
-    });
-
-    const combinedList = [...deposits, ...savingsTxs].sort((a, b) => {
-      const dateA = StorageManager.normalizeDateString(a.date);
-      const dateB = StorageManager.normalizeDateString(b.date);
-      return dateB.localeCompare(dateA);
-    });
-
-    if (badgeEl) {
-      badgeEl.textContent = `${lang === 'en' ? 'Total' : 'ทั้งหมด'} ${combinedList.length} ${lang === 'en' ? 'records' : 'รายการ'}`;
-    }
-
-    if (combinedList.length === 0) {
-      container.innerHTML = `
-        <div class="py-10 text-center text-slate-400 text-xs">
-          <span>📭 ${lang === 'en' ? 'No savings records yet' : 'ยังไม่มีประวัติการออมเงิน'}</span>
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = combinedList.map(d => {
-      const isDeposit = d.type === 'deposit';
-      const isSurplus = Boolean(d.isSurplus);
-      const isTx = Boolean(d.isTransaction);
-      const emoji = d.emoji || (isSurplus ? '🎉' : (isDeposit ? '💰' : '💸'));
-      const badgeColor = isSurplus ? 'bg-indigo-100 text-indigo-700' : (isDeposit ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700');
-      const numColor = isDeposit ? 'text-emerald-600' : 'text-rose-600';
-      const sign = isDeposit ? '+' : '-';
-      const dStr = StorageManager.normalizeDateString(d.date);
-      const subNote = isSurplus 
-        ? (lang === 'en' ? 'Surplus settlement' : 'เงินเหลือปิดรอบ') 
-        : (isTx 
-          ? (lang === 'en' ? 'Savings entry' : 'บันทึกเงินออม') 
-          : (isDeposit ? (lang === 'en' ? 'Deducted from budget' : 'หักจากคงเหลือสุทธิ') : (lang === 'en' ? 'Transferred back' : 'โอนคืนคงเหลือ')));
-
-      return `
-        <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-2 hover:bg-slate-100/70 transition-all">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="w-8 h-8 rounded-xl ${badgeColor} flex items-center justify-center text-sm font-bold shrink-0">${emoji}</span>
-            <div class="min-w-0">
-              <span class="text-xs font-bold text-slate-800 block truncate">${d.note || (isDeposit ? 'ฝากเงินออม' : 'ถอนเงินออม')}</span>
-              <span class="text-[10px] text-slate-400">${dStr} · ${subNote}</span>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <div class="text-right">
-              <span class="text-xs font-black num-font ${numColor} block">${sign}฿${(Number(d.amount) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              <span class="text-[9px] text-slate-400">${lang === 'en' ? 'Done' : 'สำเร็จ'}</span>
-            </div>
-            <button 
-              type="button" 
-              onclick="App.handleDeleteSavingsDeposit('${d.id}', ${isTx})" 
-              class="w-6 h-6 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center text-xs transition-colors cursor-pointer"
-              title="${lang === 'en' ? 'Delete this entry' : 'ลบรายการนี้'}"
-            >✕</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-  },
-
-  // --- Savings Instant Deposit & Withdrawal Handlers ---
-  openSavingsDepositModal() {
-    const modal = document.getElementById('savings-deposit-modal');
-    if (!modal) return;
-
-    const dateInput = document.getElementById('savings-deposit-date');
-    const amountInput = document.getElementById('savings-deposit-amount');
-    const noteInput = document.getElementById('savings-deposit-note');
-    const deductToggle = document.getElementById('savings-deposit-deduct-toggle');
-
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    if (dateInput) {
-      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    }
-    if (amountInput) {
-      if (!amountInput.value) amountInput.value = '1000';
-      setTimeout(() => amountInput.focus(), 100);
-    }
-    if (noteInput) noteInput.value = '';
-    if (deductToggle) deductToggle.checked = true;
-
-    modal.classList.add('show');
-  },
-
-  closeSavingsDepositModal() {
-    const modal = document.getElementById('savings-deposit-modal');
-    if (modal) modal.classList.remove('show');
-  },
-
-  setSavingsDepositPreset(amt) {
-    const amountInput = document.getElementById('savings-deposit-amount');
-    if (amountInput) {
-      amountInput.value = amt;
-      amountInput.focus();
-    }
-  },
-
-  handleSaveSavingsDeposit() {
-    const amountInput = document.getElementById('savings-deposit-amount');
-    const dateInput = document.getElementById('savings-deposit-date');
-    const noteInput = document.getElementById('savings-deposit-note');
-    const deductToggle = document.getElementById('savings-deposit-deduct-toggle');
-    const lang = I18n.getLanguage();
-
-    const amt = Math.max(0, Math.round(((parseFloat(amountInput?.value) || 0) + Number.EPSILON) * 100) / 100);
-    if (amt <= 0) {
-      alert(lang === 'en' ? 'Please enter a valid deposit amount' : 'กรุณาระบุจำนวนเงินที่ต้องการออม');
-      return;
-    }
-
-    const date = dateInput?.value || new Date().toISOString().slice(0, 10);
-    const note = (noteInput?.value || '').trim() || (lang === 'en' ? 'Deposit to Savings' : 'ฝากเงินออม');
-    const deductFromDailyBudget = deductToggle ? deductToggle.checked : true;
-
-    StorageManager.addSavingsDeposit({
-      type: 'deposit',
-      amount: amt,
-      date,
-      note,
-      deductFromDailyBudget
-    });
-
-    this.closeSavingsDepositModal();
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
-    this.renderTab1OverviewHero();
-    if (typeof this.renderSavingsHistoryModal === 'function') this.renderSavingsHistoryModal();
-
-    this.showToast(lang === 'en' ? `💰 Saved ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} into savings!` : `💰 ฝากเงิน ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} เข้าเงินออมสะสมเรียบร้อย!`);
-  },
-
-  openSavingsWithdrawModal() {
-    const modal = document.getElementById('savings-withdraw-modal');
-    if (!modal) return;
-
-    const dateInput = document.getElementById('savings-withdraw-date');
-    const amountInput = document.getElementById('savings-withdraw-amount');
-    const noteInput = document.getElementById('savings-withdraw-note');
-    const creditToggle = document.getElementById('savings-withdraw-credit-toggle');
-
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    if (dateInput) {
-      dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    }
-    if (amountInput) {
-      amountInput.value = '';
-      setTimeout(() => amountInput.focus(), 100);
-    }
-    if (noteInput) noteInput.value = '';
-    if (creditToggle) creditToggle.checked = true;
-
-    modal.classList.add('show');
-  },
-
-  closeSavingsWithdrawModal() {
-    const modal = document.getElementById('savings-withdraw-modal');
-    if (modal) modal.classList.remove('show');
-  },
-
-  handleSaveSavingsWithdraw() {
-    const amountInput = document.getElementById('savings-withdraw-amount');
-    const dateInput = document.getElementById('savings-withdraw-date');
-    const noteInput = document.getElementById('savings-withdraw-note');
-    const creditToggle = document.getElementById('savings-withdraw-credit-toggle');
-    const lang = I18n.getLanguage();
-
-    const amt = Math.max(0, Math.round(((parseFloat(amountInput?.value) || 0) + Number.EPSILON) * 100) / 100);
-    if (amt <= 0) {
-      alert(lang === 'en' ? 'Please enter a valid withdrawal amount' : 'กรุณาระบุจำนวนเงินที่ต้องการถอน');
-      return;
-    }
-
-    const accumulatedData = StorageManager.getTotalAccumulatedSavings();
-    if (amt > accumulatedData.totalAccumulated) {
-      alert(lang === 'en' ? 'Insufficient savings balance' : 'ยอดเงินออมสะสมมีไม่เพียงพอสำหรับการถอน');
-      return;
-    }
-
-    const date = dateInput?.value || new Date().toISOString().slice(0, 10);
-    const note = (noteInput?.value || '').trim() || (lang === 'en' ? 'Withdraw Savings' : 'ถอนเงินออม');
-    const deductFromDailyBudget = creditToggle ? creditToggle.checked : true;
-
-    StorageManager.addSavingsDeposit({
-      type: 'withdraw',
-      amount: amt,
-      date,
-      note,
-      deductFromDailyBudget
-    });
-
-    this.closeSavingsWithdrawModal();
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
-    this.renderTab1OverviewHero();
-    if (typeof this.renderSavingsHistoryModal === 'function') this.renderSavingsHistoryModal();
-
-    this.showToast(lang === 'en' ? `💸 Withdrew ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} from savings` : `💸 ถอนเงิน ฿${amt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} จากเงินออมสะสมแล้ว`);
-  },
-
-  handleDeleteSavingsDeposit(id, isTx = false) {
-    const lang = I18n.getLanguage();
-    if (confirm(lang === 'en' ? 'Delete this savings record?' : 'ลบรายการบันทึกเงินออมนี้หรือไม่?')) {
-      if (isTx) {
-        StorageManager.deleteTransaction(id);
-        this.renderAll();
-      } else {
-        StorageManager.deleteSavingsDeposit(id);
-        this.renderTab1DailyBudgetCard();
-        this.renderTab1SavingsCard();
-        this.renderTab1OverviewHero();
-      }
-      this.renderSavingsHistoryModal();
-      this.showToast(lang === 'en' ? 'Deleted savings record' : 'ลบรายการบันทึกเงินออมแล้ว');
-    }
   },
 
   // --- Monthly Savings Goal Manager ---
@@ -4577,7 +3908,7 @@ const App = {
     const lang = I18n.getLanguage();
 
     if (badgeEl) {
-      badgeEl.textContent = `฿${goal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${lang === 'en' ? '/ month' : '/ เดือน'}`;
+      badgeEl.textContent = `฿${goal.toLocaleString('th-TH')} ${lang === 'en' ? '/ month' : '/ เดือน'}`;
     }
     if (inputEl) {
       inputEl.value = goal;
@@ -4585,13 +3916,12 @@ const App = {
   },
 
   handleSaveSettingsSavingsGoal(amount) {
-    const val = Math.max(0, Math.round(((parseFloat(amount) || 0) + Number.EPSILON) * 100) / 100);
+    const val = Math.max(0, parseFloat(amount) || 0);
     StorageManager.saveMonthlySavingsGoal(val);
     this.renderSettingsSavingsGoalSection();
     this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
     const lang = I18n.getLanguage();
-    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `🎯 บันทึกเป้าหมายเงินออม ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} แล้ว`);
+    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 บันทึกเป้าหมายเงินออม ฿${val.toLocaleString()} แล้ว`);
   },
 
   handleSetSavingsGoalPreset(amount) {
@@ -4617,147 +3947,13 @@ const App = {
 
   handleSaveSavingsGoalFromModal() {
     const input = document.getElementById('modal-savings-goal-input');
-    const val = Math.max(0, Math.round(((parseFloat(input?.value) || 0) + Number.EPSILON) * 100) / 100);
+    const val = Math.max(0, parseFloat(input?.value) || 0);
     StorageManager.saveMonthlySavingsGoal(val);
     this.closeSavingsGoalModal();
     this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
     this.renderSettingsSavingsGoalSection();
     const lang = I18n.getLanguage();
-    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `🎯 ปรับเป้าหมายเงินออมเป็น ฿${val.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} แล้ว`);
-  },
-
-  // --- Surplus Settlement Modal & Actions ---
-  openSurplusSettlementModal() {
-    const modal = document.getElementById('surplus-settlement-modal');
-    if (!modal) return;
-
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-
-    const totalSurplus = Math.max(0, prevSurplusData.netSurplus);
-    const totalEl = document.getElementById('settlement-modal-total-surplus');
-    const labelEl = document.getElementById('settlement-modal-cycle-label');
-    const rollInput = document.getElementById('settlement-input-rollover');
-    const savInput = document.getElementById('settlement-input-savings');
-    const lang = I18n.getLanguage();
-
-    if (totalEl) totalEl.textContent = `฿${totalSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    if (labelEl) labelEl.textContent = (lang === 'en') ? prevSurplusData.prevCycle.labelEn : prevSurplusData.prevCycle.labelTh;
-
-    const settlement = prevSurplusData.settlement;
-    if (settlement) {
-      if (rollInput) rollInput.value = settlement.rolloverAmount !== undefined ? settlement.rolloverAmount : 0;
-      if (savInput) savInput.value = settlement.savingsAmount !== undefined ? settlement.savingsAmount : 0;
-    } else {
-      if (rollInput) rollInput.value = totalSurplus;
-      if (savInput) savInput.value = 0;
-    }
-
-    modal.classList.add('show');
-  },
-
-  closeSurplusSettlementModal() {
-    const modal = document.getElementById('surplus-settlement-modal');
-    if (modal) modal.classList.remove('show');
-  },
-
-  setSettlementModalMode(mode) {
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    const totalSurplus = Math.max(0, Math.round((prevSurplusData.netSurplus + Number.EPSILON) * 100) / 100);
-
-    const rollInput = document.getElementById('settlement-input-rollover');
-    const savInput = document.getElementById('settlement-input-savings');
-
-    if (mode === 'all_rollover') {
-      if (rollInput) rollInput.value = totalSurplus;
-      if (savInput) savInput.value = 0;
-    } else if (mode === 'all_savings') {
-      if (rollInput) rollInput.value = 0;
-      if (savInput) savInput.value = totalSurplus;
-    }
-  },
-
-  onSettlementInputChange(changedField) {
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    const totalSurplus = Math.max(0, Math.round((prevSurplusData.netSurplus + Number.EPSILON) * 100) / 100);
-
-    const rollInput = document.getElementById('settlement-input-rollover');
-    const savInput = document.getElementById('settlement-input-savings');
-
-    if (changedField === 'rollover' && rollInput && savInput) {
-      const rollVal = Math.max(0, Math.min(totalSurplus, parseFloat(rollInput.value) || 0));
-      const remainingSav = Math.max(0, Math.round((totalSurplus - rollVal + Number.EPSILON) * 100) / 100);
-      savInput.value = remainingSav;
-    } else if (changedField === 'savings' && rollInput && savInput) {
-      const savVal = Math.max(0, Math.min(totalSurplus, parseFloat(savInput.value) || 0));
-      const remainingRoll = Math.max(0, Math.round((totalSurplus - savVal + Number.EPSILON) * 100) / 100);
-      rollInput.value = remainingRoll;
-    }
-  },
-
-  handleApplySurplusSettlement(action, rolloverAmt, savingsAmt) {
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const currentCycle = StorageManager.getCycleDateRange(now, payCycleSetting);
-
-    const rAmt = Math.max(0, Math.round(((parseFloat(rolloverAmt) || 0) + Number.EPSILON) * 100) / 100);
-    const sAmt = Math.max(0, Math.round(((parseFloat(savingsAmt) || 0) + Number.EPSILON) * 100) / 100);
-
-    StorageManager.saveSurplusSettlement(currentCycle.startDate, {
-      action,
-      rolloverAmount: rAmt,
-      savingsAmount: sAmt
-    });
-
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
-    this.renderTab1OverviewHero();
-    this.renderSettingsSurplusSection();
-
-    const lang = I18n.getLanguage();
-    if (action === 'rollover') {
-      this.showToast(lang === 'en' ? `📥 Rolled over ฿${rAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to daily budget!` : `📥 ยกยอด ฿${rAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} เข้าโควตากินใช้แล้ว!`);
-    } else if (action === 'savings') {
-      this.showToast(lang === 'en' ? `🏦 Saved ฿${sAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} as net savings!` : `🏦 บันทึกเงิน ฿${sAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} เข้าเงินออมเรียบร้อย!`);
-    } else {
-      this.showToast(lang === 'en' ? '✨ Surplus allocation saved!' : '✨ บันทึกการจัดสรรเงินเหลือแล้ว!');
-    }
-  },
-
-  handleSaveSurplusSettlementFromModal() {
-    const rollInput = document.getElementById('settlement-input-rollover');
-    const savInput = document.getElementById('settlement-input-savings');
-    const rollAmt = Math.max(0, Math.round(((parseFloat(rollInput?.value) || 0) + Number.EPSILON) * 100) / 100);
-    const savAmt = Math.max(0, Math.round(((parseFloat(savInput?.value) || 0) + Number.EPSILON) * 100) / 100);
-
-    let action = 'split';
-    if (rollAmt > 0 && savAmt === 0) action = 'rollover';
-    else if (rollAmt === 0 && savAmt > 0) action = 'savings';
-
-    this.handleApplySurplusSettlement(action, rollAmt, savAmt);
-    this.closeSurplusSettlementModal();
-  },
-
-  handleResetSurplusSettlement() {
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const currentCycle = StorageManager.getCycleDateRange(now, payCycleSetting);
-
-    StorageManager.removeSurplusSettlement(currentCycle.startDate);
-    this.closeSurplusSettlementModal();
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
-    this.renderTab1OverviewHero();
-    this.renderSettingsSurplusSection();
-
-    const lang = I18n.getLanguage();
-    this.showToast(lang === 'en' ? '🔄 Surplus settlement reset' : '🔄 รีเซ็ตการจัดการเงินเหลือแล้ว');
+    this.showToast(lang === 'en' ? `🎯 Savings target set to ฿${val.toLocaleString()}` : `🎯 ปรับเป้าหมายเงินออมเป็น ฿${val.toLocaleString()} แล้ว`);
   },
 
   // ==========================================
@@ -4767,122 +3963,9 @@ const App = {
     this.renderSettingsGoogleAccount();
     this.renderSettingsPayCycleSection();
     this.renderSettingsSavingsGoalSection();
-    this.renderSettingsSurplusSection();
     this.renderSettingsRecurringSummary();
     this.renderSettingsCategorySummary();
     this.renderSettingsStorageStats();
-  },
-
-  renderSettingsSurplusSection() {
-    const badgeEl = document.getElementById('settings-surplus-badge');
-    const contentEl = document.getElementById('settings-surplus-content-card');
-    if (!contentEl) return;
-
-    const lang = I18n.getLanguage();
-    const now = new Date();
-    const payCycleSetting = StorageManager.getPayCycleSetting();
-    const prevSurplusData = StorageManager.getPreviousCycleSurplus(now, payCycleSetting);
-    const settlement = prevSurplusData.settlement;
-
-    if (settlement) {
-      if (settlement.action === 'savings') {
-        const savAmt = Number(settlement.savingsAmount) || 0;
-        if (badgeEl) {
-          badgeEl.textContent = lang === 'en' ? '🏦 Kept in Savings' : '🏦 เก็บเข้าเงินออม';
-          badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 num-font';
-        }
-        contentEl.innerHTML = `
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-            <div>
-              <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Allocated as Savings' : 'สถานะ: เก็บเข้าเงินออมทั้งหมด'}</span>
-              <span class="text-[11px] text-slate-500">${lang === 'en' ? 'Saved from previous cycle: ' : 'เงินเหลือรอบก่อน: '}<strong class="text-emerald-700 num-font font-bold">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-            </div>
-            <div class="flex items-center gap-1.5 self-end sm:self-center">
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer">
-                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
-              </button>
-              <button type="button" onclick="App.handleResetSurplusSettlement()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer">
-                ${lang === 'en' ? 'Reset' : 'รีเซ็ต'}
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (settlement.action === 'rollover') {
-        const rollAmt = Number(settlement.rolloverAmount) || 0;
-        if (badgeEl) {
-          badgeEl.textContent = lang === 'en' ? '📥 Rolled Over' : '📥 ยกยอดกินใช้';
-          badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
-        }
-        contentEl.innerHTML = `
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-            <div>
-              <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Rolled Over to Daily Budget' : 'สถานะ: ยกยอดไปทบเป็นงบกินใช้'}</span>
-              <span class="text-[11px] text-slate-500">${lang === 'en' ? 'Rollover amount: ' : 'จำนวนเงินที่ยกยอด: '}<strong class="text-emerald-700 num-font font-bold">+฿${rollAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-            </div>
-            <div class="flex items-center gap-1.5 self-end sm:self-center">
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer">
-                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
-              </button>
-              <button type="button" onclick="App.handleResetSurplusSettlement()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer">
-                ${lang === 'en' ? 'Reset' : 'รีเซ็ต'}
-              </button>
-            </div>
-          </div>
-        `;
-      } else {
-        const rollAmt = Number(settlement.rolloverAmount) || 0;
-        const savAmt = Number(settlement.savingsAmount) || 0;
-        if (badgeEl) {
-          badgeEl.textContent = lang === 'en' ? '✂️ Custom Split' : '✂️ แบ่งสัดส่วน';
-          badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 num-font';
-        }
-        contentEl.innerHTML = `
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-            <div>
-              <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Split between Rollover & Savings' : 'สถานะ: แบ่งยกยอดกินใช้ & เก็บเข้าเงินออม'}</span>
-              <span class="text-[11px] text-slate-500">ยกยอด: <strong class="text-emerald-700 num-font font-bold">฿${rollAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> | ออม: <strong class="text-indigo-700 num-font font-bold">฿${savAmt.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-            </div>
-            <div class="flex items-center gap-1.5 self-end sm:self-center">
-              <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer">
-                ${lang === 'en' ? 'Adjust' : 'ปรับเปลี่ยน'}
-              </button>
-              <button type="button" onclick="App.handleResetSurplusSettlement()" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all cursor-pointer">
-                ${lang === 'en' ? 'Reset' : 'รีเซ็ต'}
-              </button>
-            </div>
-          </div>
-        `;
-      }
-    } else if (prevSurplusData.hasSurplus) {
-      if (badgeEl) {
-        badgeEl.textContent = lang === 'en' ? '⚡ Pending' : '⚡ รอดำเนินการ';
-        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200/60 num-font';
-      }
-      contentEl.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
-          <div>
-            <span class="font-bold text-slate-800 block">${lang === 'en' ? 'Surplus Available for Allocation' : 'มียอดเงินเหลือจากรอบก่อนหน้าที่ยังไม่ได้จัดสรร'}</span>
-            <span class="text-[11px] text-slate-500">${lang === 'en' ? 'Amount: ' : 'ยอดเงินคงเหลือ: '}<strong class="text-emerald-600 num-font font-bold">฿${prevSurplusData.netSurplus.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-          </div>
-          <button type="button" onclick="App.openSurplusSettlementModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-2xs transition-all cursor-pointer self-end sm:self-center">
-            ${lang === 'en' ? 'Allocate Now' : 'จัดสรรเงินเหลือ'}
-          </button>
-        </div>
-      `;
-    } else {
-      if (badgeEl) {
-        badgeEl.textContent = lang === 'en' ? 'No Surplus' : 'ไม่มียอดยก';
-        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 num-font';
-      }
-      contentEl.innerHTML = `
-        <div class="flex items-center justify-between text-xs text-slate-500">
-          <span>${lang === 'en' ? 'No surplus recorded from the previous cycle, or it was balanced.' : 'รอบก่อนหน้าไม่มีเงินเหลือ หรือถูกจัดสรรสมดุลเรียบร้อยแล้ว'}</span>
-          <button type="button" onclick="App.openSurplusSettlementModal()" class="text-xs text-indigo-600 font-bold hover:underline cursor-pointer shrink-0 ml-2">
-            ${lang === 'en' ? 'Custom Input' : 'กำหนดยอดเอง'}
-          </button>
-        </div>
-      `;
-    }
   },
 
   renderSettingsPayCycleSection() {
@@ -4892,28 +3975,34 @@ const App = {
     const customDayInput = document.getElementById('settings-custom-cycle-day');
     const previewEl = document.getElementById('settings-paycycle-preview');
 
-    const types = ['end_of_month', 'calendar', 'custom'];
+    const types = ['end_of_month', 'calendar', 'day_25', 'day_28'];
     types.forEach(t => {
       const card = document.getElementById(`paycycle-opt-${t}`);
       if (card) {
         if (setting.type === t) {
-          card.className = 'paycycle-card p-3 sm:p-3.5 rounded-2xl border-2 border-indigo-600 bg-indigo-50/50 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 shadow-xs ring-2 ring-indigo-500/10';
+          card.className = 'paycycle-card p-3 sm:p-3.5 rounded-2xl border-2 border-indigo-600 bg-indigo-50/50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-xs ring-2 ring-indigo-500/10';
         } else {
-          card.className = 'paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex flex-col justify-between gap-2 shadow-2xs';
+          card.className = 'paycycle-card p-3 sm:p-3.5 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50 text-left transition-all cursor-pointer flex items-start gap-2.5 shadow-2xs';
         }
       }
     });
 
     if (customDayInput) {
-      customDayInput.value = (setting.type === 'custom') ? (setting.customDay || 15) : (setting.customDay || 15);
+      customDayInput.value = (setting.type === 'custom') ? (setting.customDay || 1) : '';
     }
 
     if (badgeEl) {
       if (setting.type === 'end_of_month') {
         badgeEl.textContent = lang === 'en' ? '💼 End of Month' : '💼 วันสิ้นเดือน';
         badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+      } else if (setting.type === 'day_25') {
+        badgeEl.textContent = lang === 'en' ? '💳 Day 25' : '💳 วันที่ 25';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
+      } else if (setting.type === 'day_28') {
+        badgeEl.textContent = lang === 'en' ? '🏦 Day 28' : '🏦 วันที่ 28';
+        badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
       } else if (setting.type === 'custom') {
-        badgeEl.textContent = lang === 'en' ? `⚙️ Day ${setting.customDay || 15}` : `⚙️ ตัดรอบวันที่ ${setting.customDay || 15}`;
+        badgeEl.textContent = lang === 'en' ? `⚙️ Day ${setting.customDay}` : `⚙️ วันที่ ${setting.customDay}`;
         badgeEl.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/60 num-font';
       } else {
         badgeEl.textContent = lang === 'en' ? '📆 Calendar (1-End)' : '📆 เดือนปฏิทิน';
@@ -4929,8 +4018,12 @@ const App = {
       let explanation = '';
       if (setting.type === 'end_of_month') {
         explanation = lang === 'en' ? 'Salary on last day of month is counted in this period' : 'เงินเดือนที่เข้าวันสุดท้ายของเดือนจะถูกนับเป็นรายรับของงวดนี้ทันที';
+      } else if (setting.type === 'day_25') {
+        explanation = lang === 'en' ? 'Income from 25th is counted for the upcoming period' : 'เงินเดือนเข้าวันที่ 25 จะถูกนำมาจัดสรรสำหรับงวดนี้';
+      } else if (setting.type === 'day_28') {
+        explanation = lang === 'en' ? 'Income from 28th is counted for the upcoming period' : 'เงินเดือนเข้าวันที่ 28 จะถูกนำมาจัดสรรสำหรับงวดนี้';
       } else if (setting.type === 'custom') {
-        explanation = lang === 'en' ? `Cut-off every ${setting.customDay || 15}th of month (aligned with daily quota & history)` : `ตัดรอบทุกวันที่ ${setting.customDay || 15} ของเดือน (เชื่อมโยงโควตากินใช้และประวัติรายการ)`;
+        explanation = lang === 'en' ? `Cut-off every ${setting.customDay}th of month` : `ตัดรอบทุกวันที่ ${setting.customDay} ของเดือน`;
       } else {
         explanation = lang === 'en' ? 'Standard calendar month (1st to last day)' : 'รอบเดือนปฏิทินมาตรฐาน 1 ถึงวันสิ้นเดือน';
       }
@@ -4951,16 +4044,10 @@ const App = {
   handleSetPayCycleType(type) {
     const setting = StorageManager.getPayCycleSetting();
     setting.type = type;
-    if (type === 'end_of_month') {
-      setting.customDay = 31;
-    } else if (type === 'calendar') {
-      setting.customDay = 1;
-    } else if (type === 'custom') {
-      if (!setting.customDay || setting.customDay === 1 || setting.customDay === 31) {
-        const inputVal = parseInt(document.getElementById('settings-custom-cycle-day')?.value, 10);
-        setting.customDay = (inputVal >= 1 && inputVal <= 31) ? inputVal : 15;
-      }
-    }
+    if (type === 'day_25') setting.customDay = 25;
+    else if (type === 'day_28') setting.customDay = 28;
+    else if (type === 'end_of_month') setting.customDay = 31;
+    else if (type === 'calendar') setting.customDay = 1;
 
     StorageManager.savePayCycleSetting(setting);
     this.currentPayCyclePreset = type;
@@ -4968,12 +4055,9 @@ const App = {
     this.updateCustomDateRangeFromSelectedDate();
     this.renderSettingsPayCycleSection();
     this.renderTab1OverviewHero();
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
     this.renderHistoryTab();
     this.renderMonthSelector();
     this.renderDashboard();
-    this.renderSettingsSurplusSection();
 
     const lang = I18n.getLanguage();
     this.showToast(lang === 'en' ? '🗓️ Payday cycle updated' : '🗓️ บันทึกรอบบัญชีและวันเงินเดือนออกแล้ว');
@@ -4988,18 +4072,12 @@ const App = {
     StorageManager.savePayCycleSetting(setting);
     this.currentPayCyclePreset = 'custom';
 
-    const customDayInput = document.getElementById('settings-custom-cycle-day');
-    if (customDayInput) customDayInput.value = d;
-
     this.updateCustomDateRangeFromSelectedDate();
     this.renderSettingsPayCycleSection();
     this.renderTab1OverviewHero();
-    this.renderTab1DailyBudgetCard();
-    this.renderTab1SavingsCard();
     this.renderHistoryTab();
     this.renderMonthSelector();
     this.renderDashboard();
-    this.renderSettingsSurplusSection();
 
     const lang = I18n.getLanguage();
     this.showToast(lang === 'en' ? `🗓️ Pay cycle set to Day ${d}` : `🗓️ ตั้งวันตัดรอบเป็นวันที่ ${d} ของเดือนแล้ว`);
@@ -5230,13 +4308,14 @@ const App = {
     this.settingsCatType = type;
     const expBtn = document.getElementById('settings-cat-type-exp');
     const incBtn = document.getElementById('settings-cat-type-inc');
-    const savBtn = document.getElementById('settings-cat-type-sav');
 
-    const unselectedCls = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
-
-    if (expBtn) expBtn.className = (type === 'expense') ? 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer' : unselectedCls;
-    if (incBtn) incBtn.className = (type === 'income') ? 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs cursor-pointer' : unselectedCls;
-    if (savBtn) savBtn.className = (type === 'savings') ? 'px-3 py-1.5 rounded-xl font-bold text-xs bg-indigo-500 text-white shadow-xs cursor-pointer' : unselectedCls;
+    if (type === 'expense') {
+      if (expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-rose-400 text-white shadow-xs cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
+    } else {
+      if (expBtn) expBtn.className = 'px-3 py-1.5 rounded-xl font-medium text-xs text-slate-500 hover:text-slate-900 cursor-pointer';
+      if (incBtn) incBtn.className = 'px-3 py-1.5 rounded-xl font-bold text-xs bg-emerald-400 text-white shadow-xs cursor-pointer';
+    }
 
     this.renderSettingsCategoryList();
   },

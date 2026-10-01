@@ -9,22 +9,13 @@ const STORAGE_KEYS = {
   RECURRING_ITEMS: 'smart_expense_recurring_list_v2',
   DELETED_RECURRING: 'smart_expense_deleted_rec_ids_v1',
   PAY_CYCLE: 'smart_expense_pay_cycle_setting_v1',
-  SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1',
-  SURPLUS_SETTLEMENT: 'smart_expense_surplus_settlement_v1',
-  SAVINGS_DEPOSITS: 'smart_expense_savings_deposits_v1',
-  SAVINGS_POCKETS: 'smart_expense_savings_pockets_v1'
+  SAVINGS_GOAL: 'smart_expense_monthly_savings_goal_v1'
 };
 
 const DEFAULT_SAVINGS_GOAL = 5000;
 
-const DEFAULT_SAVINGS_POCKETS = [
-  { id: 'pocket_general', name: 'เงินออมทั่วไป', nameEn: 'General Savings', emoji: '💰', targetAmount: 0 },
-  { id: 'pocket_emergency', name: 'เงินสำรองฉุกเฉิน', nameEn: 'Emergency Fund', emoji: '🛡️', targetAmount: 10000 },
-  { id: 'pocket_travel', name: 'ทริปท่องเที่ยว', nameEn: 'Travel & Vacation', emoji: '🏖️', targetAmount: 10000 }
-];
-
 const DEFAULT_PAY_CYCLE = {
-  type: 'calendar', // 'calendar' | 'end_of_month' | 'custom'
+  type: 'calendar', // 'calendar' | 'end_of_month' | 'day_25' | 'day_28' | 'custom'
   customDay: 1
 };
 
@@ -46,13 +37,7 @@ const DEFAULT_CATEGORIES = [
   { id: 'inc_bonus', name: 'โบนัส & คอมมิชชั่น', nameEn: 'Bonus & Commission', emoji: '🎁', color: '#14b8a6', type: 'income', isDefault: true },
   { id: 'inc_business', name: 'ธุรกิจ & ค้าขาย', nameEn: 'Business & Sales', emoji: '🛒', color: '#059669', type: 'income', isDefault: true },
   { id: 'inc_invest', name: 'เงินปันผล & ดอกเบี้ย', nameEn: 'Dividends & Interest', emoji: '📈', color: '#6366f1', type: 'income', isDefault: true },
-  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true },
-
-  // เงินออม (Savings)
-  { id: 'sav_general', name: 'เงินออมทั่วไป', nameEn: 'General Savings', emoji: '💰', color: '#6366f1', type: 'savings', isDefault: true },
-  { id: 'sav_emergency', name: 'เงินสำรองฉุกเฉิน', nameEn: 'Emergency Fund', emoji: '🛡️', color: '#10b981', type: 'savings', isDefault: true },
-  { id: 'sav_invest', name: 'ลงทุน & พอร์ตหุ้น', nameEn: 'Investment & Stocks', emoji: '📈', color: '#3b82f6', type: 'savings', isDefault: true },
-  { id: 'sav_dream', name: 'เป้าหมาย & ของที่อยากได้', nameEn: 'Goals & Dreams', emoji: '🎯', color: '#ec4899', type: 'savings', isDefault: true }
+  { id: 'inc_other', name: 'รายรับอื่นๆ', nameEn: 'Other Income', emoji: '💰', color: '#84cc16', type: 'income', isDefault: true }
 ];
 
 // รายการประจำเริ่มต้น
@@ -142,15 +127,6 @@ const StorageManager = {
             }
           }
         });
-
-        // Ensure default savings categories exist for existing users
-        DEFAULT_CATEGORIES.forEach(def => {
-          if (def.type === 'savings' && !parsed.some(c => c.id === def.id)) {
-            parsed.push({ ...def });
-            needsSave = true;
-          }
-        });
-
         this._categories = parsed;
         this._updateCatMap();
         if (needsSave) {
@@ -201,17 +177,16 @@ const StorageManager = {
 
   addCategory(category) {
     const categories = this.getCategories();
-    const type = category.type === 'income' ? 'income' : (category.type === 'savings' ? 'savings' : 'expense');
-    const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : (type === 'savings' ? 'หมวดเงินออมใหม่' : 'รายจ่ายใหม่'));
+    const type = category.type === 'income' ? 'income' : 'expense';
+    const name = (category.name || '').trim() || (type === 'income' ? 'รายรับใหม่' : 'รายจ่ายใหม่');
     const nameEn = (category.nameEn || '').trim() || name;
-    const prefix = type === 'income' ? 'inc_' : (type === 'savings' ? 'sav_' : 'exp_');
     
     const newCat = {
-      id: 'cat_' + prefix + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: 'cat_' + (type === 'income' ? 'inc_' : 'exp_') + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       name: name,
       nameEn: nameEn,
-      emoji: category.emoji || (type === 'income' ? '💰' : (type === 'savings' ? '🏦' : '📦')),
-      color: category.color || (type === 'income' ? '#34d399' : (type === 'savings' ? '#6366f1' : '#f87171')),
+      emoji: category.emoji || (type === 'income' ? '💰' : '📦'),
+      color: category.color || (type === 'income' ? '#34d399' : '#f87171'),
       type: type,
       isDefault: false
     };
@@ -507,15 +482,13 @@ const StorageManager = {
 
   addTransaction(tx) {
     const transactions = this.getTransactions();
-    const txType = (tx.type === 'income') ? 'income' : ((tx.type === 'savings') ? 'savings' : 'expense');
-    const defaultCat = (txType === 'income') ? 'inc_other' : ((txType === 'savings') ? 'sav_general' : 'exp_other');
     const newTx = {
       id: 'tx_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      type: txType,
+      type: tx.type === 'income' ? 'income' : 'expense',
       amount: Math.abs(parseFloat(tx.amount)) || 0,
-      categoryId: tx.categoryId || defaultCat,
+      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
       date: tx.date || new Date().toISOString().slice(0, 16),
-      paymentMethod: tx.paymentMethod || (txType === 'savings' ? 'บัญชีเงินออม / ธนาคาร' : 'เงินสด (Cash)'),
+      paymentMethod: tx.paymentMethod || 'เงินสด (Cash)',
       note: (tx.note || '').trim(),
       createdAt: Date.now()
     };
@@ -529,20 +502,16 @@ const StorageManager = {
   addTransactionsBatch(txList) {
     if (!Array.isArray(txList) || txList.length === 0) return 0;
     const transactions = this.getTransactions();
-    const newItems = txList.map((tx, idx) => {
-      const txType = (tx.type === 'income') ? 'income' : ((tx.type === 'savings') ? 'savings' : 'expense');
-      const defaultCat = (txType === 'income') ? 'inc_other' : ((txType === 'savings') ? 'sav_general' : 'exp_other');
-      return {
-        id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
-        type: txType,
-        amount: Math.abs(parseFloat(tx.amount)) || 0,
-        categoryId: tx.categoryId || defaultCat,
-        date: tx.date || new Date().toISOString().slice(0, 16),
-        paymentMethod: tx.paymentMethod || (txType === 'savings' ? 'บัญชีเงินออม / ธนาคาร' : 'โอนเงิน / บัญชีธนาคาร'),
-        note: (tx.note || '').trim(),
-        createdAt: Date.now() + idx
-      };
-    });
+    const newItems = txList.map((tx, idx) => ({
+      id: 'tx_' + (Date.now() + idx) + '_' + Math.random().toString(36).substring(2, 6),
+      type: tx.type === 'income' ? 'income' : 'expense',
+      amount: Math.abs(parseFloat(tx.amount)) || 0,
+      categoryId: tx.categoryId || (tx.type === 'income' ? 'inc_other' : 'exp_other'),
+      date: tx.date || new Date().toISOString().slice(0, 16),
+      paymentMethod: tx.paymentMethod || 'โอนเงิน / บัญชีธนาคาร',
+      note: (tx.note || '').trim(),
+      createdAt: Date.now() + idx
+    }));
     const merged = [...newItems, ...transactions];
     this.saveTransactions(merged);
 
@@ -556,11 +525,9 @@ const StorageManager = {
     const index = transactions.findIndex(t => t.id === id);
     if (index === -1) return { success: false, message: 'ไม่พบรายการที่ต้องการแก้ไข' };
 
-    const txType = (updatedData.type === 'income') ? 'income' : ((updatedData.type === 'savings') ? 'savings' : 'expense');
-
     transactions[index] = {
       ...transactions[index],
-      type: txType,
+      type: updatedData.type === 'income' ? 'income' : 'expense',
       amount: Math.abs(parseFloat(updatedData.amount)) || 0,
       categoryId: updatedData.categoryId || transactions[index].categoryId,
       date: updatedData.date || transactions[index].date,
@@ -630,9 +597,9 @@ const StorageManager = {
         // Migration support from legacy pay_cycle_preset key
         const legacyPreset = localStorage.getItem('money_memo_pay_cycle_preset');
         if (legacyPreset === '25') {
-          this._payCycleSetting = { type: 'custom', customDay: 25 };
+          this._payCycleSetting = { type: 'day_25', customDay: 25 };
         } else if (legacyPreset === '28') {
-          this._payCycleSetting = { type: 'custom', customDay: 28 };
+          this._payCycleSetting = { type: 'day_28', customDay: 28 };
         } else if (legacyPreset === 'end_of_month' || legacyPreset === 'last_day') {
           this._payCycleSetting = { type: 'end_of_month', customDay: 31 };
         } else {
@@ -640,22 +607,7 @@ const StorageManager = {
         }
         return this._payCycleSetting;
       }
-      let parsed = JSON.parse(data);
-      let needsSave = false;
-      if (parsed.type === 'day_25') {
-        parsed = { type: 'custom', customDay: 25 };
-        needsSave = true;
-      } else if (parsed.type === 'day_28') {
-        parsed = { type: 'custom', customDay: 28 };
-        needsSave = true;
-      } else if (parsed.type === 'custom' && !parsed.customDay) {
-        parsed.customDay = 15;
-        needsSave = true;
-      }
-      this._payCycleSetting = parsed;
-      if (needsSave) {
-        this.savePayCycleSetting(parsed);
-      }
+      this._payCycleSetting = JSON.parse(data);
       return this._payCycleSetting;
     } catch (e) {
       this._payCycleSetting = JSON.parse(JSON.stringify(DEFAULT_PAY_CYCLE));
@@ -702,229 +654,21 @@ const StorageManager = {
     }
   },
 
-  // --- การจัดการเงินเหลือสิ้นสุดรอบ (Month-End Surplus Settlement & Rollover) ---
-  getSurplusSettlements() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.SURPLUS_SETTLEMENT);
-      return data ? JSON.parse(data) : {};
-    } catch (e) {
-      return {};
+  getPaydayForMonth(year, monthIndex, setting) {
+    if (setting.type === 'calendar') {
+      return new Date(year, monthIndex, 1);
     }
-  },
-
-  getSurplusSettlement(cycleStartDate) {
-    if (!cycleStartDate) return null;
-    const all = this.getSurplusSettlements();
-    return all[cycleStartDate] || null;
-  },
-
-  saveSurplusSettlement(cycleStartDate, settlement) {
-    if (!cycleStartDate) return;
-    try {
-      const all = this.getSurplusSettlements();
-      all[cycleStartDate] = {
-        ...settlement,
-        updatedAt: new Date().toISOString()
-      };
-      localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(all));
-
-      // Also sync surplus savings directly into savingsDeposits ledger
-      const savingsAmt = Number(settlement.savingsAmount) || 0;
-      let deposits = this.getSavingsDeposits();
-      const existingIdx = deposits.findIndex(d => d.cycleStartDate === cycleStartDate && d.isSurplus);
-
-      if (savingsAmt > 0) {
-        const surplusRecord = {
-          id: existingIdx >= 0 ? deposits[existingIdx].id : ('sav_surplus_' + cycleStartDate.replace(/-/g, '')),
-          type: 'deposit',
-          amount: savingsAmt,
-          date: cycleStartDate,
-          note: 'ยกเงินเหลือจากรอบก่อนหน้าเข้าเงินออม',
-          isSurplus: true,
-          cycleStartDate: cycleStartDate,
-          deductFromDailyBudget: false,
-          createdAt: existingIdx >= 0 ? deposits[existingIdx].createdAt : new Date().toISOString()
-        };
-        if (existingIdx >= 0) {
-          deposits[existingIdx] = surplusRecord;
-        } else {
-          deposits.unshift(surplusRecord);
-        }
-      } else if (existingIdx >= 0) {
-        deposits.splice(existingIdx, 1);
-      }
-      this.saveSavingsDeposits(deposits);
-    } catch (e) {
-      console.error('Error saving surplus settlement:', e);
+    if (setting.type === 'end_of_month' || setting.type === 'last_day') {
+      return new Date(year, monthIndex + 1, 0); // last day of month
     }
-  },
-
-  removeSurplusSettlement(cycleStartDate) {
-    if (!cycleStartDate) return;
-    try {
-      const all = this.getSurplusSettlements();
-      delete all[cycleStartDate];
-      localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(all));
-
-      let deposits = this.getSavingsDeposits();
-      deposits = deposits.filter(d => !(d.cycleStartDate === cycleStartDate && d.isSurplus));
-      this.saveSavingsDeposits(deposits);
-    } catch (e) {
-      console.error('Error removing surplus settlement:', e);
+    let day = 1;
+    if (setting.type === 'day_25') day = 25;
+    else if (setting.type === 'day_28') day = 28;
+    else if (setting.type === 'custom') {
+      day = Math.max(1, Math.min(31, parseInt(setting.customDay, 10) || 1));
     }
-  },
-
-  getPreviousCycleSurplus(referenceDate = new Date(), payCycleSetting = null) {
-    const setting = payCycleSetting || this.getPayCycleSetting();
-    const currentCycle = this.getCycleDateRange(referenceDate, setting);
-    
-    // Find the immediately preceding cycle (1 day before currentCycle starts)
-    const prevDate = new Date(currentCycle.sDate.getTime() - 86400000);
-    const prevCycle = this.getCycleDateRange(prevDate, setting);
-
-    const allTxs = this.getTransactions();
-    const prevTxs = allTxs.filter(t => {
-      const d = this.normalizeDateString(t.date);
-      return d >= prevCycle.startDate && d <= prevCycle.endDate;
-    });
-
-    let totalIncome = 0;
-    let totalExpense = 0;
-    let prevTxSavings = 0;
-    prevTxs.forEach(t => {
-      const amt = Number(t.amount) || 0;
-      if (t.type === 'income') totalIncome += amt;
-      else if (t.type === 'savings') prevTxSavings += amt;
-      else totalExpense += amt;
-    });
-
-    // Rollover from cycle before previous cycle
-    const prevPrevSettlement = this.getSurplusSettlement(prevCycle.startDate);
-    const prevRollover = prevPrevSettlement ? (Number(prevPrevSettlement.rolloverAmount) || 0) : 0;
-
-    // Filter savings deposits during previous cycle that were deducted from budget
-    const allDeposits = this.getSavingsDeposits();
-    let prevSavingsDeducted = prevTxSavings;
-    allDeposits.forEach(d => {
-      const dStr = this.normalizeDateString(d.date);
-      if (dStr >= prevCycle.startDate && dStr <= prevCycle.endDate && d.deductFromDailyBudget && !d.isSurplus) {
-        const amt = Number(d.amount) || 0;
-        if (d.type === 'deposit') prevSavingsDeducted += amt;
-        else if (d.type === 'withdraw') prevSavingsDeducted -= amt;
-      }
-    });
-
-    const effectivePrevIncome = totalIncome + prevRollover;
-    let netSurplus = Math.round((effectivePrevIncome - totalExpense - prevSavingsDeducted + Number.EPSILON) * 100) / 100;
-    netSurplus = Math.max(0, netSurplus);
-
-    const settlement = this.getSurplusSettlement(currentCycle.startDate);
-
-    if (settlement && (settlement.rolloverAmount > 0 || settlement.savingsAmount > 0)) {
-      const settledTotal = (Number(settlement.rolloverAmount) || 0) + (Number(settlement.savingsAmount) || 0);
-      if (netSurplus <= 0 && settledTotal > 0) {
-        netSurplus = Math.round((settledTotal + Number.EPSILON) * 100) / 100;
-      }
-    }
-
-    return {
-      currentCycle,
-      prevCycle,
-      totalIncome: Math.round((effectivePrevIncome + Number.EPSILON) * 100) / 100,
-      totalExpense: Math.round((totalExpense + Number.EPSILON) * 100) / 100,
-      totalSavings: Math.round((prevSavingsDeducted + Number.EPSILON) * 100) / 100,
-      netSurplus,
-      hasSurplus: netSurplus > 0 || (settlement !== null),
-      settlement
-    };
-  },
-
-  // --- เงินออมสะสม & รายการฝาก/ถอนเงินออม (Accumulated Savings & Deposits Ledger) ---
-  _savingsDeposits: null,
-
-  getSavingsDeposits() {
-    if (this._savingsDeposits) return this._savingsDeposits;
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.SAVINGS_DEPOSITS);
-      if (data) {
-        this._savingsDeposits = JSON.parse(data);
-        return this._savingsDeposits;
-      }
-      this._savingsDeposits = [];
-      return this._savingsDeposits;
-    } catch (e) {
-      this._savingsDeposits = [];
-      return this._savingsDeposits;
-    }
-  },
-
-  saveSavingsDeposits(deposits) {
-    this._savingsDeposits = deposits;
-    try {
-      localStorage.setItem(STORAGE_KEYS.SAVINGS_DEPOSITS, JSON.stringify(deposits));
-    } catch (e) {
-      console.error('Error saving savings deposits:', e);
-    }
-  },
-
-  addSavingsDeposit(data) {
-    const deposits = this.getSavingsDeposits();
-    const amt = Math.max(0, Math.round(((parseFloat(data.amount) || 0) + Number.EPSILON) * 100) / 100);
-    const type = data.type === 'withdraw' ? 'withdraw' : 'deposit';
-    const now = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const dateStr = data.date || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-
-    const newDeposit = {
-      id: 'sav_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      amount: amt,
-      type: type, // 'deposit' | 'withdraw'
-      date: dateStr,
-      note: (data.note || (type === 'withdraw' ? 'ถอนเงินออม' : 'ฝากเงินออม')).trim(),
-      deductFromDailyBudget: data.deductFromDailyBudget !== undefined ? Boolean(data.deductFromDailyBudget) : true,
-      isSurplus: Boolean(data.isSurplus),
-      cycleStartDate: data.cycleStartDate || null,
-      createdAt: new Date().toISOString()
-    };
-
-    deposits.unshift(newDeposit);
-    this.saveSavingsDeposits(deposits);
-    return newDeposit;
-  },
-
-  deleteSavingsDeposit(id) {
-    let deposits = this.getSavingsDeposits();
-    deposits = deposits.filter(d => d.id !== id);
-    this.saveSavingsDeposits(deposits);
-  },
-
-  getTotalAccumulatedSavings() {
-    const deposits = this.getSavingsDeposits();
-    const transactions = this.getTransactions();
-    let totalDeposits = 0;
-
-    deposits.forEach(d => {
-      const amt = Number(d.amount) || 0;
-      if (d.type === 'withdraw') {
-        totalDeposits -= amt;
-      } else {
-        totalDeposits += amt;
-      }
-    });
-
-    // Also include transactions recorded with type === 'savings'
-    transactions.forEach(t => {
-      if (t.type === 'savings') {
-        totalDeposits += (Number(t.amount) || 0);
-      }
-    });
-
-    const totalAccumulated = Math.max(0, Math.round((totalDeposits + Number.EPSILON) * 100) / 100);
-
-    return {
-      totalAccumulated,
-      depositsCount: deposits.length + transactions.filter(t => t.type === 'savings').length
-    };
+    const maxDay = new Date(year, monthIndex + 1, 0).getDate();
+    return new Date(year, monthIndex, Math.min(day, maxDay));
   },
 
   getCycleDateRange(referenceDate = new Date(), payCycleSetting = null) {
@@ -932,44 +676,28 @@ const StorageManager = {
     const ref = new Date(referenceDate);
     const Y = ref.getFullYear();
     const M = ref.getMonth(); // 0 to 11
-    const day = ref.getDate();
     const pad = (n) => String(n).padStart(2, '0');
 
     let sDate, eDate;
 
-    let startDay = 1;
     if (setting.type === 'calendar') {
-      startDay = 1;
-    } else if (setting.type === 'day_25') {
-      startDay = 25;
-    } else if (setting.type === 'day_28') {
-      startDay = 28;
-    } else if (setting.type === 'end_of_month' || setting.type === 'last_day') {
-      startDay = 31;
-    } else if (setting.type === 'custom') {
-      startDay = Math.max(1, Math.min(31, parseInt(setting.customDay, 10) || 1));
-    }
-
-    if (startDay === 1) {
       sDate = new Date(Y, M, 1);
       eDate = new Date(Y, M + 1, 0);
     } else {
-      const curMonthLastDay = new Date(Y, M + 1, 0).getDate();
-      const effectiveStartDayThisMonth = Math.min(startDay, curMonthLastDay);
+      const thisMonthPayday = this.getPaydayForMonth(Y, M, setting);
+      const refZero = new Date(Y, M, ref.getDate()).getTime();
+      const thisPayZero = new Date(thisMonthPayday.getFullYear(), thisMonthPayday.getMonth(), thisMonthPayday.getDate()).getTime();
 
-      if (day >= effectiveStartDayThisMonth) {
-        // Reference date is on or after cycle start day this month -> cycle starts this month
-        sDate = new Date(Y, M, effectiveStartDayThisMonth);
-        const nextMonthLastDay = new Date(Y, M + 2, 0).getDate();
-        const effectiveEndDayNextMonth = Math.min(startDay - 1, nextMonthLastDay);
-        eDate = new Date(Y, M + 1, effectiveEndDayNextMonth);
+      if (refZero >= thisPayZero) {
+        // Today is on or after this month's payday -> cycle started on this month's payday
+        sDate = thisMonthPayday;
+        const nextMonthPayday = this.getPaydayForMonth(Y, M + 1, setting);
+        eDate = new Date(nextMonthPayday.getTime() - 86400000);
       } else {
-        // Reference date is before cycle start day this month -> cycle started last month
-        const prevMonthLastDay = new Date(Y, M, 0).getDate();
-        const effectiveStartDayPrevMonth = Math.min(startDay, prevMonthLastDay);
-        sDate = new Date(Y, M - 1, effectiveStartDayPrevMonth);
-        const effectiveEndDayThisMonth = Math.min(startDay - 1, curMonthLastDay);
-        eDate = new Date(Y, M, effectiveEndDayThisMonth);
+        // Today is before this month's payday -> cycle started on previous month's payday
+        const prevMonthPayday = this.getPaydayForMonth(Y, M - 1, setting);
+        sDate = prevMonthPayday;
+        eDate = new Date(thisMonthPayday.getTime() - 86400000);
       }
     }
 
@@ -983,8 +711,8 @@ const StorageManager = {
 
     const labelTh = `${sDate.getDate()} ${thShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${thShortMonths[eDate.getMonth()]} ${eDate.getFullYear() + 543}`;
     const labelEn = `${sDate.getDate()} ${enShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${enShortMonths[eDate.getMonth()]} ${eDate.getFullYear()}`;
-    const monthTitleTh = `${thFullMonths[M]} ${Y + 543}`;
-    const monthTitleEn = `${enFullMonths[M]} ${Y}`;
+    const monthTitleTh = `${thFullMonths[sDate.getMonth()]} ${sDate.getFullYear() + 543}`;
+    const monthTitleEn = `${enFullMonths[sDate.getMonth()]} ${sDate.getFullYear()}`;
 
     return {
       startDate: startDateStr,
@@ -995,9 +723,37 @@ const StorageManager = {
       labelEn,
       monthTitleTh,
       monthTitleEn,
-      year: Y,
-      monthIndex: M,
+      year: sDate.getFullYear(),
+      monthIndex: sDate.getMonth(),
       isCalendar: setting.type === 'calendar'
+    };
+  },
+
+  getPreviousCycleSurplus(referenceDate = new Date(), payCycleSetting = null) {
+    const setting = payCycleSetting || this.getPayCycleSetting();
+    const currentCycle = this.getCycleDateRange(referenceDate, setting);
+    const allTxs = this.getTransactions();
+
+    let priorIncome = 0;
+    let priorExpense = 0;
+
+    allTxs.forEach(t => {
+      const d = this.normalizeDateString(t.date);
+      const amt = Number(t.amount) || 0;
+      if (d < currentCycle.startDate) {
+        if (t.type === 'income') priorIncome += amt;
+        else priorExpense += amt;
+      }
+    });
+
+    const netSurplus = priorIncome - priorExpense;
+
+    return {
+      currentCycle,
+      priorIncome,
+      priorExpense,
+      netSurplus,
+      hasSurplus: netSurplus > 0
     };
   },
 
@@ -1067,21 +823,16 @@ const StorageManager = {
 
     let totalIncome = 0;
     let totalExpense = 0;
-    let totalSavings = 0;
 
     const rows = filtered.map(t => {
       const cat = this.getCategoryById(t.categoryId);
       const catName = this.getCategoryDisplayName(cat);
       const isExp = t.type === 'expense';
-      const isSav = t.type === 'savings';
       
       if (isExp) totalExpense += t.amount;
-      else if (isSav) totalSavings += t.amount;
       else totalIncome += t.amount;
 
-      const typeStr = isExp 
-        ? (lang === 'en' ? 'Expense' : 'รายจ่าย') 
-        : (isSav ? (lang === 'en' ? 'Savings' : 'เงินออม') : (lang === 'en' ? 'Income' : 'รายรับ'));
+      const typeStr = isExp ? (lang === 'en' ? 'Expense' : 'รายจ่าย') : (lang === 'en' ? 'Income' : 'รายรับ');
       const formattedDate = t.date.replace('T', ' ');
       const cleanNote = (t.note || '').replace(/"/g, '""');
 
@@ -1095,14 +846,13 @@ const StorageManager = {
       ].join(',');
     });
 
-    const netBalance = totalIncome - totalExpense - totalSavings;
+    const netBalance = totalIncome - totalExpense;
 
     // Summary Rows with Headers
     const emptyRow = '"","","","","",""';
     const summaryHeader = `"${lang === 'en' ? '=== SUMMARY ===' : '=== สรุปยอดรวม ==='}","","","","",""`;
     const incomeSummary = `"${lang === 'en' ? 'Total Income' : 'รายรับรวม'}","","","${totalIncome.toFixed(2)}","",""`;
     const expenseSummary = `"${lang === 'en' ? 'Total Expense' : 'รายจ่ายรวม'}","","","${totalExpense.toFixed(2)}","",""`;
-    const savingsSummary = `"${lang === 'en' ? 'Total Savings' : 'เงินออมรวม'}","","","${totalSavings.toFixed(2)}","",""`;
     const netSummary = `"${lang === 'en' ? 'Net Balance' : 'คงเหลือสุทธิ'}","","","${netBalance.toFixed(2)}","",""`;
 
     const csvContent = '\uFEFF' + [
@@ -1115,7 +865,6 @@ const StorageManager = {
       summaryHeader,
       incomeSummary,
       expenseSummary,
-      savingsSummary,
       netSummary
     ].join('\r\n');
 
@@ -1138,16 +887,14 @@ const StorageManager = {
 
   exportToJSON() {
     const backupData = {
-      version: '4.0.0',
+      version: '3.9.1',
       exportedAt: new Date().toISOString(),
       transactions: this.getTransactions(),
       categories: this.getCategories(),
       recurringItems: this.getRecurringItems(),
       budgetSimulator: this.getBudgetSimulator(),
       payCycleSetting: this.getPayCycleSetting(),
-      savingsGoal: this.getMonthlySavingsGoal(),
-      surplusSettlements: this.getSurplusSettlements(),
-      savingsDeposits: this.getSavingsDeposits()
+      savingsGoal: this.getMonthlySavingsGoal()
     };
 
     const jsonStr = JSON.stringify(backupData, null, 2);
@@ -1177,10 +924,6 @@ const StorageManager = {
         if (data.budgetSimulator) this.saveBudgetSimulator(data.budgetSimulator);
         if (data.payCycleSetting) this.savePayCycleSetting(data.payCycleSetting);
         if (typeof data.savingsGoal === 'number') this.saveMonthlySavingsGoal(data.savingsGoal);
-        if (data.surplusSettlements && typeof data.surplusSettlements === 'object') {
-          localStorage.setItem(STORAGE_KEYS.SURPLUS_SETTLEMENT, JSON.stringify(data.surplusSettlements));
-        }
-        if (Array.isArray(data.savingsDeposits)) this.saveSavingsDeposits(data.savingsDeposits);
       }
       return { success: true };
     } catch (e) {

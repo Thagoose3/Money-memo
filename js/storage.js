@@ -772,7 +772,26 @@ const StorageManager = {
       else totalExpense += amt;
     });
 
-    let netSurplus = Math.round((totalIncome - totalExpense + Number.EPSILON) * 100) / 100;
+    // Rollover from cycle before previous cycle
+    const prevPrevSettlement = this.getSurplusSettlement(prevCycle.startDate);
+    const prevRollover = prevPrevSettlement ? (Number(prevPrevSettlement.rolloverAmount) || 0) : 0;
+
+    // Filter savings deposits during previous cycle that were deducted from budget
+    const allDeposits = this.getSavingsDeposits();
+    let prevSavingsDeducted = 0;
+    allDeposits.forEach(d => {
+      const dStr = this.normalizeDateString(d.date);
+      if (dStr >= prevCycle.startDate && dStr <= prevCycle.endDate && d.deductFromDailyBudget && !d.isSurplus) {
+        const amt = Number(d.amount) || 0;
+        if (d.type === 'deposit') prevSavingsDeducted += amt;
+        else if (d.type === 'withdraw') prevSavingsDeducted -= amt;
+      }
+    });
+
+    const effectivePrevIncome = totalIncome + prevRollover;
+    let netSurplus = Math.round((effectivePrevIncome - totalExpense - prevSavingsDeducted + Number.EPSILON) * 100) / 100;
+    netSurplus = Math.max(0, netSurplus);
+
     const settlement = this.getSurplusSettlement(currentCycle.startDate);
 
     if (settlement && (settlement.rolloverAmount > 0 || settlement.savingsAmount > 0)) {
@@ -785,8 +804,9 @@ const StorageManager = {
     return {
       currentCycle,
       prevCycle,
-      totalIncome: Math.round((totalIncome + Number.EPSILON) * 100) / 100,
+      totalIncome: Math.round((effectivePrevIncome + Number.EPSILON) * 100) / 100,
       totalExpense: Math.round((totalExpense + Number.EPSILON) * 100) / 100,
+      totalSavings: Math.round((prevSavingsDeducted + Number.EPSILON) * 100) / 100,
       netSurplus,
       hasSurplus: netSurplus > 0 || (settlement !== null),
       settlement

@@ -3772,13 +3772,13 @@ const App = {
 
     let income = 0;
     let expense = 0;
-    let savingsInCycle = 0;
     currentTxs.forEach(t => {
       const amt = Number(t.amount) || 0;
       if (t.type === 'income') income += amt;
-      else if (t.type === 'savings') savingsInCycle += amt;
-      else expense += amt;
+      else if (t.type !== 'savings') expense += amt;
     });
+
+    const savingsInCycle = StorageManager.getSavingsInCycle(cycleRange.startDate, cycleRange.endDate);
 
     // Net balance (Living Pool) = Rollover + Income - Expense - SavingsInCycle
     const net = rolloverSurplus + income - expense - savingsInCycle;
@@ -3910,15 +3910,12 @@ const App = {
     let totalIncomeInCycle = 0;
     let pastExpenseInCycle = 0;
     let todayExpense = 0;
-    let totalSavingsInCycle = 0;
 
     cycleTxs.forEach(t => {
       const dStr = StorageManager.normalizeDateString(t.date);
       const amount = Number(t.amount) || 0;
       if (t.type === 'income') {
         totalIncomeInCycle += amount;
-      } else if (t.type === 'savings') {
-        totalSavingsInCycle += amount;
       } else if (t.type === 'expense') {
         if (dStr === todayStr) {
           todayExpense += amount;
@@ -3927,6 +3924,8 @@ const App = {
         }
       }
     });
+
+    const totalSavingsInCycle = StorageManager.getSavingsInCycle(cycleRange.startDate, cycleRange.endDate);
 
     // Monthly savings goal (if user set a goal in settings)
     const savingsGoal = StorageManager.getMonthlySavingsGoal();
@@ -4043,16 +4042,13 @@ const App = {
     const cycleRange = StorageManager.getCycleDateRange(now, payCycleSetting);
 
     const allTxs = StorageManager.getTransactions();
-    const totalAccumulatedSavings = StorageManager.getTotalAccumulatedSavings();
+    const rawSavings = StorageManager.getTotalAccumulatedSavings();
+    const totalAccumulatedSavings = typeof rawSavings === 'object' && rawSavings !== null
+      ? (Number(rawSavings.totalAccumulated) || 0)
+      : (Number(rawSavings) || 0);
 
     // Savings strictly inside the current cycle
-    const savingsInCycle = allTxs
-      .filter(t => {
-        if (t.type !== 'savings') return false;
-        const d = StorageManager.normalizeDateString(t.date);
-        return d >= cycleRange.startDate && d <= cycleRange.endDate;
-      })
-      .reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const savingsInCycle = StorageManager.getSavingsInCycle(cycleRange.startDate, cycleRange.endDate);
 
     container.innerHTML = `
       <div class="pastel-card p-4 sm:p-5 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-slate-50 to-indigo-50/20">
@@ -4224,24 +4220,50 @@ const App = {
     // Legacy savings deposits check
     const legacyDeposits = [];
     try {
-      const goals = StorageManager.getSavingsGoals ? StorageManager.getSavingsGoals() : [];
-      goals.forEach(g => {
-        if (Array.isArray(g.deposits)) {
-          g.deposits.forEach(d => {
+      const depositsStr = localStorage.getItem('smart_expense_savings_deposits_v1');
+      if (depositsStr) {
+        const parsed = JSON.parse(depositsStr);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(d => {
             legacyDeposits.push({
               id: `legacy_${d.id}`,
-              goalId: g.id,
-              goalTitle: g.title,
               amount: Number(d.amount) || 0,
               date: d.date,
-              note: d.note || g.title,
-              isLegacy: true
+              note: d.note || (lang === 'en' ? 'Legacy Savings Deposit' : 'รายการออมเงินเดิม'),
+              isLegacy: true,
+              legacySource: 'deposits'
             });
           });
         }
-      });
+      }
     } catch (e) {
       console.warn('Error reading legacy deposits:', e);
+    }
+
+    try {
+      const goalsStr = localStorage.getItem('smart_expense_savings_goals_v1');
+      if (goalsStr) {
+        const goals = JSON.parse(goalsStr);
+        if (Array.isArray(goals)) {
+          goals.forEach(g => {
+            if (Array.isArray(g.deposits)) {
+              g.deposits.forEach(d => {
+                legacyDeposits.push({
+                  id: `legacy_goal_${d.id}`,
+                  goalId: g.id,
+                  amount: Number(d.amount) || 0,
+                  date: d.date,
+                  note: d.note || g.title || (lang === 'en' ? 'Savings Goal Deposit' : 'เงินฝากเป้าหมายออม'),
+                  isLegacy: true,
+                  legacySource: 'goals'
+                });
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading legacy goals:', e);
     }
 
     const combined = [
@@ -4283,6 +4305,7 @@ const App = {
         const emoji = cat && cat.emoji ? cat.emoji : '💰';
         const dStr = (item.date || '').slice(0, 10);
         const tStr = (item.date && item.date.length >= 16) ? item.date.slice(11, 16) : '';
+        const sourceArg = item.legacySource ? `'${item.legacySource}'` : 'null';
         return `
           <div class="p-3 rounded-2xl bg-slate-50/90 border border-slate-100 flex items-center justify-between hover:bg-slate-100/70 transition-colors">
             <div class="flex items-center gap-2.5 min-w-0 flex-1">
@@ -4296,7 +4319,7 @@ const App = {
               <span class="text-xs font-black num-font text-indigo-600">+฿${item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               <button 
                 type="button" 
-                onclick="App.handleDeleteSavingsRecord('${item.id}', ${item.isLegacy})"
+                onclick="App.handleDeleteSavingsRecord('${item.id}', ${item.isLegacy}, ${sourceArg})"
                 class="w-6 h-6 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center text-xs transition-colors cursor-pointer"
                 title="${lang === 'en' ? 'Delete' : 'ลบ'}"
               >
@@ -4309,25 +4332,42 @@ const App = {
     `;
   },
 
-  handleDeleteSavingsRecord(id, isLegacy) {
+  handleDeleteSavingsRecord(id, isLegacy, legacySource) {
     const lang = I18n.getLanguage();
     if (!confirm(lang === 'en' ? 'Delete this savings record?' : 'ต้องการลบรายการเงินออมนี้หรือไม่?')) {
       return;
     }
     if (isLegacy) {
       try {
-        const rawId = id.replace('legacy_', '');
-        const goals = StorageManager.getSavingsGoals ? StorageManager.getSavingsGoals() : [];
-        goals.forEach(g => {
-          if (Array.isArray(g.deposits)) {
-            const idx = g.deposits.findIndex(d => String(d.id) === String(rawId));
-            if (idx !== -1) {
-              g.currentAmount = Math.max(0, (g.currentAmount || 0) - (Number(g.deposits[idx].amount) || 0));
-              g.deposits.splice(idx, 1);
-              StorageManager.saveSavingsGoals(goals);
+        if (legacySource === 'goals') {
+          const rawId = id.replace('legacy_goal_', '');
+          const goalsStr = localStorage.getItem('smart_expense_savings_goals_v1');
+          if (goalsStr) {
+            const goals = JSON.parse(goalsStr);
+            if (Array.isArray(goals)) {
+              goals.forEach(g => {
+                if (Array.isArray(g.deposits)) {
+                  const idx = g.deposits.findIndex(d => String(d.id) === String(rawId));
+                  if (idx !== -1) {
+                    g.currentAmount = Math.max(0, (g.currentAmount || 0) - (Number(g.deposits[idx].amount) || 0));
+                    g.deposits.splice(idx, 1);
+                  }
+                }
+              });
+              localStorage.setItem('smart_expense_savings_goals_v1', JSON.stringify(goals));
             }
           }
-        });
+        } else {
+          const rawId = id.replace('legacy_', '');
+          const depositsStr = localStorage.getItem('smart_expense_savings_deposits_v1');
+          if (depositsStr) {
+            let deposits = JSON.parse(depositsStr);
+            if (Array.isArray(deposits)) {
+              deposits = deposits.filter(d => String(d.id) !== String(rawId));
+              localStorage.setItem('smart_expense_savings_deposits_v1', JSON.stringify(deposits));
+            }
+          }
+        }
       } catch (e) {
         console.error(e);
       }

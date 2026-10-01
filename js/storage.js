@@ -753,35 +753,33 @@ const StorageManager = {
     const thFullMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
     const enFullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-    // If no explicit payCycleSetting override passed, check custom date range first
-    if (!payCycleSetting) {
-      const custom = this.getCustomCycleRange();
-      if (custom && custom.startDate && custom.endDate) {
-        const [sY, sM, sD] = custom.startDate.split('-').map(Number);
-        const [eY, eM, eD] = custom.endDate.split('-').map(Number);
-        const sDate = new Date(sY, sM - 1, sD);
-        const eDate = new Date(eY, eM - 1, eD);
+    // Check if custom date range was saved by user
+    const custom = this.getCustomCycleRange();
+    if (custom && custom.startDate && custom.endDate) {
+      const [sY, sM, sD] = custom.startDate.split('-').map(Number);
+      const [eY, eM, eD] = custom.endDate.split('-').map(Number);
+      const sDate = new Date(sY, sM - 1, sD);
+      const eDate = new Date(eY, eM - 1, eD);
 
-        const labelTh = `${sDate.getDate()} ${thShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${thShortMonths[eDate.getMonth()]} ${eDate.getFullYear() + 543}`;
-        const labelEn = `${sDate.getDate()} ${enShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${enShortMonths[eDate.getMonth()]} ${eDate.getFullYear()}`;
-        const monthTitleTh = `${thFullMonths[sDate.getMonth()]} ${sDate.getFullYear() + 543}`;
-        const monthTitleEn = `${enFullMonths[sDate.getMonth()]} ${sDate.getFullYear()}`;
+      const labelTh = `${sDate.getDate()} ${thShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${thShortMonths[eDate.getMonth()]} ${eDate.getFullYear() + 543}`;
+      const labelEn = `${sDate.getDate()} ${enShortMonths[sDate.getMonth()]} - ${eDate.getDate()} ${enShortMonths[eDate.getMonth()]} ${eDate.getFullYear()}`;
+      const monthTitleTh = `${thFullMonths[sDate.getMonth()]} ${sDate.getFullYear() + 543}`;
+      const monthTitleEn = `${enFullMonths[sDate.getMonth()]} ${sDate.getFullYear()}`;
 
-        return {
-          startDate: custom.startDate,
-          endDate: custom.endDate,
-          sDate,
-          eDate,
-          labelTh,
-          labelEn,
-          monthTitleTh,
-          monthTitleEn,
-          year: sDate.getFullYear(),
-          monthIndex: sDate.getMonth(),
-          isCalendar: false,
-          isCustom: true
-        };
-      }
+      return {
+        startDate: custom.startDate,
+        endDate: custom.endDate,
+        sDate,
+        eDate,
+        labelTh,
+        labelEn,
+        monthTitleTh,
+        monthTitleEn,
+        year: sDate.getFullYear(),
+        monthIndex: sDate.getMonth(),
+        isCalendar: false,
+        isCustom: true
+      };
     }
 
     const setting = payCycleSetting || this.getPayCycleSetting();
@@ -898,7 +896,7 @@ const StorageManager = {
       }
     });
 
-    // Support legacy deposits if present
+    // Support legacy deposits if present (smart_expense_savings_deposits_v1)
     try {
       const legacyDepositsStr = localStorage.getItem('smart_expense_savings_deposits_v1');
       if (legacyDepositsStr) {
@@ -914,12 +912,98 @@ const StorageManager = {
       }
     } catch(e) {}
 
+    // Support legacy savings goals / deposits if present (smart_expense_savings_goals_v1)
+    try {
+      const legacyGoalsStr = localStorage.getItem('smart_expense_savings_goals_v1');
+      if (legacyGoalsStr) {
+        const goals = JSON.parse(legacyGoalsStr);
+        if (Array.isArray(goals)) {
+          goals.forEach(g => {
+            if (Array.isArray(g.deposits)) {
+              g.deposits.forEach(d => {
+                totalDeposits += (Number(d.amount) || 0);
+                count++;
+              });
+            } else if (g.currentAmount) {
+              totalDeposits += (Number(g.currentAmount) || 0);
+              count++;
+            }
+          });
+        }
+      }
+    } catch(e) {}
+
+    // Support legacy surplus settlement savings if present (smart_expense_surplus_settlement_v1)
+    try {
+      const settlementsStr = localStorage.getItem('smart_expense_surplus_settlement_v1');
+      if (settlementsStr) {
+        const settlements = JSON.parse(settlementsStr);
+        if (settlements && typeof settlements === 'object') {
+          Object.values(settlements).forEach(s => {
+            const amt = Number(s.savingsAmount) || 0;
+            if (amt > 0) {
+              totalDeposits += amt;
+              count++;
+            }
+          });
+        }
+      }
+    } catch(e) {}
+
     const totalAccumulated = Math.max(0, Math.round((totalDeposits + Number.EPSILON) * 100) / 100);
 
-    return {
-      totalAccumulated,
-      depositsCount: count
-    };
+    return totalAccumulated;
+  },
+
+  getSavingsInCycle(startDate, endDate) {
+    let total = 0;
+    const transactions = this.getTransactions();
+    transactions.forEach(t => {
+      if (t.type === 'savings') {
+        const d = this.normalizeDateString(t.date);
+        if (d >= startDate && d <= endDate) {
+          total += (Number(t.amount) || 0);
+        }
+      }
+    });
+
+    try {
+      const legacyDepositsStr = localStorage.getItem('smart_expense_savings_deposits_v1');
+      if (legacyDepositsStr) {
+        const legacyDeposits = JSON.parse(legacyDepositsStr);
+        if (Array.isArray(legacyDeposits)) {
+          legacyDeposits.forEach(d => {
+            const dStr = this.normalizeDateString(d.date);
+            if (dStr >= startDate && dStr <= endDate) {
+              const amt = Number(d.amount) || 0;
+              if (d.type === 'deposit') total += amt;
+              else if (d.type === 'withdraw') total -= amt;
+            }
+          });
+        }
+      }
+    } catch(e) {}
+
+    try {
+      const legacyGoalsStr = localStorage.getItem('smart_expense_savings_goals_v1');
+      if (legacyGoalsStr) {
+        const goals = JSON.parse(legacyGoalsStr);
+        if (Array.isArray(goals)) {
+          goals.forEach(g => {
+            if (Array.isArray(g.deposits)) {
+              g.deposits.forEach(d => {
+                const dStr = this.normalizeDateString(d.date);
+                if (dStr >= startDate && dStr <= endDate) {
+                  total += (Number(d.amount) || 0);
+                }
+              });
+            }
+          });
+        }
+      }
+    } catch(e) {}
+
+    return Math.max(0, Math.round((total + Number.EPSILON) * 100) / 100);
   },
 
   // --- นำเข้า / ส่งออก ข้อมูล พร้อมตัวกรองและหัวตารางสมบูรณ์ ---

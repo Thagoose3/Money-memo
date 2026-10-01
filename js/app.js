@@ -3976,8 +3976,13 @@ const App = {
       }
     });
 
+    // Total savings deduction for cycle living budget:
+    // When a user has a monthly savingsGoal (e.g. 5000) and deposited 2000 into pockets,
+    // the 2000 is part of the 5000 goal, so we deduct max(savingsGoal, manualSavingsDeductedInCycle)
+    const totalCycleSavingsDeduction = Math.max(savingsGoal, manualSavingsDeductedInCycle);
+
     // Dynamic available amount for the rest of the cycle (including today & rollover)
-    const availableForLiving = Math.max(0, (effectiveIncome + rolloverSurplus) - pastExpenseInCycle - savingsGoal - manualSavingsDeductedInCycle);
+    const availableForLiving = Math.max(0, (effectiveIncome + rolloverSurplus) - pastExpenseInCycle - totalCycleSavingsDeduction);
     const dailyQuotaToday = daysRemaining > 0 ? (availableForLiving / daysRemaining) : 0;
     const remainingToday = Math.max(0, dailyQuotaToday - todayExpense);
     const isExceeded = (todayExpense > dailyQuotaToday && dailyQuotaToday > 0) || (dailyQuotaToday === 0 && todayExpense > 0);
@@ -4051,7 +4056,7 @@ const App = {
         <!-- Sub Context Stats (Income & Past Expenses) -->
         <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
           <span>${lang === 'en' ? 'Cycle Income: ' : 'รายรับรอบนี้: '}<strong class="text-emerald-600 num-font font-bold">฿${(effectiveIncome + rolloverSurplus).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-          <span>${lang === 'en' ? 'Saved & Goal: ' : 'เป้าออม+ฝากแยก: '}<strong class="text-indigo-600 num-font font-bold">฿${(savingsGoal + manualSavingsDeductedInCycle).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+          <span>${lang === 'en' ? 'Target: ' : 'เป้าออมเดือนนี้: '}<strong class="text-indigo-600 num-font font-bold">฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> <span class="text-emerald-600 font-semibold">(ออมแล้ว ฿${manualSavingsDeductedInCycle.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span></span>
         </div>
       </div>
     `;
@@ -4247,6 +4252,10 @@ const App = {
       `;
     }
 
+    // Monthly Goal Progress computation
+    const goalProgressPct = savingsGoal > 0 ? Math.min(100, Math.max(0, (cycleDepositsTotal / savingsGoal) * 100)) : 100;
+    const isGoalAchieved = savingsGoal > 0 && cycleDepositsTotal >= savingsGoal;
+
     container.innerHTML = `
       <div class="pastel-card p-3.5 sm:p-4 rounded-3xl shadow-2xs border border-slate-200/80 space-y-3 bg-gradient-to-br from-white via-emerald-50/20 to-slate-50">
         <!-- Header -->
@@ -4290,11 +4299,11 @@ const App = {
               ฿${accumulatedData.totalAccumulated.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
             <span class="text-[9px] text-emerald-700 font-bold block mt-0.5 truncate">
-              ${cycleDepositsTotal !== 0 ? `${cycleDepositsTotal > 0 ? '+' : ''}฿${cycleDepositsTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} ${lang === 'en' ? 'this cycle' : 'รอบนี้'}` : (accumulatedData.totalSurplusSavings > 0 ? `${lang === 'en' ? 'Surplus saved' : 'ออมจากเงินเหลือ'}: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `${lang === 'en' ? 'Ready to grow' : 'พร้อมสะสมเพิ่ม'}`)}
+              ${cycleDepositsTotal !== 0 ? `${cycleDepositsTotal > 0 ? '+' : ''}฿${cycleDepositsTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })} ${lang === 'en' ? 'this cycle' : 'ฝากรอบนี้'}` : (accumulatedData.totalSurplusSavings > 0 ? `${lang === 'en' ? 'Surplus saved' : 'ออมจากเงินเหลือ'}: ฿${accumulatedData.totalSurplusSavings.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : `${lang === 'en' ? 'Total in all pockets' : 'รวมเงินในทุกกระปุก'}`)}
             </span>
           </div>
 
-          <!-- Right: Monthly Savings Goal -->
+          <!-- Right: Monthly Savings Goal & Progress -->
           <div class="bg-white/90 p-2.5 rounded-2xl border border-slate-100 shadow-2xs cursor-pointer hover:border-indigo-300 transition-colors" onclick="App.openSavingsGoalModal()" title="${lang === 'en' ? 'Click to adjust target' : 'คลิกเพื่อปรับเป้าหมาย'}">
             <div class="flex items-center justify-between">
               <span class="text-[10px] text-slate-400 font-semibold block">${lang === 'en' ? 'Monthly Goal' : 'เป้าหมายประจำเดือน'}</span>
@@ -4303,9 +4312,20 @@ const App = {
             <p class="text-base sm:text-xl font-black num-font text-emerald-600 mt-0.5">
               ฿${savingsGoal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-            <span class="text-[9px] text-slate-400 block mt-0.5 truncate">
-              ${lang === 'en' ? 'Deducted for daily allowance' : 'หักจัดสรรงบกินใช้อัตโนมัติ'}
-            </span>
+            ${savingsGoal > 0 ? `
+              <div class="mt-1 space-y-0.5">
+                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: ${goalProgressPct}%"></div>
+                </div>
+                <span class="text-[9px] ${isGoalAchieved ? 'text-emerald-700 font-extrabold' : 'text-slate-400 font-medium'} block truncate">
+                  ${isGoalAchieved ? (lang === 'en' ? `🎉 Achieved (${goalProgressPct.toFixed(0)}%)` : `🎉 ครบเป้าแล้ว (${goalProgressPct.toFixed(0)}%)`) : (lang === 'en' ? `Saved ฿${cycleDepositsTotal.toLocaleString()} (${goalProgressPct.toFixed(0)}%)` : `ออมแล้ว ฿${cycleDepositsTotal.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} (${goalProgressPct.toFixed(0)}%)`)}
+                </span>
+              </div>
+            ` : `
+              <span class="text-[9px] text-slate-400 block mt-0.5 truncate">
+                ${lang === 'en' ? 'Click to set target' : 'คลิกเพื่อตั้งเป้าหมาย ✏️'}
+              </span>
+            `}
           </div>
         </div>
 

@@ -908,7 +908,7 @@ const StorageManager = {
 
     totalSurplusSavings = Math.round((totalSurplusSavings + Number.EPSILON) * 100) / 100;
     totalManualDeposits = Math.round((totalManualDeposits + Number.EPSILON) * 100) / 100;
-    const totalAccumulated = Math.round((totalSurplusSavings + totalManualDeposits + currentGoal + Number.EPSILON) * 100) / 100;
+    const totalAccumulated = Math.max(0, Math.round((totalSurplusSavings + totalManualDeposits + Number.EPSILON) * 100) / 100);
 
     return {
       totalSurplusSavings,
